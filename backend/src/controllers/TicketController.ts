@@ -25,6 +25,8 @@ type IndexQuery = {
   date?: string;
   dateStart?: string;
   dateEnd?: string;
+  startDate?: string;
+  endDate?: string;
   updatedAt?: string;
   showAll: string;
   withUnreadMessages?: string;
