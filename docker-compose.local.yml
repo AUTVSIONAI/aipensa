@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:12
+    restart: always
+    environment:
+      POSTGRES_USER: zapcash_user
+      POSTGRES_PASSWORD: zapcash_secure_password
+      POSTGRES_DB: zapcash_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data
+    networks:
+      - zapcash-local
+
+  redis:
+    image: redis:6-alpine
+    restart: always
+    command: ["redis-server", "--requirepass", "zapcash_redis_pass"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data_local:/data
+    networks:
+      - zapcash-local
+
+  backend:
+    build: ./backend
+    restart: always
+    depends_on:
+      - db
+      - redis
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_USER: zapcash_user
+      DB_PASS: zapcash_secure_password
+      DB_NAME: zapcash_db
+      JWT_SECRET: local_secret
+      JWT_REFRESH_SECRET: local_refresh_secret
+      REDIS_URI: redis://:zapcash_redis_pass@redis:6379
+      REDIS_OPT_LIMITER_MAX: 1
+      BACKEND_URL: http://localhost:8081
+      FRONTEND_URL: http://localhost:3001
+      VERIFY_TOKEN: ${VERIFY_TOKEN}
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+      PROXY_PORT: 8080
+      PORT: 8080
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./backend/public:/app/public
+    networks:
+      - zapcash-local
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_BACKEND_URL: http://localhost:8081
+        REACT_APP_FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "3001:80"
+    networks:
+      - zapcash-local
+
+volumes:
+  postgres_data_local:
+  redis_data_local:
+
+networks:
+  zapcash-local:
+    driver: bridge
