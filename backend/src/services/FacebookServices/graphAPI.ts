@@ -215,8 +215,8 @@ export const getAccessTokenFromPage = async (
       "https://graph.facebook.com/v20.0/oauth/access_token",
       {
         params: {
-          client_id: appId,
-          client_secret: appSecret,
+          client_id: process.env.FACEBOOK_APP_ID,
+          client_secret: process.env.FACEBOOK_APP_SECRET,
           grant_type: "fb_exchange_token",
           fb_exchange_token: token
         }

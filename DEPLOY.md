@@ -36,7 +36,7 @@ Cole o seguinte conteúdo (ajuste as senhas se desejar):
 DB_USER=zapcash_user
 DB_PASS=zapcash_secure_password
 DB_NAME=zapcash_db
-REDIS_PASS=zapcash_redis_pass
+REDIS_PASS=sua_senha_redis
 JWT_SECRET=super_secret_jwt_key_change_me
 JWT_REFRESH_SECRET=super_secret_refresh_key_change_me
 
