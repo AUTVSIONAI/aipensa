@@ -45,6 +45,10 @@ const isAuth = async (req: Request, res: Response, next: NextFunction): Promise<
       companyId
     };
   } catch (err: any) {
+    if (err.name === "TokenExpiredError" || err.message === "jwt expired") {
+      throw new AppError("ERR_SESSION_EXPIRED", 401);
+    }
+    
     if (err.message === "ERR_SESSION_EXPIRED" && err.statusCode === 401) {
       throw new AppError(err.message, 401);
     } else {

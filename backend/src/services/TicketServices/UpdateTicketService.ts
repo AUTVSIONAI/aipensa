@@ -202,44 +202,20 @@ const UpdateTicketService = async ({
             ticketId,
             type: "nps"
           });
-
-          // try {
-          //   // Retrieve tagIds associated with the provided ticketId from TicketTags
-          //   const ticketTags = await TicketTag.findAll({ where: { ticketId } });
-          //   const tagIds = ticketTags.map((ticketTag) => ticketTag.tagId);
-
-          //   // Find the tagIds with kanban = 1 in the Tags table
-          //   const tagsWithKanbanOne = await Tag.findAll({
-          //     where: {
-          //       id: tagIds,
-          //       kanban: 1,
-          //     },
-          //   });
-
-          //   // Remove the tagIds with kanban = 1 from TicketTags
-          //   const tagIdsWithKanbanOne = tagsWithKanbanOne.map((tag) => tag.id);
-          //   if (tagIdsWithKanbanOne)
-          //     await TicketTag.destroy({ where: { ticketId, tagId: tagIdsWithKanbanOne } });
-          // } catch (error) {
-          //   Sentry.captureException(error);
-          // }
-
-          await ticket.update({
-            status: "nps",
-            amountUsedBotQueuesNPS: 1
-          });
-
-          io.of(String(companyId))
-            // .to(oldStatus)
-            // .to(ticketId.toString())
-            .emit(`company-${ticket.companyId}-ticket`, {
-              action: "delete",
-              ticketId: ticket.id
-            });
-
-          console.log(277, "UpdateTicketService");
-          return { ticket, oldStatus, oldUserId };
         }
+        
+        await ticket.update({
+          status: "closed",
+          unreadMessages: 0,
+          userId: null
+        });
+
+        // io.to("open").emit(`company-${companyId}-ticket`, {
+        //   action: "delete",
+        //   ticketId: ticket.id
+        // });
+
+        return { ticket, oldStatus, oldUserId };
       }
 
       if (
@@ -793,25 +769,45 @@ const UpdateTicketService = async ({
 
     status = queue && queue.closeTicket ? "closed" : status;
 
-    await ticket.update({
-      status,
-      queueId,
-      userId,
-      isBot,
-      queueOptionId,
-      amountUsedBotQueues:
-        status === "closed"
-          ? 0
-          : amountUsedBotQueues
-          ? amountUsedBotQueues
-          : ticket.amountUsedBotQueues,
-      lastMessage: lastMessage ? lastMessage : ticket.lastMessage,
-      useIntegration,
-      integrationId,
-      typebotSessionId: !useIntegration ? null : ticket.typebotSessionId,
-      typebotStatus: useIntegration,
-      unreadMessages
-    });
+    // Feature: Transfer to AI (Bot)
+    if (isBot) {
+      await ticket.update({
+        isBot: true,
+        userId: null,
+        queueId: queueId || null, // Optional: move to specific queue or keep current/null
+        status: status || "pending" // Usually back to pending or open
+      });
+
+       await CreateLogTicketService({
+        userId,
+        queueId: ticket.queueId,
+        ticketId,
+        type: "transfered" // Or a new type "transfered_to_bot"
+      });
+
+      // Optionally send a message or trigger bot logic here
+      // For now, just updating isBot is enough if the bot listener checks this flag
+    } else {
+      await ticket.update({
+        status,
+        queueId,
+        userId,
+        isBot,
+        queueOptionId,
+        amountUsedBotQueues:
+          status === "closed"
+            ? 0
+            : amountUsedBotQueues
+            ? amountUsedBotQueues
+            : ticket.amountUsedBotQueues,
+        lastMessage: lastMessage ? lastMessage : ticket.lastMessage,
+        useIntegration,
+        integrationId,
+        typebotSessionId: !useIntegration ? null : ticket.typebotSessionId,
+        typebotStatus: useIntegration,
+        unreadMessages
+      });
+    }
 
     ticketTraking.queuedAt = moment().toDate();
     ticketTraking.queueId = queueId;
