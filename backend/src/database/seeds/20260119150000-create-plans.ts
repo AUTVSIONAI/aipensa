@@ -75,7 +75,6 @@ export const up = async (queryInterface: QueryInterface) => {
 
   // Update or Insert Plano 1 (Mini)
   const miniPlan = {
-      id: 1,
       name: "Plano Mini",
       users: 2,
       connections: 1,
@@ -99,14 +98,14 @@ export const up = async (queryInterface: QueryInterface) => {
       updatedAt: new Date()
   };
 
-  const [existingMini] = await queryInterface.sequelize.query(
-      'SELECT id FROM "Plans" WHERE id = 1 LIMIT 1'
-  );
+  const existingMiniPlan = await queryInterface.rawSelect('Plans', {
+      where: { id: 1 },
+  }, ['id']);
 
-  if (existingMini.length > 0) {
+  if (existingMiniPlan) {
       await queryInterface.bulkUpdate('Plans', miniPlan, { id: 1 });
   } else {
-      await queryInterface.bulkInsert('Plans', [miniPlan]);
+      await queryInterface.bulkInsert('Plans', [{ ...miniPlan, id: 1 }]);
   }
 
   for (const plan of plans) {
