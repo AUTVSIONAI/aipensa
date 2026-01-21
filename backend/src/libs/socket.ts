@@ -10,28 +10,16 @@ let io: SocketIO;
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     allowRequest: (req, callback) => {
-      const origin = req.headers.origin;
-      const frontendUrl = process.env.FRONTEND_URL;
-
-      if (process.env.NODE_ENV !== "production") {
-        return callback(null, true);
-      }
-
-      if (!frontendUrl || !origin) {
-        return callback(null, true);
-      }
-
-      const normalize = (value: string) => value.replace(/\/$/, "");
-      callback(null, normalize(origin) === normalize(frontendUrl));
+      // Permitir todas as requisições temporariamente
+      callback(null, true);
     },
     cors: {
       origin: (origin, cb) => {
-        const frontendUrl = process.env.FRONTEND_URL;
-        if (process.env.NODE_ENV !== "production") return cb(null, true);
-        if (!frontendUrl || !origin) return cb(null, true);
-        const normalize = (value: string) => value.replace(/\/$/, "");
-        return cb(null, normalize(origin) === normalize(frontendUrl));
-      }
+        // Permitir todas as origens temporariamente
+        return cb(null, true);
+      },
+      credentials: true,
+      methods: ["GET", "POST"]
     }
   });
 
