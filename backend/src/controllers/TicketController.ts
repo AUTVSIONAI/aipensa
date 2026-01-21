@@ -25,8 +25,8 @@ type IndexQuery = {
   date?: string;
   dateStart?: string;
   dateEnd?: string;
-  startDate?: string;
-  endDate?: string;
+  startDate?: string; // Support for legacy/alternative date params
+  endDate?: string;   // Support for legacy/alternative date params
   updatedAt?: string;
   showAll: string;
   withUnreadMessages?: string;
