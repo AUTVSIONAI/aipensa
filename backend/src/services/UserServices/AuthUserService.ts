@@ -43,8 +43,11 @@ const AuthUserService = async ({
   email,
   password
 }: Request): Promise<Response> => {
+  const searchEmail = email.trim().toLowerCase();
+  console.log(`[AuthUserService] Searching for user with email: '${searchEmail}'`);
+
   const user = await User.findOne({
-    where: { email: email.trim().toLowerCase() },
+    where: { email: searchEmail },
     include: ["queues", { model: Company, include: [{ model: CompaniesSettings }] }]
   });
 

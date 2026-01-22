@@ -126,6 +126,8 @@ const CreateCompanyService = async (
     
     await t.commit();
 
+    console.log(`[CreateCompanyService] Company created: ${company.id}, User created: ${user.id}, Email: ${email}`);
+
     return company;
   } catch (error) {
     await t.rollback();
