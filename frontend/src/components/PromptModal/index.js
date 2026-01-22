@@ -296,6 +296,7 @@ const PromptModal = ({ open, onClose, promptId }) => {
     const [showApiKey, setShowApiKey] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState("openai");
     const [selectedModel, setSelectedModel] = useState("");
+    const [voiceProvider, setVoiceProvider] = useState("azure");
 
     const handleToggleApiKey = () => {
         setShowApiKey(!showApiKey);
@@ -334,6 +335,13 @@ const PromptModal = ({ open, onClose, promptId }) => {
                 setSelectedVoice(data.voice);
                 setSelectedProvider(data.provider || "openai");
                 setSelectedModel(data.model || "");
+                
+                const vRegion = data.voiceRegion || "";
+                if (vRegion === "openai" || vRegion === "openrouter") {
+                    setVoiceProvider(vRegion);
+                } else {
+                    setVoiceProvider("azure");
+                }
             } catch (err) {
                 toastError(err);
             }
@@ -347,6 +355,7 @@ const PromptModal = ({ open, onClose, promptId }) => {
         setSelectedVoice("texto");
         setSelectedProvider("openai");
         setSelectedModel("");
+        setVoiceProvider("azure");
         onClose();
     };
 
@@ -433,7 +442,7 @@ const PromptModal = ({ open, onClose, promptId }) => {
                             }, 400);
                         }}
                     >
-                        {({ touched, errors, isSubmitting, values }) => (
+                        {({ touched, errors, isSubmitting, values, setFieldValue }) => (
                             <Form style={{ width: "100%" }}>
                                 {/* Seção Principal */}
                                 <Typography className={classes.sectionTitle}>
@@ -717,24 +726,52 @@ const PromptModal = ({ open, onClose, promptId }) => {
                                             }}
                                         />
 
-                                        <Field
-                                            as={TextField}
-                                            label={i18n.t("promptModal.form.voiceRegion")}
-                                            name="voiceRegion"
-                                            error={touched.voiceRegion && Boolean(errors.voiceRegion)}
-                                            helperText={touched.voiceRegion && errors.voiceRegion}
-                                            variant="outlined"
-                                            margin="dense"
-                                            fullWidth
+                                        <FormControl 
+                                            margin="dense" 
+                                            variant="outlined" 
                                             className={classes.formControl}
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <SettingsInputAntennaIcon className={classes.fieldIcon} />
-                                                    </InputAdornment>
-                                                ),
-                                            }}
-                                        />
+                                            fullWidth
+                                        >
+                                            <InputLabel>Provedor de Voz</InputLabel>
+                                            <Select
+                                                value={voiceProvider}
+                                                onChange={(e) => {
+                                                    const newProvider = e.target.value;
+                                                    setVoiceProvider(newProvider);
+                                                    if (newProvider === "openai" || newProvider === "openrouter") {
+                                                        setFieldValue("voiceRegion", newProvider);
+                                                    } else {
+                                                        setFieldValue("voiceRegion", "");
+                                                    }
+                                                }}
+                                                label="Provedor de Voz"
+                                            >
+                                                <MenuItem value="azure">Azure (Microsoft)</MenuItem>
+                                                <MenuItem value="openai">OpenAI</MenuItem>
+                                                <MenuItem value="openrouter">OpenRouter</MenuItem>
+                                            </Select>
+                                        </FormControl>
+
+                                        {voiceProvider === "azure" && (
+                                            <Field
+                                                as={TextField}
+                                                label={i18n.t("promptModal.form.voiceRegion")}
+                                                name="voiceRegion"
+                                                error={touched.voiceRegion && Boolean(errors.voiceRegion)}
+                                                helperText={touched.voiceRegion && errors.voiceRegion}
+                                                variant="outlined"
+                                                margin="dense"
+                                                fullWidth
+                                                className={classes.formControl}
+                                                InputProps={{
+                                                    startAdornment: (
+                                                        <InputAdornment position="start">
+                                                            <SettingsInputAntennaIcon className={classes.fieldIcon} />
+                                                        </InputAdornment>
+                                                    ),
+                                                }}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                                 
