@@ -111,7 +111,7 @@ const SettingsCustom = () => {
     }
     findData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tab]);
 
   const handleTabChange = (event, newValue) => {
     setTab(newValue);

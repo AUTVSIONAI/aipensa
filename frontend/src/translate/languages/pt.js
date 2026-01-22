@@ -890,7 +890,7 @@ const messages = {
           queueIntegration: "Integrações",
           version: "Versão",
           kanban: "Kanban",
-          prompts: "Agende IA",
+          prompts: "Agente IA",
           allConnections: "Gerenciar conexões",
           reports: "Relatórios",
           management: "Gerência"

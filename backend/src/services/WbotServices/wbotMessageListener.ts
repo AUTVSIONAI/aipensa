@@ -1788,6 +1788,25 @@ const verifyQueue = async (
   const botText = async () => {
     console.log("log... 1449");
 
+    // add logic to AI
+    if (
+      !ticket.userId &&
+      !isNil(whatsapp.promptId) &&
+      !msg.key.fromMe &&
+      !ticket.isGroup
+    ) {
+      const { prompt } = whatsapp;
+      await handleOpenAi(
+        prompt,
+        msg,
+        wbot,
+        ticket,
+        contact,
+        mediaSent,
+        ticketTraking
+      );
+    }
+
     if (choosenQueue || (queues.length === 1 && chatbot)) {
       console.log("log... 1452");
       // console.log("entrou no choose", ticket.isOutOfHour, ticketTraking.chatbotAt)

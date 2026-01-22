@@ -91,8 +91,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError("ERR_NO_PERMISSION", 403);
   }
 
-  // const companyUser = bodyCompanyId || userCompanyId;
-  const companyUser = userCompanyId;
+  const companyUser = bodyCompanyId || userCompanyId;
 
   if (!companyUser) {
 

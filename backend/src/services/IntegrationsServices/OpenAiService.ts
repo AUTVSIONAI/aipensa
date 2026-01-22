@@ -261,8 +261,8 @@ export const handleOpenAi = async (
 
   let messagesOpenAi = [];
 
-  if (msg.message?.conversation || msg.message?.extendedTextMessage?.text) {
-    console.log(`Processing text message with ${provider}`);
+  if (msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage) {
+    console.log(`Processing text/image message with ${provider}`);
     messagesOpenAi = [];
     messagesOpenAi.push({ role: "system", content: promptSystem });
     
@@ -276,7 +276,29 @@ export const handleOpenAi = async (
         }
       }
     }
-    messagesOpenAi.push({ role: "user", content: bodyMessage! });
+
+    if (msg.message?.imageMessage) {
+       const mediaUrl = mediaSent!.mediaUrl!.split("/").pop();
+       const filePath = `${publicFolder}/${mediaUrl}`;
+       const imageBuffer = fs.readFileSync(filePath);
+       const base64Image = imageBuffer.toString('base64');
+       const mimeType = msg.message.imageMessage.mimetype || "image/jpeg";
+
+       messagesOpenAi.push({
+         role: "user",
+         content: [
+           { type: "text", text: bodyMessage || "Analise esta imagem." },
+           {
+             type: "image_url",
+             image_url: {
+               url: `data:${mimeType};base64,${base64Image}`
+             }
+           }
+         ]
+       });
+    } else {
+      messagesOpenAi.push({ role: "user", content: bodyMessage! });
+    }
 
     let response: string | undefined;
 

@@ -79,7 +79,7 @@ const CreateCompanyService = async (
 
     const settings = await CompaniesSettings.create({
           companyId: company.id,
-          hoursCloseTicketsAuto: "9999999999",
+          hoursCloseTicketsAuto: "999999",
           chatBotType: "text",
           acceptCallWhatsapp: "enabled",
           userRandom: "enabled",
@@ -106,17 +106,21 @@ const CreateCompanyService = async (
           DirectTicketsToWallets: false
     },{ transaction: t })
 
-    await Prompt.create({
-      name: "IA Padrão",
-      prompt: "Você é um assistente virtual inteligente e útil.",
-      apiKey: "token_here",
-      voice: "pt-BR-Wavenet-A",
-      provider: "openrouter",
-      model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-      companyId: company.id,
-      maxTokens: 1000,
-      temperature: 1
-    }, { transaction: t });
+    try {
+      await Prompt.create({
+        name: "IA Padrão",
+        prompt: "Você é um assistente virtual inteligente e útil.",
+        apiKey: "token_here",
+        voice: "pt-BR-Wavenet-A",
+        provider: "openrouter",
+        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+        companyId: company.id,
+        maxTokens: 1000,
+        temperature: 1
+      }, { transaction: t });
+    } catch (e) {
+      console.log("Falha ao criar prompt padrão, continuando...", e);
+    }
     
     await t.commit();
 

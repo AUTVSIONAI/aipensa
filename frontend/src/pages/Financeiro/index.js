@@ -7,7 +7,7 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
-import { Grid, Card, CardContent, Typography } from "@material-ui/core";
+import { Grid, Card, CardContent, Typography, Box } from "@material-ui/core";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import useCompanies from "../../hooks/useCompanies";
 import usePlans from "../../hooks/usePlans";
@@ -19,6 +19,10 @@ import api from "../../services/api";
 import TableRowSkeleton from "../../components/TableRowSkeleton";
 import toastError from "../../errors/toastError";
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import BusinessIcon from '@material-ui/icons/Business';
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import CancelIcon from '@material-ui/icons/Cancel';
+import Chart from "react-apexcharts";
 
 import moment from "moment";
 
@@ -73,30 +77,128 @@ const useStyles = makeStyles((theme) => ({
     overflowY: "scroll",
     ...theme.scrollbarStyles,
   },
+  card: {
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between', // Changed for icon alignment
+    position: 'relative',
+    overflow: 'visible'
+  },
+  cardContent: {
+    position: 'relative',
+    zIndex: 1
+  },
+  cardTitle: {
+    fontSize: 14,
+    color: theme.palette.text.secondary,
+    fontWeight: 'bold',
+    textTransform: 'uppercase'
+  },
+  cardValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginTop: theme.spacing(1)
+  },
+  iconWrapper: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    color: 'rgba(0,0,0,0.1)',
+    fontSize: 40
+  },
+  chartCard: {
+    height: '100%',
+    padding: theme.spacing(2)
+  }
 }));
 
 const Invoices = () => {
   const classes = useStyles();
   const { user } = useContext(AuthContext);
-  const { findAll: findAllCompanies } = useCompanies();
+  const { list: listCompanies } = useCompanies();
   const { list: listPlans } = usePlans();
   const [companies, setCompanies] = useState([]);
   const [plans, setPlans] = useState([]);
+  
+  // Chart Data
+  const [planSeries, setPlanSeries] = useState([]);
+  const [planOptions, setPlanOptions] = useState({});
+  const [statusSeries, setStatusSeries] = useState([]);
+  const [statusOptions, setStatusOptions] = useState({});
+  const [revenueSeries, setRevenueSeries] = useState([]);
+  const [revenueOptions, setRevenueOptions] = useState({});
 
   useEffect(() => {
     async function fetchData() {
       if (user.super) {
         try {
-          const companiesData = await findAllCompanies();
+          const { data } = await api.get("/companiesPlan", {
+            params: { searchParam: "", pageNumber: 1 }
+          });
+          const companiesData = data.companies;
           const plansData = await listPlans();
+          
           if (Array.isArray(companiesData)) {
             setCompanies(companiesData);
-          }
-          if (Array.isArray(plansData)) {
-            setPlans(plansData);
+            
+            // Prepare Chart Data
+            if (Array.isArray(plansData)) {
+              setPlans(plansData);
+              
+              // 1. Companies per Plan
+              const companiesPerPlan = plansData.map(plan => {
+                return {
+                  name: plan.name,
+                  data: [companiesData.filter(c => (c.plan?.id || c.planId) === plan.id).length]
+                };
+              });
+              
+              setPlanSeries(companiesPerPlan.map(p => ({ name: p.name, data: p.data })));
+              setPlanOptions({
+                chart: { type: 'bar', height: 350 },
+                plotOptions: {
+                  bar: { horizontal: false, columnWidth: '55%', endingShape: 'rounded' },
+                },
+                dataLabels: { enabled: false },
+                stroke: { show: true, width: 2, colors: ['transparent'] },
+                xaxis: { categories: ['Empresas por Plano'] },
+                fill: { opacity: 1 },
+                title: { text: 'Distribuição por Plano', align: 'left' }
+              });
+
+              // 2. Status Distribution
+              const activeCount = companiesData.filter(c => c.status === true).length;
+              const inactiveCount = companiesData.filter(c => c.status === false).length;
+              
+              setStatusSeries([activeCount, inactiveCount]);
+              setStatusOptions({
+                chart: { type: 'donut' },
+                labels: ['Ativas', 'Inativas'],
+                colors: ['#4caf50', '#f44336'],
+                title: { text: 'Status das Empresas', align: 'left' },
+                legend: { position: 'bottom' }
+              });
+
+              // 3. Revenue per Plan (Estimated)
+              const revenueData = plansData.map(plan => {
+                const amount = parseFloat(plan.amount ? plan.amount.replace(',', '.') : 0);
+                const count = companiesData.filter(c => (c.plan?.id || c.planId) === plan.id).length;
+                return amount * count;
+              });
+              
+              setRevenueSeries(revenueData);
+              setRevenueOptions({
+                chart: { type: 'pie' },
+                labels: plansData.map(p => p.name),
+                title: { text: 'Receita Estimada por Plano', align: 'left' },
+                legend: { position: 'bottom' }
+              });
+            }
           }
         } catch (err) {
           console.error(err);
+          toastError(err);
         }
       }
     }
@@ -198,25 +300,85 @@ const Invoices = () => {
     <MainContainer>
       {user.super && (
         <Grid container spacing={3} style={{ marginBottom: "20px" }}>
+          {/* Métricas Gerais */}
           <Grid item xs={12} sm={3}>
-            <Card>
+            <Card className={classes.card}>
               <CardContent>
-                <Typography color="textSecondary" gutterBottom>
+                <Typography className={classes.cardTitle}>
                   Total de Empresas
                 </Typography>
-                <Typography variant="h5" component="h2">
+                <Typography className={classes.cardValue}>
                   {companies.length}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
-           <Grid item xs={12} sm={9}>
+          <Grid item xs={12} sm={3}>
+            <Card className={classes.card}>
+              <CardContent>
+                <Typography className={classes.cardTitle}>
+                  Empresas Ativas
+                </Typography>
+                <Typography className={classes.cardValue} style={{ color: '#4caf50' }}>
+                  {companies.filter(c => c.status).length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <Card className={classes.card}>
+              <CardContent>
+                <Typography className={classes.cardTitle}>
+                  Empresas Inativas
+                </Typography>
+                <Typography className={classes.cardValue} style={{ color: '#f44336' }}>
+                  {companies.filter(c => !c.status).length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <Card className={classes.card}>
+              <CardContent>
+                <Typography className={classes.cardTitle}>
+                  Receita Mensal Estimada
+                </Typography>
+                <Typography className={classes.cardValue} style={{ color: '#2196f3' }}>
+                  {companies.reduce((sum, c) => {
+                    const plan = plans.find(p => p.id === c.planId);
+                    return sum + (plan ? parseFloat(plan.value) : 0);
+                  }, 0).toLocaleString('pt-br', { style: 'currency', currency: 'BRL' })}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Gráficos */}
+          <Grid item xs={12} md={8}>
+             <Card style={{ height: '100%' }}>
+               <CardContent>
+                 <Typography variant="h6" gutterBottom>Distribuição por Plano</Typography>
+                 <Chart options={planOptions} series={planSeries} type="bar" height={350} />
+               </CardContent>
+             </Card>
+          </Grid>
+          <Grid item xs={12} md={4}>
+             <Card style={{ height: '100%' }}>
+               <CardContent>
+                 <Typography variant="h6" gutterBottom>Status das Empresas</Typography>
+                 <Chart options={statusOptions} series={statusSeries} type="donut" height={350} />
+               </CardContent>
+             </Card>
+          </Grid>
+
+          {/* Tabela de Empresas */}
+           <Grid item xs={12}>
             <Card>
               <CardContent>
                  <Typography color="textSecondary" gutterBottom>
                   Gestão de Assinaturas (Todas as Empresas)
                 </Typography>
-                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                     <Table size="small" stickyHeader>
                         <TableHead>
                             <TableRow>

@@ -314,56 +314,77 @@ export default function Options(props) {
 
   async function handleChangeEfiClientid(value) {
     setEfiClientidType(value);
+  }
+
+  async function handleBlurEfiClientid() {
     setLoadingEfiClientidType(true);
-    await updateeficlientid({ key: 'eficlientid', value });
+    await updateeficlientid({ key: 'eficlientid', value: eficlientidType });
     toast.success('Operação atualizada com sucesso.');
     setLoadingEfiClientidType(false);
   }
 
   async function handleChangeEfiClientsecret(value) {
     setEfiClientsecretType(value);
+  }
+
+  async function handleBlurEfiClientsecret() {
     setLoadingEfiClientsecretType(true);
-    await updateeficlientsecret({ key: 'eficlientsecret', value });
+    await updateeficlientsecret({ key: 'eficlientsecret', value: eficlientsecretType });
     toast.success('Operação atualizada com sucesso.');
     setLoadingEfiClientsecretType(false);
   }
 
   async function handleChangeEfiChavepix(value) {
     setEfiChavepixType(value);
+  }
+
+  async function handleBlurEfiChavepix() {
     setLoadingEfiChavepixType(true);
-    await updateefichavepix({ key: 'efichavepix', value });
+    await updateefichavepix({ key: 'efichavepix', value: efichavepixType });
     toast.success('Operação atualizada com sucesso.');
     setLoadingEfiChavepixType(false);
   }
 
   async function handleChangempaccesstoken(value) {
     setmpaccesstokenType(value);
+  }
+
+  async function handleBlurmpaccesstoken() {
     setLoadingmpaccesstokenType(true);
-    await updatempaccesstoken({ key: 'mpaccesstoken', value });
+    await updatempaccesstoken({ key: 'mpaccesstoken', value: mpaccesstokenType });
     toast.success('Operação atualizada com sucesso.');
     setLoadingmpaccesstokenType(false);
   }
 
   async function handleChangestripeprivatekey(value) {
     setstripeprivatekeyType(value);
+  }
+
+  async function handleBlurstripeprivatekey() {
     setLoadingstripeprivatekeyType(true);
-    await updatestripeprivatekey({ key: 'stripeprivatekey', value });
+    await updatestripeprivatekey({ key: 'stripeprivatekey', value: stripeprivatekeyType });
     toast.success('Operação atualizada com sucesso.');
     setLoadingstripeprivatekeyType(false);
   }
 
   async function handleChangeasaastoken(value) {
     setasaastokenType(value);
+  }
+
+  async function handleBlurasaastoken() {
     setLoadingasaastokenType(true);
-    await updateasaastoken({ key: 'asaastoken', value });
+    await updateasaastoken({ key: 'asaastoken', value: asaastokenType });
     toast.success('Operação atualizada com sucesso.');
     setLoadingasaastokenType(false);
   }
 
   async function handleChangeopenaitoken(value) {
     setopenaitokenType(value);
+  }
+
+  async function handleBluropenaitoken() {
     setLoadingopenaitokenType(true);
-    await updateopenaitoken({ key: 'openaikeyaudio', value });
+    await updateopenaitoken({ key: 'openaikeyaudio', value: openaitokenType });
     toast.success('Operação atualizada com sucesso.');
     setLoadingopenaitokenType(false);
   }
@@ -1146,6 +1167,7 @@ export default function Options(props) {
                 variant='outlined'
                 value={mpaccesstokenType}
                 onChange={(e) => handleChangempaccesstoken(e.target.value)}
+                onBlur={handleBlurmpaccesstoken}
                 style={{ backgroundColor: "white" }}
                 InputProps={{
                   startAdornment: (
@@ -1188,6 +1210,7 @@ export default function Options(props) {
                 variant='outlined'
                 value={stripeprivatekeyType}
                 onChange={(e) => handleChangestripeprivatekey(e.target.value)}
+                onBlur={handleBlurstripeprivatekey}
                 style={{ backgroundColor: "white" }}
                 InputProps={{
                   startAdornment: (
@@ -1230,6 +1253,7 @@ export default function Options(props) {
                 variant='outlined'
                 value={asaastokenType}
                 onChange={(e) => handleChangeasaastoken(e.target.value)}
+                onBlur={handleBlurasaastoken}
                 style={{ backgroundColor: "white" }}
                 InputProps={{
                   startAdornment: (
@@ -1272,6 +1296,7 @@ export default function Options(props) {
                 variant='outlined'
                 value={openaitokenType}
                 onChange={(e) => handleChangeopenaitoken(e.target.value)}
+                onBlur={handleBluropenaitoken}
                 style={{ backgroundColor: "white" }}
                 InputProps={{
                   startAdornment: (

@@ -12,15 +12,22 @@ type Response = { transcribedText: string } | string;
 //   apiKey: process.env.OPENAI_API_KEY,
 // });
 
-async function fetchOpenAIToken() {
+async function fetchOpenAIToken(companyId: number) {
   let key_OPENAI_TOKEN = null;
   try {
     
-    const buscacompanyId = 1;
-  
-    const getopenaitoken = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "openaikeyaudio" },
+    // Tenta pegar da empresa atual
+    let getopenaitoken = await Setting.findOne({
+      where: { companyId: companyId, key: "openaikeyaudio" },
     });
+
+    // Se não encontrar, tenta pegar da empresa 1 (Global/Super Admin)
+    if (!getopenaitoken) {
+       getopenaitoken = await Setting.findOne({
+        where: { companyId: 1, key: "openaikeyaudio" },
+      });
+    }
+
     key_OPENAI_TOKEN = getopenaitoken?.value;
 
     return key_OPENAI_TOKEN;
@@ -35,7 +42,7 @@ async function fetchOpenAIToken() {
 // const openai = new OpenAI({ apiKey: OpenaiKEY });
 
 const TranscribeAudioMessageToText = async (fileName: string, companyId: number): Promise<Response> => {
-  const token = await fetchOpenAIToken();
+  const token = await fetchOpenAIToken(companyId);
   const publicFolder = path.resolve(__dirname, "..", "..", "..", "public");
 
   const filePath = `${publicFolder}/company${companyId}/${fileName}`;
