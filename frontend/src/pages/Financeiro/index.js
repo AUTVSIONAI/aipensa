@@ -89,8 +89,12 @@ const Invoices = () => {
         try {
           const companiesData = await findAllCompanies();
           const plansData = await listPlans();
-          setCompanies(companiesData);
-          setPlans(plansData);
+          if (Array.isArray(companiesData)) {
+            setCompanies(companiesData);
+          }
+          if (Array.isArray(plansData)) {
+            setPlans(plansData);
+          }
         } catch (err) {
           console.error(err);
         }
@@ -223,7 +227,7 @@ const Invoices = () => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {companies.map(company => {
+                            {Array.isArray(companies) && companies.map(company => {
                                 const plan = plans.find(p => p.id === company.planId);
                                 const dueDate = moment(company.dueDate);
                                 const daysLeft = dueDate.diff(moment(), 'days');
