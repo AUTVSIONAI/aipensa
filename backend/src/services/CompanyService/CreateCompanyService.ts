@@ -4,6 +4,7 @@ import Company from "../../models/Company";
 import User from "../../models/User";
 import sequelize from "../../database";
 import CompaniesSettings from "../../models/CompaniesSettings";
+import Prompt from "../../models/Prompt";
 
 interface CompanyData {
   name: string;
