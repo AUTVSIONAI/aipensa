@@ -3615,6 +3615,33 @@ export const convertTextToSpeechAndSaveToFile = (
   audioToFormat: string = "mp3"
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
+    if (serviceRegion === "openai" || serviceRegion === "openrouter") {
+      const baseUrl = serviceRegion === "openrouter" 
+        ? "https://openrouter.ai/api/v1" 
+        : undefined;
+
+      const openai = new OpenAI({
+        apiKey: subscriptionKey,
+        baseURL: baseUrl
+      });
+
+      openai.audio.speech.create({
+        model: "tts-1",
+        voice: voice as any,
+        input: text,
+      })
+      .then(async (mp3) => {
+        const buffer = Buffer.from(await mp3.arrayBuffer());
+        await fs.promises.writeFile(`${filename}.${audioToFormat}`, buffer);
+        resolve();
+      })
+      .catch((error) => {
+        console.error("OpenAI TTS Error:", error);
+        reject(error);
+      });
+      return;
+    }
+
     const speechConfig = SpeechConfig.fromSubscription(
       subscriptionKey,
       serviceRegion

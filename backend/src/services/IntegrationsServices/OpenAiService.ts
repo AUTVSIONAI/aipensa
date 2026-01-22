@@ -318,22 +318,31 @@ export const handleOpenAi = async (
     let transcriptionText: string;
 
     try {
-      if (provider === "gemini") {
-        // Gemini não suporta transcrição ainda, usar OpenAI como fallback
-        const tempOpenAI = new OpenAI({ apiKey: openAiSettings.apiKey });
-        const transcription = await tempOpenAI.audio.transcriptions.create({
-          model: "whisper-1",
-          file: file
+      let transcriptionClient = aiClient;
+      
+      // Check if we should use a separate key/provider for transcription (via Voice settings)
+      if (openAiSettings.voiceRegion === "openrouter" || openAiSettings.voiceRegion === "openai") {
+        const baseUrl = openAiSettings.voiceRegion === "openrouter" 
+          ? "https://openrouter.ai/api/v1" 
+          : undefined;
+          
+        console.log(`Using ${openAiSettings.voiceRegion} for transcription with voiceKey`);
+        transcriptionClient = new OpenAI({
+          apiKey: openAiSettings.voiceKey,
+          baseURL: baseUrl
         });
-        transcriptionText = transcription.text;
-      } else {
-        // Usar OpenAI para transcrição
-        const transcription = await aiClient.audio.transcriptions.create({
-          model: "whisper-1",
-          file: file
-        });
-        transcriptionText = transcription.text;
+      } else if (provider === "gemini") {
+        // Fallback for Gemini: try to use the main API key as OpenAI key (legacy behavior)
+        // or if voiceKey is set, it would have been caught above if voiceRegion was set.
+        console.log("Using fallback OpenAI for Gemini transcription");
+        transcriptionClient = new OpenAI({ apiKey: openAiSettings.apiKey });
       }
+
+      const transcription = await transcriptionClient.audio.transcriptions.create({
+        model: "whisper-1",
+        file: file
+      });
+      transcriptionText = transcription.text;
 
       messagesOpenAi = [];
       messagesOpenAi.push({ role: "system", content: promptSystem });
