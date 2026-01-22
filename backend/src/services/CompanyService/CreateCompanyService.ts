@@ -27,7 +27,6 @@ const CreateCompanyService = async (
     name,
     phone,
     password,
-    email,
     status,
     planId,
     dueDate,
@@ -36,6 +35,8 @@ const CreateCompanyService = async (
     paymentMethod,
     companyUserName
   } = companyData;
+
+  const email = companyData.email?.toLocaleLowerCase();
 
   const companySchema = Yup.object().shape({
     name: Yup.string()

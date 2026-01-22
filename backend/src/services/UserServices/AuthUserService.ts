@@ -47,7 +47,7 @@ const AuthUserService = async ({
   console.log(`[AuthUserService] Searching for user with email: '${searchEmail}'`);
 
   const user = await User.findOne({
-    where: { email: searchEmail },
+    where: { email: { [Op.iLike]: searchEmail } },
     include: ["queues", { model: Company, include: [{ model: CompaniesSettings }] }]
   });
 
