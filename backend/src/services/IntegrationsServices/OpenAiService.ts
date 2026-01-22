@@ -21,6 +21,8 @@ import Message from "../../models/Message";
 import TicketTraking from "../../models/TicketTraking";
 import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
 import Whatsapp from "../../models/Whatsapp";
+import CreateScheduleService from "../ScheduleServices/CreateService";
+import { zonedTimeToUtc } from "date-fns-tz";
 
 type Session = WASocket & {
   id?: number;
@@ -132,6 +134,55 @@ const transcribeWithGemini = async (
   return "Áudio recebido (transcrição não disponível com Gemini)";
 };
 
+const handleScheduleAction = async (
+  response: string, 
+  ticket: Ticket, 
+  contact: Contact
+): Promise<string> => {
+  // Allow whitespace around content
+  const scheduleRegex = /\[AGENDAR\]([\s\S]*?)\[\/AGENDAR\]/;
+  const match = response.match(scheduleRegex);
+
+  if (match && match[1]) {
+      try {
+          const jsonContent = match[1].trim();
+          console.log("[OpenAiService] Schedule JSON Content:", jsonContent);
+          
+          const scheduleData = JSON.parse(jsonContent);
+          const { sendAt, body } = scheduleData;
+          
+          if (sendAt && body) {
+            // Parse date considering Brazil Timezone
+            // If string is ISO without timezone (e.g. 2024-02-21T15:00:00), treat as BRT
+            const parsedDate = zonedTimeToUtc(sendAt, 'America/Sao_Paulo');
+            
+            console.log("[OpenAiService] Scheduling via AI:", { 
+                original: sendAt, 
+                parsed: parsedDate, 
+                body 
+            });
+
+            await CreateScheduleService({
+                body,
+                sendAt: parsedDate.toISOString(),
+                contactId: contact.id,
+                companyId: ticket.companyId,
+                userId: ticket.userId || undefined,
+                ticketUserId: ticket.userId || undefined
+            });
+            
+            // Success: remove tag
+            return response.replace(match[0], "").trim();
+          }
+      } catch (e) {
+          console.error("Erro ao agendar via AI:", e);
+          // Error: remove tag anyway to avoid showing code to user
+          return response.replace(match[0], "").trim();
+      }
+  }
+  return response;
+};
+
 export const handleOpenAi = async (
   openAiSettings: IOpenAi,
   msg: proto.IWebMessageInfo,
@@ -203,7 +254,7 @@ export const handleOpenAi = async (
 
   const promptSystem = `Nas respostas utilize o nome ${sanitizeName(
     contact.name || "Amigo(a)"
-  )} para identificar o cliente.\nSua resposta deve usar no máximo ${
+  )} para identificar o cliente.\nData e Hora atual: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}\nSua resposta deve usar no máximo ${
     openAiSettings.maxTokens
   } tokens e cuide para não truncar o final.\nSempre que possível, mencione o nome dele para ser mais personalizado o atendimento e mais educado. Quando a resposta requer uma transferência para o setor de atendimento, comece sua resposta com 'Ação: Transferir para o setor de atendimento'.\n
                 ${openAiSettings.prompt}\n`;
@@ -262,6 +313,10 @@ export const handleOpenAi = async (
         response = response
           .replace("Ação: Transferir para o setor de atendimento", "")
           .trim();
+      }
+
+      if (response) {
+        response = await handleScheduleAction(response, ticket, contact);
       }
 
       if (openAiSettings.voice === "texto") {
@@ -392,6 +447,10 @@ export const handleOpenAi = async (
         response = response
           .replace("Ação: Transferir para o setor de atendimento", "")
           .trim();
+      }
+
+      if (response) {
+        response = await handleScheduleAction(response, ticket, contact);
       }
 
       if (openAiSettings.voice === "texto") {
