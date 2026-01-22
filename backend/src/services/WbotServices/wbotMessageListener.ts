@@ -1798,8 +1798,14 @@ const verifyQueue = async (
       !ticket.isGroup
     ) {
       const { prompt } = whatsapp;
+
+      const promptWithFallback = {
+        ...prompt.toJSON(),
+        apiKey: prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken
+      };
+
       await handleOpenAi(
-        prompt,
+        promptWithFallback,
         msg,
         wbot,
         ticket,
@@ -4871,7 +4877,7 @@ const handleMessage = async (
         voiceRegion,
         maxTokens: parseInt(maxTokens),
         temperature: parseInt(temperature),
-        apiKey,
+        apiKey: apiKey || settings?.openaikeyaudio || settings?.userApiToken,
         queueId: parseInt(queueId),
         maxMessages: parseInt(maxMessages)
       };
@@ -4898,8 +4904,14 @@ const handleMessage = async (
       !isNil(whatsapp.promptId)
     ) {
       const { prompt } = whatsapp;
+
+      const promptWithFallback = {
+        ...prompt.toJSON(),
+        apiKey: prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken
+      };
+
       await handleOpenAi(
-        prompt,
+        promptWithFallback,
         msg,
         wbot,
         ticket,
