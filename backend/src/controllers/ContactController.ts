@@ -64,7 +64,68 @@ interface ContactData {
 
 export const importXls = async (req: Request, res: Response): Promise<Response> => {
   const { companyId } = req.user;
-  const { number, name, email, validateContact, tags } = req.body;
+  const { contacts, validateContact } = req.body;
+
+  if (Array.isArray(contacts)) {
+    const createdContacts: any[] = [];
+    for (const contactItem of contacts) {
+      try {
+        const { number, name, email, tags } = contactItem;
+        const simpleNumber = String(number).replace(/[^\d.-]+/g, '');
+        let validNumber = simpleNumber;
+
+        if (validateContact === "true") {
+          try {
+            validNumber = await CheckContactNumber(simpleNumber, companyId);
+          } catch (e) {
+            console.log("CheckContactNumber error", e);
+            continue; // Skip invalid numbers if validation is on
+          }
+        }
+
+        const contactData = {
+          name: `${name}`,
+          number: validNumber,
+          profilePicUrl: "",
+          isGroup: false,
+          email,
+          companyId,
+        };
+
+        const contact = await CreateOrUpdateContactServiceForImport(contactData);
+
+        if (tags) {
+          const tagList = String(tags).split(',').map(tag => tag.trim());
+          for (const tagName of tagList) {
+            try {
+              let [tag, created] = await Tag.findOrCreate({
+                where: { name: tagName, companyId, color: "#A4CCCC", kanban: 0 }
+              });
+              await ContactTag.findOrCreate({
+                where: { contactId: contact.id, tagId: tag.id }
+              });
+            } catch (error) {
+              logger.info("Erro ao criar Tags", error)
+            }
+          }
+        }
+        createdContacts.push(contact);
+      } catch (error) {
+        console.error("Error importing contact", error);
+      }
+    }
+    
+    const io = getIO();
+    io.of(String(companyId))
+    .emit(`company-${companyId}-contact`, {
+      action: "create",
+      contact: createdContacts[0] // Just emit one or maybe all? Existing code emits one.
+    });
+    
+    return res.status(200).json(createdContacts);
+  }
+
+  const { number, name, email, tags } = req.body;
   const simpleNumber = String(number).replace(/[^\d.-]+/g, '');
   let validNumber = simpleNumber;
 

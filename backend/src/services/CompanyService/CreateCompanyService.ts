@@ -104,6 +104,18 @@ const CreateCompanyService = async (
           closeTicketOnTransfer: false,
           DirectTicketsToWallets: false
     },{ transaction: t })
+
+    await Prompt.create({
+      name: "IA Padrão",
+      prompt: "Você é um assistente virtual inteligente e útil.",
+      apiKey: "token_here",
+      voice: "pt-BR-Wavenet-A",
+      provider: "openrouter",
+      model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+      companyId: company.id,
+      maxTokens: 1000,
+      temperature: 1
+    }, { transaction: t });
     
     await t.commit();
 

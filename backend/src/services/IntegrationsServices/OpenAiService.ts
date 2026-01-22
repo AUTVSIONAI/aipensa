@@ -36,17 +36,7 @@ interface IMe {
   id: string;
 }
 
-interface SessionOpenAi extends OpenAI {
-  id?: number;
-}
 
-interface SessionGemini {
-  id?: number;
-  client: GoogleGenerativeAI;
-}
-
-const sessionsOpenAi: SessionOpenAi[] = [];
-const sessionsGemini: SessionGemini[] = [];
 
 interface IOpenAi {
   name: string;
@@ -84,6 +74,8 @@ const callOpenAI = async (
   openAiSettings: IOpenAi
 ) => {
   const model = openAiSettings.model || "gpt-3.5-turbo";
+  console.log(`[callOpenAI] Calling with model: ${model}`);
+
   
   const chat = await openai.chat.completions.create({
     model: model,
@@ -178,55 +170,29 @@ export const handleOpenAi = async (
 
   if (provider === "gemini") {
     // Configurar Gemini
-    const geminiIndex = sessionsGemini.findIndex(s => s.id === ticket.id);
-    
-    if (geminiIndex === -1) {
-      console.log("Initializing Gemini Service", openAiSettings.apiKey?.substring(0, 10) + "...");
-      const geminiClient = new GoogleGenerativeAI(openAiSettings.apiKey);
-      const session = { id: ticket.id, client: geminiClient };
-      sessionsGemini.push(session);
-      aiClient = geminiClient;
-    } else {
-      aiClient = sessionsGemini[geminiIndex].client;
-    }
+    console.log("Initializing Gemini Service", openAiSettings.apiKey?.substring(0, 10) + "...");
+    aiClient = new GoogleGenerativeAI(openAiSettings.apiKey);
   } else if (provider === "openrouter") {
       // Configurar OpenRouter
-      const openRouterIndex = sessionsOpenAi.findIndex(s => s.id === ticket.id);
-
-      if (openRouterIndex === -1) {
-        console.log("Initializing OpenRouter Service", openAiSettings.apiKey?.substring(0, 10) + "...");
-        aiClient = new OpenAI({
-          apiKey: openAiSettings.apiKey,
-          baseURL: "https://openrouter.ai/api/v1",
-          defaultHeaders: {
-            "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com", // Optional, for including your app on openrouter.ai rankings.
-            "X-Title": "AIPENSA.COM", // Optional. Shows in rankings on openrouter.ai.
-          }
-        });
-        // @ts-ignore
-        aiClient.id = ticket.id;
-        sessionsOpenAi.push(aiClient);
-      } else {
-        aiClient = sessionsOpenAi[openRouterIndex];
-      }
+      console.log("Initializing OpenRouter Service", openAiSettings.apiKey?.substring(0, 10) + "...");
+      aiClient = new OpenAI({
+        apiKey: openAiSettings.apiKey,
+        baseURL: "https://openrouter.ai/api/v1",
+        defaultHeaders: {
+          "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com", // Optional, for including your app on openrouter.ai rankings.
+          "X-Title": "AIPENSA.COM", // Optional. Shows in rankings on openrouter.ai.
+        }
+      });
     } else if (provider === "external") {
       // Configurar Integração Externa (DireitaI / Outros)
       // Não precisa inicializar cliente, usaremos axios diretamente
       console.log("Using External Provider for Ticket:", ticket.id);
     } else {
       // Configurar OpenAI (padrão)
-    const openAiIndex = sessionsOpenAi.findIndex(s => s.id === ticket.id);
-
-    if (openAiIndex === -1) {
       console.log("Initializing OpenAI Service", openAiSettings.apiKey?.substring(0, 10) + "...");
       aiClient = new OpenAI({
         apiKey: openAiSettings.apiKey
       });
-      aiClient.id = ticket.id;
-      sessionsOpenAi.push(aiClient);
-    } else {
-      aiClient = sessionsOpenAi[openAiIndex];
-    }
   }
 
   const messages = await Message.findAll({

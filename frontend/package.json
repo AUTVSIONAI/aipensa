@@ -117,7 +117,7 @@
     "zustand": "^4.4.1"
   },
   "scripts": {
-    "start": "react-scripts start",
+                  "start": "react-scripts start",
     "build": "cross-env GENERATE_SOURCEMAP=false react-scripts build",
     "builddev": "react-scripts build",
     "test": "react-scripts test",

@@ -137,6 +137,9 @@ const ContactImport = () => {
     }
 
     if (rows?.length > 1) {
+      const batch = [];
+      let batchIgnored = 0;
+
       for (let index = 1; index < rows.length; index++) {
         if (selectedRows[index]) { // Importar apenas as linhas selecionadas
           const item = rows[index];
@@ -157,23 +160,31 @@ const ContactImport = () => {
             setCountIgnored(prevCount => prevCount + 1);
             continue;
           }
-
-          try {
-            const data = await api.post('/contactsImport', {
-              ...contactData,
-              validateContact: validateContact ? "true" : "false",
-            });
-
-            if (data.status === 200) {
-              setCountCreated(prevCount => prevCount + 1);
-            } else {
-              setCountIgnored(prevCount => prevCount + 1);
-            }
-          } catch (error) {
-            setCountIgnored(prevCount => prevCount + 1);
-          }
+          
+          batch.push(contactData);
         }
       }
+
+      const chunkSize = 50; 
+      for (let i = 0; i < batch.length; i += chunkSize) {
+          const chunk = batch.slice(i, i + chunkSize);
+          try {
+            const { data } = await api.post('/contactsImport', {
+              contacts: chunk,
+              validateContact: validateContact ? "true" : "false",
+            });
+            if (Array.isArray(data)) {
+               setCountCreated(prevCount => prevCount + data.length);
+               setCountIgnored(prevCount => prevCount + (chunk.length - data.length));
+            } else {
+               // Fallback for old API response if any
+               setCountCreated(prevCount => prevCount + 1);
+            }
+          } catch (error) {
+            setCountIgnored(prevCount => prevCount + chunk.length);
+          }
+      }
+
       setValidateContact(false);
       setSelectedRows({});
       setImported(true);
