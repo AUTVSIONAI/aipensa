@@ -255,6 +255,9 @@ export default function Options(props) {
       const mpaccesstokenType = oldSettings.find((s) => s.key === 'mpaccesstoken');
       if (mpaccesstokenType) setmpaccesstokenType(mpaccesstokenType.value);
 
+      const stripeprivatekeyType = oldSettings.find((s) => s.key === 'stripeprivatekey');
+      if (stripeprivatekeyType) setstripeprivatekeyType(stripeprivatekeyType.value);
+
       const asaastokenType = oldSettings.find((s) => s.key === 'asaastoken');
       if (asaastokenType) setasaastokenType(asaastokenType.value);
 

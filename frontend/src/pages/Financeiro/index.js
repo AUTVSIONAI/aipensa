@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer } from "react";
+import React, { useState, useEffect, useReducer, useContext } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
@@ -7,6 +7,10 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
+import { Grid, Card, CardContent, Typography } from "@material-ui/core";
+import { AuthContext } from "../../context/Auth/AuthContext";
+import useCompanies from "../../hooks/useCompanies";
+import usePlans from "../../hooks/usePlans";
 import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
 import Title from "../../components/Title";
@@ -73,6 +77,27 @@ const useStyles = makeStyles((theme) => ({
 
 const Invoices = () => {
   const classes = useStyles();
+  const { user } = useContext(AuthContext);
+  const { findAll: findAllCompanies } = useCompanies();
+  const { list: listPlans } = usePlans();
+  const [companies, setCompanies] = useState([]);
+  const [plans, setPlans] = useState([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      if (user.super) {
+        try {
+          const companiesData = await findAllCompanies();
+          const plansData = await listPlans();
+          setCompanies(companiesData);
+          setPlans(plansData);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
+    fetchData();
+  }, [user]);
 
   const [loading, setLoading] = useState(false);
   const [pageNumber, setPageNumber] = useState(1);
@@ -167,6 +192,60 @@ const Invoices = () => {
 
   return (
     <MainContainer>
+      {user.super && (
+        <Grid container spacing={3} style={{ marginBottom: "20px" }}>
+          <Grid item xs={12} sm={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Total de Empresas
+                </Typography>
+                <Typography variant="h5" component="h2">
+                  {companies.length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+           <Grid item xs={12} sm={9}>
+            <Card>
+              <CardContent>
+                 <Typography color="textSecondary" gutterBottom>
+                  Gestão de Assinaturas (Todas as Empresas)
+                </Typography>
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    <Table size="small" stickyHeader>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Empresa</TableCell>
+                                <TableCell>Plano</TableCell>
+                                <TableCell>Vencimento</TableCell>
+                                <TableCell>Status</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {companies.map(company => {
+                                const plan = plans.find(p => p.id === company.planId);
+                                const dueDate = moment(company.dueDate);
+                                const daysLeft = dueDate.diff(moment(), 'days');
+                                return (
+                                    <TableRow key={company.id}>
+                                        <TableCell>{company.name}</TableCell>
+                                        <TableCell>{plan ? plan.name : '-'}</TableCell>
+                                        <TableCell>{dueDate.format('DD/MM/YYYY')}</TableCell>
+                                        <TableCell style={{ color: daysLeft < 0 ? 'red' : 'green', fontWeight: 'bold' }}>
+                                            {daysLeft} dias {daysLeft < 0 ? '(Vencido)' : ''}
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
       <SubscriptionModal
         open={contactModalOpen}
         onClose={handleCloseContactModal}
