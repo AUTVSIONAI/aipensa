@@ -1802,7 +1802,7 @@ const verifyQueue = async (
       const promptWithFallback = {
         ...prompt.toJSON(),
         apiKey: prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken
-      };
+      } as any;
 
       await handleOpenAi(
         promptWithFallback,
@@ -4908,7 +4908,7 @@ const handleMessage = async (
       const promptWithFallback = {
         ...prompt.toJSON(),
         apiKey: prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken
-      };
+      } as any;
 
       await handleOpenAi(
         promptWithFallback,
