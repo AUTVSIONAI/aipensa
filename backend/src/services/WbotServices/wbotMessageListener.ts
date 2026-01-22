@@ -4402,12 +4402,12 @@ const handleMessage = async (
     });
 
     const listSettings = await ListSettingsService({ companyId });
-    const settingsKV = listSettings.reduce((acc, item) => {
+    const settingsKV = listSettings.reduce((acc: any, item) => {
       acc[item.key] = item.value;
       return acc;
     }, {});
 
-    const settings = { ...companiesSettings?.toJSON(), ...settingsKV };
+    const settings: any = { ...companiesSettings?.toJSON(), ...settingsKV };
 
     const enableLGPD = settings.enableLGPD === "enabled";
 
