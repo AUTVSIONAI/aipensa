@@ -9,6 +9,8 @@ import { initIO } from "./libs/socket";
 import logger from "./utils/logger";
 import { StartAllWhatsAppsSessions } from "./services/WbotServices/StartAllWhatsAppsSessions";
 import Company from "./models/Company";
+import Plan from "./models/Plan";
+import Setting from "./models/Setting";
 import BullQueue from './libs/queue';
 import { startQueueProcess } from "./queues";
 
@@ -83,6 +85,23 @@ if (process.env.CERTIFICADOS == "true") {
     }
   
     logger.info(`Server started on port: ${process.env.PORT}`);
+
+    try {
+        const allCompanies = await Company.findAll({
+            include: [{ model: Plan, as: "plan", required: false }]
+        });
+        console.log(`[VERIFY] Total Companies: ${allCompanies.length}`);
+        allCompanies.forEach(c => {
+            console.log(`[VERIFY] ID: ${c.id}, Name: ${c.name}, Plan: ${c.plan?.name || "None"}, Status: ${c.status}`);
+        });
+        const settings = await Setting.findAll();
+        console.log(`[VERIFY] Total Settings: ${settings.length}`);
+        settings.forEach(s => {
+             console.log(`[VERIFY] Key: ${s.key}, Value: ${s.value}, CompanyId: ${s.companyId}`);
+        });
+    } catch (e) {
+        console.error("[VERIFY] Error:", e);
+    }
   });
 
   process.on("uncaughtException", err => {

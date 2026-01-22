@@ -97,6 +97,7 @@ import { FlowCampaignModel } from "../../models/FlowCampaign";
 import ShowTicketService from "../TicketServices/ShowTicketService";
 import { handleOpenAi } from "../IntegrationsServices/OpenAiService";
 import { IOpenAi } from "../../@types/openai";
+import ListSettingsService from "../SettingServices/ListSettingsService";
 
 const os = require("os");
 
@@ -4396,9 +4397,17 @@ const handleMessage = async (
       );
     }
 
-    const settings = await CompaniesSettings.findOne({
+    const companiesSettings = await CompaniesSettings.findOne({
       where: { companyId }
     });
+
+    const listSettings = await ListSettingsService({ companyId });
+    const settingsKV = listSettings.reduce((acc, item) => {
+      acc[item.key] = item.value;
+      return acc;
+    }, {});
+
+    const settings = { ...companiesSettings?.toJSON(), ...settingsKV };
 
     const enableLGPD = settings.enableLGPD === "enabled";
 

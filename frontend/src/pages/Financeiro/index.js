@@ -131,11 +131,16 @@ const Invoices = () => {
 
   useEffect(() => {
     async function fetchData() {
+      if (user) {
+        console.log('Financeiro User:', user);
+      }
       if (user.super) {
         try {
+          console.log('Fetching companiesPlan...');
           const { data } = await api.get("/companiesPlan", {
             params: { searchParam: "", pageNumber: 1 }
           });
+          console.log('Financeiro Companies Data:', data);
           const companiesData = data.companies;
           const plansData = await listPlans();
           

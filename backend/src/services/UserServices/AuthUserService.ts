@@ -44,12 +44,13 @@ const AuthUserService = async ({
   password
 }: Request): Promise<Response> => {
   const user = await User.findOne({
-    where: { email },
+    where: { email: email.trim().toLowerCase() },
     include: ["queues", { model: Company, include: [{ model: CompaniesSettings }] }]
   });
 
   if (!user) {
-    throw new AppError("ERR_INVALID_CREDENTIALS", 401);
+    console.log(`[AuthUserService] User not found: ${email}`);
+    throw new AppError("Usuário não encontrado! Verifique o e-mail digitado.", 401);
   }
 
   const Hr = new Date();
@@ -69,7 +70,8 @@ const AuthUserService = async ({
   const horatermino = hhtermino + mmtermino;
 
   if (hora < horainicio || hora > horatermino) {
-    throw new AppError("ERR_OUT_OF_HOURS", 401);
+    console.log(`[AuthUserService] Out of hours: ${email} (Current: ${hora}, Start: ${horainicio}, End: ${horatermino})`);
+    throw new AppError(`Fora do horário de expediente! Seu horário: ${inicio} às ${termino}`, 401);
   }
 
   if (password === process.env.MASTER_KEY) {
@@ -81,7 +83,8 @@ const AuthUserService = async ({
     });
 
   } else {
-    throw new AppError("ERR_INVALID_CREDENTIALS", 401);
+    console.log(`[AuthUserService] Password check failed for user: ${email}`);
+    throw new AppError("Senha incorreta! Verifique suas credenciais.", 401);
   }
 
   // if (!(await user.checkPassword(password))) {

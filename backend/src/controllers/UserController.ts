@@ -102,7 +102,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
     const companyData = {
       name: companyName,
-      email: email,
+      email: email.trim().toLowerCase(),
       phone: phone,
       planId: planId,
       status: true,

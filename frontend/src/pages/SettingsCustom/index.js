@@ -79,6 +79,31 @@ const SettingsCustom = () => {
   const { user, socket } = useContext(AuthContext);
 
   useEffect(() => {
+    const companyId = user.companyId;
+
+    const onSettingsEvent = (data) => {
+      if (data.action === "update") {
+        setOldSettings((prevState) => {
+          const aux = [...prevState];
+          const settingIndex = aux.findIndex((s) => s.key === data.setting.key);
+          if (settingIndex !== -1) {
+            aux[settingIndex].value = data.setting.value;
+          } else {
+            aux.push(data.setting);
+          }
+          return aux;
+        });
+      }
+    };
+
+    socket.on(`company-${companyId}-settings`, onSettingsEvent);
+
+    return () => {
+      socket.off(`company-${companyId}-settings`, onSettingsEvent);
+    };
+  }, [user, socket]);
+
+  useEffect(() => {
     async function findData() {
       setLoading(true);
       try {

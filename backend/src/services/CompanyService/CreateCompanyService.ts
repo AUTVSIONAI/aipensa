@@ -72,7 +72,9 @@ const CreateCompanyService = async (
       password: password || "mudar123",
       profile: "admin",
       companyId: company.id,
-      super: false
+      super: false,
+      startWork: "00:00",
+      endWork: "23:59"
     },
       { transaction: t }
     );
