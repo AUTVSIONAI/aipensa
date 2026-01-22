@@ -1462,14 +1462,15 @@ const verifyQueue = async (
   ticket: Ticket,
   contact: Contact,
   settings?: any,
-  ticketTraking?: TicketTraking
+  ticketTraking?: TicketTraking,
+  mediaSent?: Message | undefined
 ) => {
   const companyId = ticket.companyId;
 
   console.log("verifyQueue");
   // console.log("GETTING WHATSAPP VERIFY QUEUE", ticket.whatsappId, wbot.id)
-  const { queues, greetingMessage, maxUseBotQueues, timeUseBotQueues } =
-    await ShowWhatsAppService(wbot.id!, companyId);
+  const whatsapp = await ShowWhatsAppService(wbot.id!, companyId);
+  const { queues, greetingMessage, maxUseBotQueues, timeUseBotQueues } = whatsapp;
 
   let chatbot = false;
 
@@ -5074,7 +5075,7 @@ const handleMessage = async (
       !ticket.useIntegration
     ) {
       // console.log("antes do verifyqueue")
-      await verifyQueue(wbot, msg, ticket, contact, settings, ticketTraking);
+      await verifyQueue(wbot, msg, ticket, contact, settings, ticketTraking, mediaSent);
 
       if (ticketTraking.chatbotAt === null) {
         await ticketTraking.update({
