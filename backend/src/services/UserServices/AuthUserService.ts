@@ -1,5 +1,6 @@
 import User from "../../models/User";
 import AppError from "../../errors/AppError";
+import { Op } from "sequelize";
 import {
   createAccessToken,
   createRefreshToken
