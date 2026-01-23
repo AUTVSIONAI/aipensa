@@ -5,6 +5,7 @@ import User from "../../models/User";
 import sequelize from "../../database";
 import CompaniesSettings from "../../models/CompaniesSettings";
 import Prompt from "../../models/Prompt";
+import { Op } from "sequelize";
 
 interface CompanyData {
   name: string;
@@ -52,6 +53,12 @@ const CreateCompanyService = async (
 
   if (!email || email.trim() === "") {
     throw new AppError("ERR_COMPANY_INVALID_EMAIL", 400);
+  }
+
+  const normalizedName = name.trim();
+  const existingByName = await Company.findOne({ where: { name: { [Op.iLike]: normalizedName } } });
+  if (existingByName) {
+    throw new AppError("ERR_COMPANY_NAME_EXISTS", 409);
   }
 
   // Evitar erro 500 por violação de unicidade de email do usuário
