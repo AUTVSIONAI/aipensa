@@ -1,5 +1,5 @@
 # Estágio de Build
-FROM node:20-bullseye-slim AS builder
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # --- Estágio de Produção ---
-FROM node:20-bullseye-slim
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
