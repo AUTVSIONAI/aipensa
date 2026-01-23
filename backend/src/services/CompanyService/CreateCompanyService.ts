@@ -50,7 +50,7 @@ const CreateCompanyService = async (
     throw new AppError(err.message);
   }
 
-  const company = await sequelize.transaction(async (t) => {
+  const result = await sequelize.transaction(async (t) => {
     const company = await Company.create({
       name,
       phone,
@@ -77,64 +77,65 @@ const CreateCompanyService = async (
     console.log(`[CreateCompanyService] VERSION 3.0 - Company created: ${company.id}, Email: '${company.email}'`);
     console.log(`[CreateCompanyService] User created: ${user.id}, Email: '${user.email}', CompanyId: ${user.companyId}`);
 
-    console.log(`[CreateCompanyService] Creating CompaniesSettings for company ${company.id}...`);
-    try {
-      await CompaniesSettings.create({
-        companyId: company.id,
-        hoursCloseTicketsAuto: "999999",
-        chatBotType: "text",
-        acceptCallWhatsapp: "enabled",
-        userRandom: "enabled",
-        sendGreetingMessageOneQueues: "enabled",
-        sendSignMessage: "enabled",
-        sendFarewellWaitingTicket: "disabled",
-        userRating: "disabled",
-        sendGreetingAccepted: "enabled",
-        CheckMsgIsGroup: "enabled",
-        sendQueuePosition: "disabled",
-        scheduleType: "disabled",
-        acceptAudioMessageContact: "enabled",
-        sendMsgTransfTicket: "disabled",
-        enableLGPD: "disabled",
-        requiredTag: "disabled",
-        lgpdDeleteMessage: "disabled",
-        lgpdHideNumber: "disabled",
-        lgpdConsent: "disabled",
-        lgpdLink: "",
-        lgpdMessage: "",
-         createdAt: new Date(),
-         updatedAt: new Date(),
-         closeTicketOnTransfer: false,
-         DirectTicketsToWallets: false,
-         notificameHub: "",
-         transferMessage: "",
-         AcceptCallWhatsappMessage: "",
-         sendQueuePositionMessage: ""
-       }, { transaction: t });
-      console.log(`[CreateCompanyService] CompaniesSettings created successfully.`);
-    } catch (err) {
-      console.error(`[CreateCompanyService] CRITICAL ERROR creating CompaniesSettings:`, err);
-      throw err; // Re-throw to rollback transaction
-    }
-
-    try {
-      await Prompt.create({
-        name: "IA Padrão",
-        prompt: "Você é um assistente virtual inteligente e útil.",
-        apiKey: "token_here",
-        voice: "pt-BR-Wavenet-A",
-        provider: "openrouter",
-        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-        companyId: company.id,
-        maxTokens: 1000,
-        temperature: 1
-      }, { transaction: t });
-    } catch (e) {
-      console.log("Falha ao criar prompt padrão, continuando...", e);
-    }
-
-    return company;
+    return { company, user };
   });
+
+  const { company, user } = result;
+
+  console.log(`[CreateCompanyService] Creating CompaniesSettings for company ${company.id}...`);
+  try {
+    await CompaniesSettings.create({
+      companyId: company.id,
+      hoursCloseTicketsAuto: "999999",
+      chatBotType: "text",
+      acceptCallWhatsapp: "enabled",
+      userRandom: "enabled",
+      sendGreetingMessageOneQueues: "enabled",
+      sendSignMessage: "enabled",
+      sendFarewellWaitingTicket: "disabled",
+      userRating: "disabled",
+      sendGreetingAccepted: "enabled",
+      CheckMsgIsGroup: "enabled",
+      sendQueuePosition: "disabled",
+      scheduleType: "disabled",
+      acceptAudioMessageContact: "enabled",
+      sendMsgTransfTicket: "disabled",
+      enableLGPD: "disabled",
+      requiredTag: "disabled",
+      lgpdDeleteMessage: "disabled",
+      lgpdHideNumber: "disabled",
+      lgpdConsent: "disabled",
+      lgpdLink: "",
+      lgpdMessage: "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      closeTicketOnTransfer: false,
+      DirectTicketsToWallets: false,
+      notificameHub: "",
+      transferMessage: "",
+      AcceptCallWhatsappMessage: "",
+      sendQueuePositionMessage: ""
+    });
+    console.log(`[CreateCompanyService] CompaniesSettings created successfully.`);
+  } catch (err) {
+    console.error(`[CreateCompanyService] ERROR creating CompaniesSettings (não bloqueante):`, err);
+  }
+
+  try {
+    await Prompt.create({
+      name: "IA Padrão",
+      prompt: "Você é um assistente virtual inteligente e útil.",
+      apiKey: "token_here",
+      voice: "pt-BR-Wavenet-A",
+      provider: "openrouter",
+      model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+      companyId: company.id,
+      maxTokens: 1000,
+      temperature: 1
+    });
+  } catch (e) {
+    console.log("Falha ao criar prompt padrão, continuando...", e);
+  }
 
   // Verify persistence immediately
   try {
