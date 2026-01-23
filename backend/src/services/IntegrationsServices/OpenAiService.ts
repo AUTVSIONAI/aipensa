@@ -340,48 +340,10 @@ export const handleOpenAi = async (
       if (response) {
         response = await handleScheduleAction(response, ticket, contact);
       }
-
-      if (openAiSettings.voice === "texto") {
-        console.log(`Sending text response via ${provider}`);
-        const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-          text: `\u200e ${response!}`
-        });
-        await verifyMessage(sentMessage!, ticket, contact);
-      } else {
-        console.log(`Sending voice response via ${provider}`);
-        const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
-        try {
-          await convertTextToSpeechAndSaveToFile(
-            keepOnlySpecifiedChars(response!),
-            `${publicFolder}/${fileNameWithOutExtension}`,
-            openAiSettings.voiceKey,
-            openAiSettings.voiceRegion,
-            openAiSettings.voice,
-            "mp3"
-          );
-          const sendMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-            audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
-            mimetype: "audio/mpeg",
-            ptt: true
-          });
-          await verifyMediaMessage(
-            sendMessage!,
-            ticket,
-            contact,
-            ticketTraking,
-            false,
-            false,
-            wbot
-          );
-          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
-          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
-        } catch (error) {
-          const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-            text: `\u200e ${response!}`
-          });
-          await verifyMessage(sentMessage!, ticket, contact);
-        }
-      }
+      const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+        text: `\u200e ${response!}`
+      });
+      await verifyMessage(sentMessage!, ticket, contact);
     } catch (error) {
       console.error(`Error calling ${provider}:`, error);
       // Fallback: enviar mensagem de erro
@@ -499,45 +461,37 @@ export const handleOpenAi = async (
       if (response) {
         response = await handleScheduleAction(response, ticket, contact);
       }
-
-      if (openAiSettings.voice === "texto") {
+      const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
+      try {
+        await convertTextToSpeechAndSaveToFile(
+          keepOnlySpecifiedChars(response!),
+          `${publicFolder}/${fileNameWithOutExtension}`,
+          openAiSettings.voiceKey,
+          openAiSettings.voiceRegion,
+          openAiSettings.voice,
+          "mp3"
+        );
+        const sendMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+          audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
+          mimetype: "audio/mpeg",
+          ptt: true
+        });
+        await verifyMediaMessage(
+          sendMessage!,
+          ticket,
+          contact,
+          ticketTraking,
+          false,
+          false,
+          wbot
+        );
+        deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
+        deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
+      } catch (error) {
         const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
           text: `\u200e ${response!}`
         });
         await verifyMessage(sentMessage!, ticket, contact);
-      } else {
-        const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
-        try {
-          await convertTextToSpeechAndSaveToFile(
-            keepOnlySpecifiedChars(response!),
-            `${publicFolder}/${fileNameWithOutExtension}`,
-            openAiSettings.voiceKey,
-            openAiSettings.voiceRegion,
-            openAiSettings.voice,
-            "mp3"
-          );
-          const sendMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-            audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
-            mimetype: "audio/mpeg",
-            ptt: true
-          });
-          await verifyMediaMessage(
-            sendMessage!,
-            ticket,
-            contact,
-            ticketTraking,
-            false,
-            false,
-            wbot
-          );
-          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
-          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
-        } catch (error) {
-          const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-            text: `\u200e ${response!}`
-          });
-          await verifyMessage(sentMessage!, ticket, contact);
-        }
       }
     } catch (error) {
       console.error(`Error processing audio with ${provider}:`, error);
