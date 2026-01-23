@@ -167,6 +167,14 @@ export const ensureFlowSeeds = async () => {
               n.type = "question";
               needsUpdate = true;
             }
+            if (n?.type === "menu") {
+              n.data = {
+                ...(n.data || {}),
+                message: n.data?.message || "Selecione uma opção",
+                arrayOption: Array.isArray(n.data?.arrayOption) ? n.data.arrayOption : []
+              };
+              needsUpdate = true;
+            }
           });
           if (needsUpdate) {
             const connections = Array.isArray(f.flow?.connections)
