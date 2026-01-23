@@ -3,10 +3,12 @@ import { Response } from "express";
 export const SendRefreshToken = (res: Response, token: string): void => {
   let sameSite: "lax" | "none" = "lax";
   let secure = false;
+  let domain: string | undefined = undefined;
 
   try {
     const frontendUrl = process.env.FRONTEND_URL;
     const backendUrl = process.env.BACKEND_URL;
+    const cookieDomain = process.env.REFRESH_COOKIE_DOMAIN;
 
     if (frontendUrl && backendUrl) {
       const frontend = new URL(frontendUrl);
@@ -19,6 +21,10 @@ export const SendRefreshToken = (res: Response, token: string): void => {
 
       if (isCrossSite) {
         sameSite = "none";
+        // Para subdomínios, permitir cookie amplo se fornecido
+        if (cookieDomain) {
+          domain = cookieDomain;
+        }
       }
     }
   } catch (_) {}
@@ -27,5 +33,7 @@ export const SendRefreshToken = (res: Response, token: string): void => {
     sameSite = "lax";
   }
 
-  res.cookie("jrt", token, { httpOnly: true, sameSite, secure, path: "/" });
+  const options: any = { httpOnly: true, sameSite, secure, path: "/" };
+  if (domain) options.domain = domain;
+  res.cookie("jrt", token, options);
 };
