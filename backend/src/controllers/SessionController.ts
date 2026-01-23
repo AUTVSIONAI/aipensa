@@ -7,6 +7,10 @@ import { SendRefreshToken } from "../helpers/SendRefreshToken";
 import { RefreshTokenService } from "../services/AuthServices/RefreshTokenService";
 import FindUserFromToken from "../services/AuthServices/FindUserFromToken";
 import User from "../models/User";
+import { verify } from "jsonwebtoken";
+import authConfig from "../config/auth";
+import ShowUserService from "../services/UserServices/ShowUserService";
+import { createAccessToken, createRefreshToken } from "../helpers/CreateTokens";
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const { email, password } = req.body;
@@ -43,20 +47,34 @@ export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const token: string = req.cookies.jrt;
+  const tokenCookie: string = req.cookies.jrt;
 
-  if (!token) {
-    throw new AppError("ERR_SESSION_EXPIRED", 401);
+  if (tokenCookie) {
+    const { user, newToken, refreshToken } = await RefreshTokenService(
+      res,
+      tokenCookie
+    );
+    SendRefreshToken(res, refreshToken);
+    return res.json({ token: newToken, user });
   }
 
-  const { user, newToken, refreshToken } = await RefreshTokenService(
-    res,
-    token
-  );
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    try {
+      const [, accessToken] = authHeader.split(" ");
+      const decoded = verify(accessToken, authConfig.secret) as any;
+      const { id, companyId } = decoded;
+      const user = await ShowUserService(id, companyId);
+      const newToken = createAccessToken(user);
+      const refreshToken = createRefreshToken(user);
+      SendRefreshToken(res, refreshToken);
+      return res.json({ token: newToken, user });
+    } catch (err) {
+      throw new AppError("ERR_SESSION_EXPIRED", 401);
+    }
+  }
 
-  SendRefreshToken(res, refreshToken);
-
-  return res.json({ token: newToken, user });
+  throw new AppError("ERR_SESSION_EXPIRED", 401);
 };
 
 export const me = async (req: Request, res: Response): Promise<Response> => {
