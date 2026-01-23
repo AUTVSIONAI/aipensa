@@ -157,6 +157,7 @@ export const ensureFlowSeeds = async () => {
         where: { companyId }
       });
       if (!defaultExists) {
+        const welcome = await FlowBuilderModel.findOne({
           where: { company_id: companyId, name: "Clínica Médica" },
           attributes: ["id"]
         });
