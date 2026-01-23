@@ -350,35 +350,37 @@ export const handleOpenAi = async (
       } else {
         console.log(`Sending voice response via ${provider}`);
         const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
-        convertTextToSpeechAndSaveToFile(
-          keepOnlySpecifiedChars(response!),
-          `${publicFolder}/${fileNameWithOutExtension}`,
-          openAiSettings.voiceKey,
-          openAiSettings.voiceRegion,
-          openAiSettings.voice,
-          "mp3"
-        ).then(async () => {
-          try {
-            const sendMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-              audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
-              mimetype: "audio/mpeg",
-              ptt: true
-            });
-            await verifyMediaMessage(
-              sendMessage!,
-              ticket,
-              contact,
-              ticketTraking,
-              false,
-              false,
-              wbot
-            );
-            deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
-            deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
-          } catch (error) {
-            console.log(`Erro para responder com audio: ${error}`);
-          }
-        });
+        try {
+          await convertTextToSpeechAndSaveToFile(
+            keepOnlySpecifiedChars(response!),
+            `${publicFolder}/${fileNameWithOutExtension}`,
+            openAiSettings.voiceKey,
+            openAiSettings.voiceRegion,
+            openAiSettings.voice,
+            "mp3"
+          );
+          const sendMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+            audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
+            mimetype: "audio/mpeg",
+            ptt: true
+          });
+          await verifyMediaMessage(
+            sendMessage!,
+            ticket,
+            contact,
+            ticketTraking,
+            false,
+            false,
+            wbot
+          );
+          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
+          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
+        } catch (error) {
+          const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+            text: `\u200e ${response!}`
+          });
+          await verifyMessage(sentMessage!, ticket, contact);
+        }
       }
     } catch (error) {
       console.error(`Error calling ${provider}:`, error);
@@ -505,35 +507,37 @@ export const handleOpenAi = async (
         await verifyMessage(sentMessage!, ticket, contact);
       } else {
         const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
-        convertTextToSpeechAndSaveToFile(
-          keepOnlySpecifiedChars(response!),
-          `${publicFolder}/${fileNameWithOutExtension}`,
-          openAiSettings.voiceKey,
-          openAiSettings.voiceRegion,
-          openAiSettings.voice,
-          "mp3"
-        ).then(async () => {
-          try {
-            const sendMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-              audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
-              mimetype: "audio/mpeg",
-              ptt: true
-            });
-            await verifyMediaMessage(
-              sendMessage!,
-              ticket,
-              contact,
-              ticketTraking,
-              false,
-              false,
-              wbot
-            );
-            deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
-            deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
-          } catch (error) {
-            console.log(`Erro para responder com audio: ${error}`);
-          }
-        });
+        try {
+          await convertTextToSpeechAndSaveToFile(
+            keepOnlySpecifiedChars(response!),
+            `${publicFolder}/${fileNameWithOutExtension}`,
+            openAiSettings.voiceKey,
+            openAiSettings.voiceRegion,
+            openAiSettings.voice,
+            "mp3"
+          );
+          const sendMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+            audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
+            mimetype: "audio/mpeg",
+            ptt: true
+          });
+          await verifyMediaMessage(
+            sendMessage!,
+            ticket,
+            contact,
+            ticketTraking,
+            false,
+            false,
+            wbot
+          );
+          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
+          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
+        } catch (error) {
+          const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+            text: `\u200e ${response!}`
+          });
+          await verifyMessage(sentMessage!, ticket, contact);
+        }
       }
     } catch (error) {
       console.error(`Error processing audio with ${provider}:`, error);

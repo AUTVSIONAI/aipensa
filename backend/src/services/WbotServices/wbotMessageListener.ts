@@ -3652,9 +3652,15 @@ export const convertTextToSpeechAndSaveToFile = (
         baseURL: baseUrl
       });
 
+      const allowedVoices = ["alloy", "verse", "aria", "charcoal", "sage"];
+      const chosenVoice =
+        allowedVoices.includes(String(voice).toLowerCase())
+          ? voice
+          : "alloy";
+
       openai.audio.speech.create({
         model: "tts-1",
-        voice: voice as any,
+        voice: chosenVoice as any,
         input: text,
       })
       .then(async (mp3) => {
