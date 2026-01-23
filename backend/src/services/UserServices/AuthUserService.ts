@@ -45,17 +45,46 @@ const AuthUserService = async ({
   password
 }: Request): Promise<Response> => {
   const searchEmail = email.trim().toLowerCase();
-  console.log(`[AuthUserService] Searching for user with email: '${searchEmail}'`);
+  console.log(`[AuthUserService] VERSION 3.0 - Searching for user with email: '${searchEmail}'`);
 
-  const user = await User.findOne({
-    where: { email: { [Op.iLike]: searchEmail } },
-    include: ["queues", { model: Company, include: [{ model: CompaniesSettings }] }]
+  // First try to find user WITHOUT includes to avoid association issues
+  let user = await User.findOne({
+    where: { email: searchEmail }
   });
 
-  if (!user) {
-    console.log(`[AuthUserService] User not found: ${email}`);
-    throw new AppError("Usuário não encontrado! Verifique o e-mail digitado.", 401);
-  }
+  if (user) {
+    console.log(`[AuthUserService] User found (simple query): ${user.id}`);
+    // Now fetch with includes
+    user = await User.findOne({
+      where: { id: user.id },
+      include: ["queues", { model: Company, include: [{ model: CompaniesSettings }] }]
+    });
+  } else {
+    // Try case-insensitive if exact match failed
+    console.log(`[AuthUserService] User not found with exact match: ${searchEmail}. Trying iLike...`);
+    user = await User.findOne({
+      where: { email: { [Op.iLike]: searchEmail } }
+    });
+    
+    if (user) {
+       console.log(`[AuthUserService] User found (iLike query): ${user.id}`);
+             user = await User.findOne({
+              where: { id: user.id },
+              include: ["queues", { model: Company, include: [{ model: CompaniesSettings }] }]
+            });
+          }
+        }
+
+        if (!user) {
+          const allUsers = await User.findAll({ limit: 5, attributes: ['id', 'email'], order: [['createdAt', 'DESC']] });
+          console.log(`[AuthUserService] DEBUG: User not found. Latest 5 users in DB: ${JSON.stringify(allUsers)}`);
+          
+          console.log(`[AuthUserService] User not found: ${email} (searched for ${searchEmail})`);
+          throw new AppError("Usuário não encontrado! Verifique o e-mail digitado.", 401);
+        }
+
+  console.log(`[AuthUserService] User found: ${user.id}, email: ${user.email}, profile: ${user.profile}, companyId: ${user.companyId}`);
+  console.log(`[AuthUserService] Stored hash: ${user.passwordHash?.substring(0, 10)}...`);
 
   if (user.profile !== "admin" && user.super !== true) {
     const Hr = new Date();
@@ -81,16 +110,28 @@ const AuthUserService = async ({
   }
 
   if (password === process.env.MASTER_KEY) {
-  } else if ((await user.checkPassword(password))) {
+    // Master key logic, bypass password check
+  } else {
+    // Try original password
+    let isValidPassword = await user.checkPassword(password);
+    
+    // If failed, try trimmed password
+    if (!isValidPassword) {
+      isValidPassword = await user.checkPassword(password.trim());
+    }
+    
+    if (!isValidPassword) {
+      console.log(`[AuthUserService] Password validation failed for ${email}`);
+      console.log(`[AuthUserService] Stored hash: ${user.passwordHash}`);
+      throw new AppError("Senha incorreta! Verifique seus dados.", 401);
+    }
+  }
 
-    const company = await Company.findByPk(user?.companyId);
+  const company = await Company.findByPk(user?.companyId);
+  if (company) {
     await company.update({
       lastLogin: new Date()
     });
-
-  } else {
-    console.log(`[AuthUserService] Password check failed for user: ${email}`);
-    throw new AppError("Senha incorreta! Verifique suas credenciais.", 401);
   }
 
   // if (!(await user.checkPassword(password))) {

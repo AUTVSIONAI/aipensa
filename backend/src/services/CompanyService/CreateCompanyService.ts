@@ -50,9 +50,7 @@ const CreateCompanyService = async (
     throw new AppError(err.message);
   }
 
-  const t = await sequelize.transaction();
-
-  try {
+  const company = await sequelize.transaction(async (t) => {
     const company = await Company.create({
       name,
       phone,
@@ -63,51 +61,57 @@ const CreateCompanyService = async (
       recurrence,
       document,
       paymentMethod
-    },
-      { transaction: t }
-    );
+    }, { transaction: t });
 
     const user = await User.create({
       name: companyUserName || name,
       email: company.email,
-      password: password || "mudar123",
+      password: (password || "mudar123").trim(),
       profile: "admin",
       companyId: company.id,
       super: false,
       startWork: "00:00",
       endWork: "23:59"
-    },
-      { transaction: t }
-    );
+    }, { transaction: t });
 
-    const settings = await CompaniesSettings.create({
-          companyId: company.id,
-          hoursCloseTicketsAuto: "999999",
-          chatBotType: "text",
-          acceptCallWhatsapp: "enabled",
-          userRandom: "enabled",
-          sendGreetingMessageOneQueues: "enabled",
-          sendSignMessage: "enabled",
-          sendFarewellWaitingTicket: "disabled",
-          userRating: "disabled",
-          sendGreetingAccepted: "enabled",
-          CheckMsgIsGroup: "enabled",
-          sendQueuePosition: "disabled",
-          scheduleType: "disabled",
-          acceptAudioMessageContact: "enabled",
-          sendMsgTransfTicket:"disabled",
-          enableLGPD: "disabled",
-          requiredTag: "disabled",
-          lgpdDeleteMessage: "disabled",
-          lgpdHideNumber: "disabled",
-          lgpdConsent: "disabled",
-          lgpdLink:"",
-          lgpdMessage:"",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          closeTicketOnTransfer: false,
-          DirectTicketsToWallets: false
-    },{ transaction: t })
+    console.log(`[CreateCompanyService] VERSION 3.0 - Company created: ${company.id}, Email: '${company.email}'`);
+    console.log(`[CreateCompanyService] User created: ${user.id}, Email: '${user.email}', CompanyId: ${user.companyId}`);
+
+    console.log(`[CreateCompanyService] Creating CompaniesSettings for company ${company.id}...`);
+    try {
+      await CompaniesSettings.create({
+        companyId: company.id,
+        hoursCloseTicketsAuto: "999999",
+        chatBotType: "text",
+        acceptCallWhatsapp: "enabled",
+        userRandom: "enabled",
+        sendGreetingMessageOneQueues: "enabled",
+        sendSignMessage: "enabled",
+        sendFarewellWaitingTicket: "disabled",
+        userRating: "disabled",
+        sendGreetingAccepted: "enabled",
+        CheckMsgIsGroup: "enabled",
+        sendQueuePosition: "disabled",
+        scheduleType: "disabled",
+        acceptAudioMessageContact: "enabled",
+        sendMsgTransfTicket: "disabled",
+        enableLGPD: "disabled",
+        requiredTag: "disabled",
+        lgpdDeleteMessage: "disabled",
+        lgpdHideNumber: "disabled",
+        lgpdConsent: "disabled",
+        lgpdLink: "",
+        lgpdMessage: "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        closeTicketOnTransfer: false,
+        DirectTicketsToWallets: false
+      }, { transaction: t });
+      console.log(`[CreateCompanyService] CompaniesSettings created successfully.`);
+    } catch (err) {
+      console.error(`[CreateCompanyService] CRITICAL ERROR creating CompaniesSettings:`, err);
+      throw err; // Re-throw to rollback transaction
+    }
 
     try {
       await Prompt.create({
@@ -124,16 +128,26 @@ const CreateCompanyService = async (
     } catch (e) {
       console.log("Falha ao criar prompt padrão, continuando...", e);
     }
-    
-    await t.commit();
-
-    console.log(`[CreateCompanyService] Company created: ${company.id}, User created: ${user.id}, Email: ${email}`);
 
     return company;
-  } catch (error) {
-    await t.rollback();
-    throw new AppError("Não foi possível criar a empresa!", error);
+  });
+
+  // Verify persistence immediately
+  try {
+    const checkUser = await User.findOne({ where: { email: email } });
+    if (checkUser) {
+      console.log(`[CreateCompanyService] SUCCESS: User '${email}' found in DB after commit. ID: ${checkUser.id}, CompanyId: ${checkUser.companyId}`);
+      // Force password re-hash check
+      const valid = await checkUser.checkPassword(password || "mudar123");
+      console.log(`[CreateCompanyService] Password check immediately after creation: ${valid ? 'VALID' : 'INVALID'}`);
+    } else {
+      console.error(`[CreateCompanyService] CRITICAL ERROR: User '${email}' NOT found in DB after commit!`);
+    }
+  } catch (e) {
+    console.error("[CreateCompanyService] Error verifying user:", e);
   }
+
+  return company;
 };
 
 export default CreateCompanyService;

@@ -1,133 +1,107 @@
-/** 
- * @TercioSantos-0 |
- * model/CompaniesSettings |
- * @descrição:modelo para tratar as configurações das empresas 
- */
 import {
-    Table,
-    Column,
-    CreatedAt,
-    UpdatedAt,
-    Model,
-    PrimaryKey,
-    AutoIncrement,
-    ForeignKey,
-    BelongsTo,
-    Default
-  } from "sequelize-typescript";
-  import Company from "./Company";
- 
-  
-  @Table({ tableName: "CompaniesSettings" })
-  class CompaniesSettings extends Model<CompaniesSettings> {
-    @PrimaryKey
-    @AutoIncrement
-    @Column
-    id: number;
+  Table,
+  Column,
+  CreatedAt,
+  UpdatedAt,
+  Model,
+  PrimaryKey,
+  AutoIncrement,
+  ForeignKey,
+  BelongsTo,
+  Default
+} from "sequelize-typescript";
+import Company from "./Company";
 
-    @ForeignKey(() => Company)
-    @Column
-    companyId: number;
-  
-    @BelongsTo(() => Company)
-    company: Company;
-  
-    @Column
-    hoursCloseTicketsAuto: string;
+@Table({ tableName: "CompaniesSettings" })
+class CompaniesSettings extends Model<CompaniesSettings> {
+  @PrimaryKey
+  @AutoIncrement
+  @Column
+  id: number;
 
-    @Column
-    chatBotType: string;
+  @ForeignKey(() => Company)
+  @Column
+  companyId: number;
 
-    @Column
-    acceptCallWhatsapp: string;
+  @BelongsTo(() => Company)
+  company: Company;
 
-    //inicio de opções: enabled ou disabled
-    @Column
-    userRandom: string; 
+  @Column
+  hoursCloseTicketsAuto: string;
 
-    @Column
-    sendGreetingMessageOneQueues: string; 
+  @Column
+  chatBotType: string;
 
-    @Column
-    sendSignMessage: string; 
+  @Column
+  acceptCallWhatsapp: string;
 
-    @Column
-    sendFarewellWaitingTicket: string; 
+  @Column
+  userRandom: string;
 
-    @Column
-    userRating: string; 
+  @Column
+  sendGreetingMessageOneQueues: string;
 
-    @Column
-    sendGreetingAccepted: string; 
+  @Column
+  sendSignMessage: string;
 
-    @Column
-    CheckMsgIsGroup: string; 
+  @Column
+  sendFarewellWaitingTicket: string;
 
-    @Column
-    sendQueuePosition: string; 
+  @Column
+  userRating: string;
 
-    @Column
-    scheduleType: string; 
+  @Column
+  sendGreetingAccepted: string;
 
-    @Column
-    acceptAudioMessageContact: string; 
+  @Column
+  CheckMsgIsGroup: string;
 
-    @Column
-    sendMsgTransfTicket: string;
+  @Column
+  sendQueuePosition: string;
 
-    @Column
-    enableLGPD: string; 
+  @Column
+  scheduleType: string;
 
-    @Column
-    requiredTag: string; 
+  @Column
+  acceptAudioMessageContact: string;
 
-    @Column
-    lgpdDeleteMessage: string; 
+  @Column
+  sendMsgTransfTicket: string;
 
-    @Column
-    lgpdHideNumber: string; 
+  @Column
+  enableLGPD: string;
 
-    @Column
-    lgpdConsent: string;
+  @Column
+  requiredTag: string;
 
-    @Column
-    lgpdLink: string
+  @Column
+  lgpdDeleteMessage: string;
 
-    //fim de opções: enabled ou disabled 
-    @Column
-    lgpdMessage: string
+  @Column
+  lgpdHideNumber: string;
 
-    @CreatedAt
-    createdAt: Date;
-  
-    @UpdatedAt
-    updatedAt: Date;
+  @Column
+  lgpdConsent: string;
 
-    @Default(false)
-    @Column
-    DirectTicketsToWallets: boolean;
+  @Column
+  lgpdLink: string;
 
-    @Default(false)
-    @Column
-    closeTicketOnTransfer: boolean;
+  @Column
+  lgpdMessage: string;
 
-    @Column
-    transferMessage: string
+  @Default(false)
+  @Column
+  closeTicketOnTransfer: boolean;
 
-    @Column
-    greetingAcceptedMessage: string
+  @Default(false)
+  @Column
+  DirectTicketsToWallets: boolean;
 
-    @Column
-    AcceptCallWhatsappMessage: string
+  @CreatedAt
+  createdAt: Date;
 
-    @Column
-    sendQueuePositionMessage: string
+  @UpdatedAt
+  updatedAt: Date;
+}
 
-    @Column
-    showNotificationPending: boolean;
-
-    @Column
-    notificameHub: string;
-  }
-  
-  export default CompaniesSettings;
+export default CompaniesSettings;

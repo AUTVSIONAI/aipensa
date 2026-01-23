@@ -91,10 +91,7 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    backgroundImage: `url(${wallfundo})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
+    background: `radial-gradient(1200px circle at 10% 10%, ${theme.palette.primary.main}22 0, transparent 40%), radial-gradient(800px circle at 90% 80%, ${theme.palette.secondary ? theme.palette.secondary.main : "#6A0DAD"}22 0, transparent 50%), linear-gradient(135deg, ${theme.palette.background.default} 0%, ${theme.palette.background.paper} 100%)`,
     position: "relative",
     "&::before": {
       content: '""',
@@ -103,7 +100,7 @@ const useStyles = makeStyles((theme) => ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.4)",
+      background: `linear-gradient(180deg, ${theme.palette.mode === "dark" ? "#00000099" : "#00000033"} 0%, transparent 60%)`,
       zIndex: 1,
     }
   },
