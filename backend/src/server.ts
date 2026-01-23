@@ -14,6 +14,7 @@ import Setting from "./models/Setting";
 import BullQueue from './libs/queue';
 import { startQueueProcess } from "./queues";
 import { ensureCompaniesSettingsColumns } from "./utils/ensureCompaniesSettingsColumns";
+import { ensureFlowSeeds } from "./utils/ensureFlowSeeds";
 
 if (process.env.CERTIFICADOS == "true") {
   
@@ -24,6 +25,7 @@ if (process.env.CERTIFICADOS == "true") {
 
   const server = https.createServer(httpsOptions, app).listen(process.env.PORT, async () => {
     await ensureCompaniesSettingsColumns();
+    await ensureFlowSeeds();
     const companies = await Company.findAll({
       where: { status: true },
       attributes: ["id"]
@@ -67,6 +69,7 @@ if (process.env.CERTIFICADOS == "true") {
 } else {
   const server = app.listen(process.env.PORT, async () => {
     await ensureCompaniesSettingsColumns();
+    await ensureFlowSeeds();
     const companies = await Company.findAll({
       where: { status: true },
       attributes: ["id"]
@@ -126,4 +129,3 @@ if (process.env.CERTIFICADOS == "true") {
   gracefulShutdown(server);
   
 }
-
