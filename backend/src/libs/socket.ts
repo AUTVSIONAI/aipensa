@@ -15,8 +15,12 @@ export const initIO = (httpServer: Server): SocketIO => {
     },
     cors: {
       origin: (origin, cb) => {
-        // Permitir todas as origens temporariamente
-        return cb(null, true);
+        try {
+          const allowed = process.env.FRONTEND_URL || origin;
+          return cb(null, allowed);
+        } catch {
+          return cb(null, origin || true);
+        }
       },
       credentials: true,
       methods: ["GET", "POST"]

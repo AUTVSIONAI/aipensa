@@ -85,15 +85,28 @@ const FLOW_SPECS: FlowSpec[] = [
 
 const buildFlowPayload = (spec: FlowSpec) => ({
   nodes: [
-    { id: "start", type: "message", content: spec.greeting, position: { x: 50, y: 50 } },
-    { id: "qualify", type: "questions", fields: spec.qualify, position: { x: 300, y: 50 } },
-    { id: "cta", type: "action", action: spec.action, position: { x: 550, y: 50 } },
-    { id: "confirm", type: "message", content: "Confirmação enviada. Em breve você receberá detalhes.", position: { x: 800, y: 50 } }
+    {
+      id: "start",
+      type: "start",
+      position: { x: 50, y: 50 },
+      data: { label: "Início do fluxo" }
+    },
+    {
+      id: "msg1",
+      type: "message",
+      position: { x: 300, y: 50 },
+      data: { label: spec.greeting, text: spec.greeting }
+    },
+    {
+      id: "confirm",
+      type: "message",
+      position: { x: 550, y: 50 },
+      data: { label: "Confirmação enviada", text: "Confirmação enviada. Em breve você receberá detalhes." }
+    }
   ],
-  edges: [
-    { from: "start", to: "qualify" },
-    { from: "qualify", to: "cta" },
-    { from: "cta", to: "confirm" }
+  connections: [
+    { id: "e-start-msg1", source: "start", target: "msg1" },
+    { id: "e-msg1-confirm", source: "msg1", target: "confirm" }
   ]
 });
 
@@ -142,11 +155,31 @@ export const ensureFlowSeeds = async () => {
               n.position = positions[Math.min(idx, positions.length - 1)];
               needsUpdate = true;
             }
+            if (!n?.data || typeof n.data.label !== "string") {
+              const fallback =
+                n?.content ||
+                n?.title ||
+                (typeof n === "object" ? JSON.stringify(n).slice(0, 40) : "Bloco");
+              n.data = { ...(n.data || {}), label: fallback };
+              needsUpdate = true;
+            }
+            if (n?.type === "questions") {
+              n.type = "question";
+              needsUpdate = true;
+            }
           });
           if (needsUpdate) {
-            const edges = Array.isArray(f.flow?.edges) ? f.flow?.edges : [];
+            const connections = Array.isArray(f.flow?.connections)
+              ? f.flow?.connections
+              : Array.isArray(f.flow?.edges)
+              ? f.flow?.edges.map((e: any, i: number) => ({
+                  id: e.id || `e-${i}`,
+                  source: e.from || e.source,
+                  target: e.to || e.target
+                }))
+              : [];
             await FlowBuilderModel.update(
-              { flow: { nodes, edges } as any },
+              { flow: { nodes, connections } as any },
               { where: { id: flow.id } }
             );
           }
