@@ -389,31 +389,54 @@ export const handleOpenAi = async (
     }
   } else if (msg.message?.audioMessage) {
     console.log(`Processing audio message with ${provider}`);
-    const mediaUrl = mediaSent!.mediaUrl!.split("/").pop();
+    let mediaUrl: string | undefined = mediaSent?.mediaUrl
+      ? mediaSent.mediaUrl.split("/").pop()
+      : undefined;
+
+    if (!mediaUrl) {
+      try {
+        const msgRecord = await Message.findOne({
+          where: { wid: msg.key.id, ticketId: ticket.id }
+        });
+        mediaUrl = msgRecord?.mediaUrl?.split("/").pop();
+      } catch (e) {
+        console.log("Fallback lookup by wid failed:", e);
+      }
+    }
+
+    if (!mediaUrl) {
+      try {
+        const lastAudio = await Message.findOne({
+          where: { ticketId: ticket.id, mediaType: "audio" },
+          order: [["createdAt", "DESC"]]
+        });
+        mediaUrl = lastAudio?.mediaUrl?.split("/").pop();
+      } catch (e) {
+        console.log("Fallback lookup for last audio failed:", e);
+      }
+    }
+
+    if (!mediaUrl) {
+      console.error("Audio mediaUrl not found for transcription");
+      await wbot.sendMessage(msg.key.remoteJid!, {
+        text: "Desculpe, não consegui localizar o áudio para processar."
+      });
+      return;
+    }
+
     const file = fs.createReadStream(`${publicFolder}/${mediaUrl}`) as any;
 
     let transcriptionText: string;
 
     try {
-      let transcriptionClient = aiClient;
-      
-      // Check if we should use a separate key/provider for transcription (via Voice settings)
-      if (openAiSettings.voiceRegion === "openrouter" || openAiSettings.voiceRegion === "openai") {
-        const baseUrl = openAiSettings.voiceRegion === "openrouter" 
-          ? "https://openrouter.ai/api/v1" 
-          : undefined;
-          
-        console.log(`Using ${openAiSettings.voiceRegion} for transcription with voiceKey`);
-        transcriptionClient = new OpenAI({
-          apiKey: openAiSettings.voiceKey,
-          baseURL: baseUrl
-        });
-      } else if (provider === "gemini") {
-        // Fallback for Gemini: try to use the main API key as OpenAI key (legacy behavior)
-        // or if voiceKey is set, it would have been caught above if voiceRegion was set.
-        console.log("Using fallback OpenAI for Gemini transcription");
-        transcriptionClient = new OpenAI({ apiKey: openAiSettings.apiKey });
-      }
+      const transcriptionApiKey =
+        openAiSettings.voiceKey && openAiSettings.voiceKey.trim() !== ""
+          ? openAiSettings.voiceKey
+          : openAiSettings.apiKey;
+
+      const transcriptionClient = new OpenAI({
+        apiKey: transcriptionApiKey
+      });
 
       const transcription = await transcriptionClient.audio.transcriptions.create({
         model: "whisper-1",
