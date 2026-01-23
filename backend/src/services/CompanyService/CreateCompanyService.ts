@@ -50,13 +50,31 @@ const CreateCompanyService = async (
     throw new AppError(err.message);
   }
 
-  const result = await sequelize.transaction(async (t) => {
+  if (!email || email.trim() === "") {
+    throw new AppError("ERR_COMPANY_INVALID_EMAIL", 400);
+  }
+
+  // Evitar erro 500 por violação de unicidade de email do usuário
+  const existingUser = await User.findOne({ where: { email } });
+  if (existingUser) {
+    throw new AppError("ERR_USER_ALREADY_EXISTS", 409);
+  }
+
+  // Opcional: evitar duplicidade de empresa por email
+  const existingCompany = await Company.findOne({ where: { email } });
+  if (existingCompany) {
+    throw new AppError("ERR_COMPANY_ALREADY_EXISTS", 409);
+  }
+
+  const planIdNum = planId ?? 1;
+
+  const company = await sequelize.transaction(async (t) => {
     const company = await Company.create({
       name,
       phone,
       email,
       status,
-      planId,
+      planId: planIdNum,
       dueDate,
       recurrence,
       document,

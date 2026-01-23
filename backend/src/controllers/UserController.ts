@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
 import { isEmpty, isNil } from "lodash";
-import CheckSettingsHelper from "../helpers/CheckSettings";
+import CheckSettingsHelper, { CheckSettings1 } from "../helpers/CheckSettings";
 import AppError from "../errors/AppError";
 
 import CreateUserService from "../services/UserServices/CreateUserService";
@@ -80,7 +80,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   if (
     req.url === "/signup" &&
-    (await CheckSettingsHelper("userCreation")) === "disabled"
+    (await CheckSettings1("userCreation", "enabled")) === "disabled"
   ) {
     throw new AppError("ERR_USER_CREATION_DISABLED", 403);
   } else if (req.url !== "/signup" && req.user.profile !== "admin") {
