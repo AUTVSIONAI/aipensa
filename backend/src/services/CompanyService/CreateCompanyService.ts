@@ -68,8 +68,8 @@ const CreateCompanyService = async (
 
   const planIdNum = planId ?? 1;
 
-  const company = await sequelize.transaction(async (t) => {
-    const company = await Company.create({
+  const txResult = await sequelize.transaction(async (t) => {
+    const createdCompany = await Company.create({
       name,
       phone,
       email,
@@ -83,27 +83,27 @@ const CreateCompanyService = async (
 
     const user = await User.create({
       name: companyUserName || name,
-      email: company.email,
+      email: createdCompany.email,
       password: (password || "mudar123").trim(),
       profile: "admin",
-      companyId: company.id,
+      companyId: createdCompany.id,
       super: false,
       startWork: "00:00",
       endWork: "23:59"
     }, { transaction: t });
 
-    console.log(`[CreateCompanyService] VERSION 3.0 - Company created: ${company.id}, Email: '${company.email}'`);
+    console.log(`[CreateCompanyService] VERSION 3.0 - Company created: ${createdCompany.id}, Email: '${createdCompany.email}'`);
     console.log(`[CreateCompanyService] User created: ${user.id}, Email: '${user.email}', CompanyId: ${user.companyId}`);
 
-    return { company, user };
+    return { company: createdCompany, user };
   });
 
-  const { company, user } = result;
+  const { company: createdCompany } = txResult;
 
-  console.log(`[CreateCompanyService] Creating CompaniesSettings for company ${company.id}...`);
+  console.log(`[CreateCompanyService] Creating CompaniesSettings for company ${createdCompany.id}...`);
   try {
     await CompaniesSettings.create({
-      companyId: company.id,
+      companyId: createdCompany.id,
       hoursCloseTicketsAuto: "999999",
       chatBotType: "text",
       acceptCallWhatsapp: "enabled",
@@ -147,7 +147,7 @@ const CreateCompanyService = async (
       voice: "pt-BR-Wavenet-A",
       provider: "openrouter",
       model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-      companyId: company.id,
+      companyId: createdCompany.id,
       maxTokens: 1000,
       temperature: 1
     });
@@ -170,7 +170,7 @@ const CreateCompanyService = async (
     console.error("[CreateCompanyService] Error verifying user:", e);
   }
 
-  return company;
+  return createdCompany;
 };
 
 export default CreateCompanyService;
