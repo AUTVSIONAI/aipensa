@@ -85,10 +85,10 @@ const FLOW_SPECS: FlowSpec[] = [
 
 const buildFlowPayload = (spec: FlowSpec) => ({
   nodes: [
-    { id: "start", type: "message", content: spec.greeting },
-    { id: "qualify", type: "questions", fields: spec.qualify },
-    { id: "cta", type: "action", action: spec.action },
-    { id: "confirm", type: "message", content: "Confirmação enviada. Em breve você receberá detalhes." }
+    { id: "start", type: "message", content: spec.greeting, position: { x: 50, y: 50 } },
+    { id: "qualify", type: "questions", fields: spec.qualify, position: { x: 300, y: 50 } },
+    { id: "cta", type: "action", action: spec.action, position: { x: 550, y: 50 } },
+    { id: "confirm", type: "message", content: "Confirmação enviada. Em breve você receberá detalhes.", position: { x: 800, y: 50 } }
   ],
   edges: [
     { from: "start", to: "qualify" },
@@ -126,12 +126,37 @@ export const ensureFlowSeeds = async () => {
         }
       }
 
+      for (const flow of existing) {
+        const f = flow.toJSON() as any;
+        const nodes = f.flow?.nodes;
+        let needsUpdate = false;
+        if (Array.isArray(nodes)) {
+          const positions = [
+            { x: 50, y: 50 },
+            { x: 300, y: 50 },
+            { x: 550, y: 50 },
+            { x: 800, y: 50 }
+          ];
+          nodes.forEach((n: any, idx: number) => {
+            if (!n?.position || typeof n.position.x !== "number" || typeof n.position.y !== "number") {
+              n.position = positions[Math.min(idx, positions.length - 1)];
+              needsUpdate = true;
+            }
+          });
+          if (needsUpdate) {
+            await FlowBuilderModel.update(
+              { flow: { nodes, edges: f.flow?.edges || [] } as any },
+              { where: { id: flow.id } }
+            );
+          }
+        }
+      }
+
       // Ensure defaults for the company if not present
       const defaultExists = await FlowDefaultModel.findOne({
         where: { companyId }
       });
       if (!defaultExists) {
-        const welcome = await FlowBuilderModel.findOne({
           where: { company_id: companyId, name: "Clínica Médica" },
           attributes: ["id"]
         });
@@ -153,4 +178,3 @@ export const ensureFlowSeeds = async () => {
     console.error("[ensureFlowSeeds] Falha ao garantir fluxos:", err);
   }
 };
-
