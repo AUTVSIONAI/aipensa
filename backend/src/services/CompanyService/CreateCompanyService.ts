@@ -102,11 +102,15 @@ const CreateCompanyService = async (
         lgpdConsent: "disabled",
         lgpdLink: "",
         lgpdMessage: "",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        closeTicketOnTransfer: false,
-        DirectTicketsToWallets: false
-      }, { transaction: t });
+         createdAt: new Date(),
+         updatedAt: new Date(),
+         closeTicketOnTransfer: false,
+         DirectTicketsToWallets: false,
+         notificameHub: "",
+         transferMessage: "",
+         AcceptCallWhatsappMessage: "",
+         sendQueuePositionMessage: ""
+       }, { transaction: t });
       console.log(`[CreateCompanyService] CompaniesSettings created successfully.`);
     } catch (err) {
       console.error(`[CreateCompanyService] CRITICAL ERROR creating CompaniesSettings:`, err);

@@ -97,6 +97,18 @@ class CompaniesSettings extends Model<CompaniesSettings> {
   @Column
   DirectTicketsToWallets: boolean;
 
+  @Column
+  notificameHub: string;
+
+  @Column
+  transferMessage: string;
+
+  @Column
+  AcceptCallWhatsappMessage: string;
+
+  @Column
+  sendQueuePositionMessage: string;
+
   @CreatedAt
   createdAt: Date;
 
