@@ -44,8 +44,8 @@ export const createSubscription = async (
   let key_GERENCIANET_PIX_KEY = null;
   let key_ASAAS_TOKEN = null;
 
+  const buscacompanyId = req.user?.companyId ?? 1;
   try {
-    const buscacompanyId = req.user?.companyId ?? 1;
   
     const getasaastoken = await Setting.findOne({
       where: { companyId: buscacompanyId, key: "asaastoken" },
