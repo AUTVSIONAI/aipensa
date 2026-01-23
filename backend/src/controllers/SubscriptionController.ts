@@ -209,7 +209,7 @@ const stripe = new Stripe(key_STRIPE_PRIVATE, {
             product_data: {
               name: `#Fatura:${invoiceId}`,
             },
-            unit_amount: Number(String(valorext).toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", "").replace(".", "")),
+            unit_amount: Math.round(Number(valorext) * 100),
           },
           quantity: 1,
         },
