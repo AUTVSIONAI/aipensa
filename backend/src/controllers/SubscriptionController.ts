@@ -45,8 +45,7 @@ export const createSubscription = async (
   let key_ASAAS_TOKEN = null;
 
   try {
-    
-    const buscacompanyId = 1;
+    const buscacompanyId = req.user?.companyId ?? 1;
   
     const getasaastoken = await Setting.findOne({
       where: { companyId: buscacompanyId, key: "asaastoken" },
@@ -81,9 +80,9 @@ export const createSubscription = async (
   const { companyId } = req.user;
 
   const schema = Yup.object().shape({
-    price: Yup.string().required(),
-    users: Yup.string().required(),
-    connections: Yup.string().required()
+    price: Yup.mixed().required(),
+    users: Yup.mixed().required(),
+    connections: Yup.mixed().required()
   });
 
   if (!(await schema.isValid(req.body))) {
@@ -106,8 +105,9 @@ export const createSubscription = async (
   } = req.body;
 
 
-const valor = Number(price.toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", "."));
-const valorext = price;
+const valorNumber = Number(String(price).replace(",", "."));
+const valor = Number(valorNumber.toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", "."));
+const valorext = valorNumber;
 
 async function createMercadoPagoPreference() {
   if (key_MP_ACCESS_TOKEN) {
@@ -209,7 +209,7 @@ const stripe = new Stripe(key_STRIPE_PRIVATE, {
             product_data: {
               name: `#Fatura:${invoiceId}`,
             },
-            unit_amount: price.toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", "").replace(".", ""), // Replace with the actual amount in cents
+            unit_amount: Number(String(valorext).toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", "").replace(".", "")),
           },
           quantity: 1,
         },
@@ -262,7 +262,7 @@ if(key_GERENCIANET_PIX_KEY){
 
 }
 
-const updateCompany = await Company.findOne();
+const updateCompany = await Company.findByPk(buscacompanyId);
 
 if (!updateCompany) {
 	throw new AppError("Company not found", 404);
