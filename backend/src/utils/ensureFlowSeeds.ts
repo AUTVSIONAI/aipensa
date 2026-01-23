@@ -163,6 +163,10 @@ export const ensureFlowSeeds = async () => {
               n.data = { ...(n.data || {}), label: fallback };
               needsUpdate = true;
             }
+            if (!n?.data?.message) {
+              n.data = { ...(n.data || {}), message: n.data?.label || "Mensagem" };
+              needsUpdate = true;
+            }
             if (n?.type === "questions") {
               n.type = "question";
               needsUpdate = true;
@@ -172,6 +176,16 @@ export const ensureFlowSeeds = async () => {
                 ...(n.data || {}),
                 message: n.data?.message || "Selecione uma opção",
                 arrayOption: Array.isArray(n.data?.arrayOption) ? n.data.arrayOption : []
+              };
+              needsUpdate = true;
+            }
+            if (n?.type === "question") {
+              n.data = {
+                ...(n.data || {}),
+                typebotIntegration: {
+                  ...(n.data?.typebotIntegration || {}),
+                  message: n.data?.typebotIntegration?.message || n.data?.label || "Pergunta não configurada"
+                }
               };
               needsUpdate = true;
             }
