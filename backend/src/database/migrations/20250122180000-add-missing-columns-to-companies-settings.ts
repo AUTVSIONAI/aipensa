@@ -1,35 +1,52 @@
 import { QueryInterface, DataTypes } from "sequelize";
 
 module.exports = {
-  up: (queryInterface: QueryInterface) => {
-    return Promise.all([
-      queryInterface.addColumn("CompaniesSettings", "closeTicketOnTransfer", {
+  up: async (queryInterface: QueryInterface) => {
+    const tableInfo = await queryInterface.describeTable("CompaniesSettings");
+
+    if (!tableInfo["closeTicketOnTransfer"]) {
+      await queryInterface.addColumn("CompaniesSettings", "closeTicketOnTransfer", {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
         allowNull: true
-      }),
-      queryInterface.addColumn("CompaniesSettings", "DirectTicketsToWallets", {
+      });
+    }
+
+    if (!tableInfo["DirectTicketsToWallets"]) {
+      await queryInterface.addColumn("CompaniesSettings", "DirectTicketsToWallets", {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
         allowNull: true
-      }),
-      queryInterface.addColumn("CompaniesSettings", "notificameHub", {
+      });
+    }
+
+    if (!tableInfo["notificameHub"]) {
+      await queryInterface.addColumn("CompaniesSettings", "notificameHub", {
         type: DataTypes.TEXT,
         allowNull: true
-      }),
-      queryInterface.addColumn("CompaniesSettings", "transferMessage", {
+      });
+    }
+
+    if (!tableInfo["transferMessage"]) {
+      await queryInterface.addColumn("CompaniesSettings", "transferMessage", {
         type: DataTypes.TEXT,
         allowNull: true
-      }),
-      queryInterface.addColumn("CompaniesSettings", "AcceptCallWhatsappMessage", {
+      });
+    }
+
+    if (!tableInfo["AcceptCallWhatsappMessage"]) {
+      await queryInterface.addColumn("CompaniesSettings", "AcceptCallWhatsappMessage", {
         type: DataTypes.TEXT,
         allowNull: true
-      }),
-      queryInterface.addColumn("CompaniesSettings", "sendQueuePositionMessage", {
+      });
+    }
+
+    if (!tableInfo["sendQueuePositionMessage"]) {
+      await queryInterface.addColumn("CompaniesSettings", "sendQueuePositionMessage", {
         type: DataTypes.TEXT,
         allowNull: true
-      })
-    ]);
+      });
+    }
   },
 
   down: (queryInterface: QueryInterface) => {
