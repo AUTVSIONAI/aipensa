@@ -109,7 +109,7 @@ export const ensureFlowSeeds = async () => {
 
       const existing = await FlowBuilderModel.findAll({
         where: { company_id: companyId },
-        attributes: ["id", "name"]
+        attributes: ["id", "name", "flow"]
       });
 
       const existingNames = new Set(existing.map(f => f.name));
@@ -144,8 +144,9 @@ export const ensureFlowSeeds = async () => {
             }
           });
           if (needsUpdate) {
+            const edges = Array.isArray(f.flow?.edges) ? f.flow?.edges : [];
             await FlowBuilderModel.update(
-              { flow: { nodes, edges: f.flow?.edges || [] } as any },
+              { flow: { nodes, edges } as any },
               { where: { id: flow.id } }
             );
           }
