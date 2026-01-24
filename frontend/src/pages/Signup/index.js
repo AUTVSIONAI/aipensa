@@ -59,7 +59,7 @@ import { i18n } from "../../translate/i18n";
 import { openApi } from "../../services/api";
 import toastError from "../../errors/toastError";
 import moment from "moment";
-import logo from "../../assets/logo.PNG";
+import logo from "../../assets/logo.png";
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import Link from "@material-ui/core/Link";
