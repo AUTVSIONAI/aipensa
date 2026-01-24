@@ -18,8 +18,11 @@ import {
 import { makeStyles } from '@material-ui/core/styles';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import WhatsAppIcon from '@material-ui/icons/WhatsApp';
-import SmartToyIcon from '@mui/icons-material/SmartToy'; // Robot icon for AI
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import SpeedIcon from '@material-ui/icons/Speed';
+import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
+import PsychologyIcon from "@mui/icons-material/Psychology";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import SecurityIcon from '@material-ui/icons/Security';
 import MenuIcon from '@material-ui/icons/Menu';
 
@@ -401,6 +404,9 @@ const LandingPage = () => {
             <img src={logoSrc} alt="AIPENSA Logo" className={classes.logo} onClick={() => window.scrollTo(0, 0)} />
             
             <div className={classes.navLinks}>
+              <Button className={classes.navLink} onClick={() => document.getElementById('how').scrollIntoView({ behavior: 'smooth' })}>
+                Como funciona
+              </Button>
               <Button className={classes.navLink} onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}>
                 Funcionalidades
               </Button>
@@ -454,6 +460,58 @@ const LandingPage = () => {
             </div>
             <img src={heroPreview} alt="Dashboard preview" style={{ width: '100%', display: 'block' }} />
           </Box>
+        </Container>
+      </Box>
+
+      <Box id="how" className={classes.featuresSection}>
+        <Container maxWidth="lg">
+          <Typography variant="h3" className={classes.sectionTitle}>
+            Como funciona
+          </Typography>
+          <Typography variant="body1" className={classes.sectionSubtitle}>
+            Três passos simples para começar
+          </Typography>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={4}>
+              <Card className={classes.featureCard}>
+                <Box className={classes.featureIconBox}>
+                  <QrCodeScannerIcon style={{ fontSize: 32 }} />
+                </Box>
+                <Typography variant="h6" className={classes.featureTitle}>
+                  Conecte o WhatsApp
+                </Typography>
+                <Typography variant="body2" className={classes.featureText}>
+                  Gere o QR Code em Conexões e leia com seu WhatsApp.
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Card className={classes.featureCard}>
+                <Box className={classes.featureIconBox}>
+                  <PsychologyIcon style={{ fontSize: 32 }} />
+                </Box>
+                <Typography variant="h6" className={classes.featureTitle}>
+                  Ative a IA
+                </Typography>
+                <Typography variant="body2" className={classes.featureText}>
+                  Crie seu agente no menu Prompts e vincule ao WhatsApp.
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Card className={classes.featureCard}>
+                <Box className={classes.featureIconBox}>
+                  <TrendingUpIcon style={{ fontSize: 32 }} />
+                </Box>
+                <Typography variant="h6" className={classes.featureTitle}>
+                  Escale as vendas
+                </Typography>
+                <Typography variant="body2" className={classes.featureText}>
+                  Use campanhas, agendamentos e fluxos para automatizar.
+                </Typography>
+              </Card>
+            </Grid>
+          </Grid>
         </Container>
       </Box>
 
