@@ -10,18 +10,10 @@ let io: SocketIO;
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     allowRequest: (req, callback) => {
-      // Permitir todas as requisições temporariamente
       callback(null, true);
     },
     cors: {
-      origin: (origin, cb) => {
-        try {
-          const allowed = process.env.FRONTEND_URL || origin;
-          return cb(null, allowed);
-        } catch {
-          return cb(null, origin || true);
-        }
-      },
+      origin: process.env.FRONTEND_URL || "https://aipensa.com",
       credentials: true,
       methods: ["GET", "POST"]
     }
