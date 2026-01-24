@@ -10,5 +10,6 @@ routes.post("/marketing/campaign", isAuth, MarketingController.createCampaign);
 routes.post("/marketing/adset", isAuth, MarketingController.createAdSet);
 routes.post("/marketing/creative", isAuth, MarketingController.createCreative);
 routes.post("/marketing/ad", isAuth, MarketingController.createAd);
+routes.post("/marketing/whatsapp-adflow", isAuth, MarketingController.createWhatsappAdFlow);
 
 export default routes;

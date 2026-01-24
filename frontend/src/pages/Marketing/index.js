@@ -37,6 +37,8 @@ const Marketing = () => {
   const [adName, setAdName] = useState("Anúncio WhatsApp");
   const [adsetId, setAdsetId] = useState("");
   const [adCreating, setAdCreating] = useState(false);
+  const [waPhoneE164, setWaPhoneE164] = useState("");
+  const [waFlowCreating, setWaFlowCreating] = useState(false);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -224,6 +226,47 @@ const Marketing = () => {
               <Box mt={2}>
                 <Button variant="contained" color="primary" disabled={adCreating} onClick={handleCreateAd}>
                   {adCreating ? "Criando..." : "Criar Ad PAUSED"}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12}>
+          <Card className={classes.card}>
+            <CardContent>
+              <Typography variant="h6">Fluxo WhatsApp (Campanha+AdSet+Creative+Ad)</Typography>
+              <Typography variant="body2" style={{ color: "#6b7280", marginBottom: 12 }}>
+                Use Page ID e o número em E.164 sem símbolos (ex.: 5511912499850). Image Hash é opcional.
+              </Typography>
+              <TextField fullWidth label="Page ID" value={pageId} onChange={(e) => setPageId(e.target.value)} style={{ marginTop: 12 }} />
+              <TextField fullWidth label="Número E.164 (ex.: 5511912499850)" value={waPhoneE164} onChange={(e) => setWaPhoneE164(e.target.value)} style={{ marginTop: 12 }} />
+              <TextField fullWidth label="Image Hash (opcional)" value={imageHash} onChange={(e) => setImageHash(e.target.value)} style={{ marginTop: 12 }} />
+              <TextField fullWidth label="Mensagem" value={messageText} onChange={(e) => setMessageText(e.target.value)} style={{ marginTop: 12 }} />
+              <Box mt={2}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  disabled={waFlowCreating}
+                  onClick={async () => {
+                    setWaFlowCreating(true);
+                    try {
+                      const { data } = await api.post("/marketing/whatsapp-adflow", {
+                        page_id: pageId,
+                        phone_number_e164: waPhoneE164,
+                        image_hash: imageHash || undefined,
+                        message_text: messageText || "Fale conosco no WhatsApp",
+                        targeting: { geo_locations: { countries: ["BR"] } },
+                        daily_budget: dailyBudget || 1000
+                      });
+                      alert(`Fluxo criado: Campaign ${data.campaign_id}, AdSet ${data.adset_id}, Creative ${data.creative_id}, Ad ${data.ad_id}`);
+                    } catch (err) {
+                      toastError(err);
+                    } finally {
+                      setWaFlowCreating(false);
+                    }
+                  }}
+                >
+                  {waFlowCreating ? "Criando..." : "Criar fluxo completo (PAUSED)"}
                 </Button>
               </Box>
             </CardContent>

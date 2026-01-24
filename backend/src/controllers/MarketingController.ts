@@ -206,3 +206,81 @@ export const createAd = async (req: Request, res: Response): Promise<Response> =
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };
+
+export const createWhatsappAdFlow = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { accessToken, adAccountId } = await getFbConfig(companyId);
+    if (!accessToken || !adAccountId) {
+      return res.status(400).json({ error: "Config ausente: access_token ou ad_account_id" });
+    }
+    const {
+      campaign_name = "Campanha WhatsApp",
+      adset_name = "AdSet WhatsApp",
+      daily_budget = 1000,
+      targeting = { geo_locations: { countries: ["BR"] } },
+      page_id,
+      phone_number_e164, // ex: 5511912345678
+      image_hash,
+      message_text = "Fale conosco no WhatsApp",
+      ad_name = "Anúncio WhatsApp"
+    } = req.body || {};
+
+    // 1) Campaign (MESSAGES)
+    const campResp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/campaigns`,
+      { name: campaign_name, objective: "MESSAGES", status: "PAUSED", special_ad_categories: [] },
+      { params: { access_token: accessToken } }
+    );
+    const campaign_id = campResp.data.id;
+
+    // 2) AdSet
+    const adsetResp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adsets`,
+      {
+        name: adset_name,
+        campaign_id,
+        daily_budget,
+        billing_event: "IMPRESSIONS",
+        optimization_goal: "REACH",
+        status: "PAUSED",
+        targeting
+      },
+      { params: { access_token: accessToken } }
+    );
+    const adset_id = adsetResp.data.id;
+
+    // 3) Creative (link to wa.me for fallback; páginas com WhatsApp conectado podem exibir CTA WhatsApp)
+    const waLink = `https://wa.me/${phone_number_e164}`;
+    const object_story_spec = {
+      page_id,
+      link_data: {
+        link: waLink,
+        message: message_text,
+        ...(image_hash ? { image_hash } : {})
+      }
+    };
+    const creativeResp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adcreatives`,
+      { name: "Creative WhatsApp Link", object_story_spec },
+      { params: { access_token: accessToken } }
+    );
+    const creative_id = creativeResp.data.id;
+
+    // 4) Ad
+    const adResp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/ads`,
+      { name: ad_name, adset_id, creative: { creative_id }, status: "PAUSED" },
+      { params: { access_token: accessToken } }
+    );
+
+    return res.json({
+      campaign_id,
+      adset_id,
+      creative_id,
+      ad_id: adResp.data.id
+    });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.response?.data || error.message });
+  }
+};
