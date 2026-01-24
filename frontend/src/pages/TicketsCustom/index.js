@@ -13,7 +13,7 @@ import { AuthContext } from "../../context/Auth/AuthContext";
 import api from "../../services/api";
 import { CircularProgress } from "@material-ui/core";
 import { getBackendUrl } from "../../config";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/logo.PNG";
 import logoDark from "../../assets/logo-black.png";
 import moment from "moment";
 
