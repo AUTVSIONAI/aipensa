@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody } from "@material-ui/core";
+import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -39,6 +39,7 @@ const Marketing = () => {
   const [adCreating, setAdCreating] = useState(false);
   const [waPhoneE164, setWaPhoneE164] = useState("");
   const [waFlowCreating, setWaFlowCreating] = useState(false);
+  const [pages, setPages] = useState([]);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -59,6 +60,15 @@ const Marketing = () => {
     };
     fetchStatus();
     fetchInsights();
+    const fetchPages = async () => {
+      try {
+        const { data } = await api.get("/marketing/pages");
+        setPages(data?.data || []);
+      } catch (err) {
+        toastError(err);
+      }
+    };
+    fetchPages();
   }, []);
 
   const handleCreateCampaign = async () => {
@@ -239,6 +249,18 @@ const Marketing = () => {
                 Use Page ID e o número em E.164 sem símbolos (ex.: 5511912499850). Image Hash é opcional.
               </Typography>
               <TextField fullWidth label="Page ID" value={pageId} onChange={(e) => setPageId(e.target.value)} style={{ marginTop: 12 }} />
+              <TextField
+                select
+                fullWidth
+                label="Selecionar Página"
+                value={pageId}
+                onChange={(e) => setPageId(e.target.value)}
+                style={{ marginTop: 12 }}
+              >
+                {pages.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>{p.name} ({p.id})</MenuItem>
+                ))}
+              </TextField>
               <TextField fullWidth label="Número E.164 (ex.: 5511912499850)" value={waPhoneE164} onChange={(e) => setWaPhoneE164(e.target.value)} style={{ marginTop: 12 }} />
               <TextField fullWidth label="Image Hash (opcional)" value={imageHash} onChange={(e) => setImageHash(e.target.value)} style={{ marginTop: 12 }} />
               <TextField fullWidth label="Mensagem" value={messageText} onChange={(e) => setMessageText(e.target.value)} style={{ marginTop: 12 }} />

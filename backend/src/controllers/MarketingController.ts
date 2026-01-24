@@ -75,6 +75,22 @@ export const insights = async (req: Request, res: Response): Promise<Response> =
   }
 };
 
+export const pages = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) {
+      return res.status(400).json({ error: "access_token ausente" });
+    }
+    const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`, {
+      params: { access_token: accessToken, fields: "id,name" }
+    });
+    return res.json(resp.data);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.response?.data || error.message });
+  }
+};
+
 export const createCampaign = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
