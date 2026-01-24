@@ -18,5 +18,6 @@ routes.post("/marketing/whatsapp-adflow", isAuth, MarketingController.createWhat
 routes.post("/marketing/campaign/status", isAuth, MarketingController.updateCampaignStatus);
 routes.post("/marketing/adset/status", isAuth, MarketingController.updateAdSetStatus);
 routes.post("/marketing/adimage", isAuth, upload.single("image"), MarketingController.uploadAdImage);
+routes.post("/marketing/publish", isAuth, MarketingController.publishContent);
 
 export default routes;

@@ -60,9 +60,10 @@ export const insights = async (req: Request, res: Response): Promise<Response> =
     if (!accessToken || !adAccountId) {
       return res.status(400).json({ error: "Config ausente: access_token ou ad_account_id" });
     }
+    const datePreset = (req.query?.date_preset as string) || "last_7d";
     const params = {
       access_token: accessToken,
-      date_preset: "last_7d",
+      date_preset: datePreset,
       level: "account",
       fields: "impressions,reach,clicks,spend,cpm,ctr"
     };
@@ -84,13 +85,118 @@ export const pages = async (req: Request, res: Response): Promise<Response> => {
       return res.status(400).json({ error: "access_token ausente" });
     }
     const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`, {
-      params: { access_token: accessToken, fields: "id,name" }
+      params: { access_token: accessToken, fields: "id,name,access_token,instagram_business_account{id,username,profile_picture_url}" }
     });
     return res.json(resp.data);
   } catch (error: any) {
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };
+
+export const publishContent = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) {
+      return res.status(400).json({ error: "access_token ausente" });
+    }
+
+    const { accountId, platform, message, imageUrl, scheduledTime } = req.body;
+    // platform: 'facebook' | 'instagram'
+
+    if (!accountId || !message) {
+      return res.status(400).json({ error: "Dados incompletos: accountId e message são obrigatórios" });
+    }
+
+    let result;
+
+    if (platform === "facebook") {
+      // Obter Page Access Token (necessário para publicar como a página)
+      // O accessToken atual é do usuário (admin), precisamos pegar o token da página na lista de pages
+      // Para simplificar, vamos buscar o token da página específica
+      const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${accountId}`, {
+        params: { fields: "access_token", access_token: accessToken }
+      });
+      const pageAccessToken = pageResp.data.access_token;
+
+      const endpoint = imageUrl 
+        ? `https://graph.facebook.com/${GRAPH_VERSION}/${accountId}/photos`
+        : `https://graph.facebook.com/${GRAPH_VERSION}/${accountId}/feed`;
+      
+      const body: any = {
+        access_token: pageAccessToken,
+        message: message
+      };
+
+      if (imageUrl) {
+        body.url = imageUrl;
+        body.caption = message; // Photos endpoint uses caption, not message
+        delete body.message;
+      }
+
+      if (scheduledTime) {
+         // Para agendamento, o campo é published=false e scheduled_publish_time (unix timestamp)
+         // Nota: Agendamento só funciona se estiver entre 10 min e 30 dias no futuro
+         body.published = false;
+         body.scheduled_publish_time = Math.floor(new Date(scheduledTime).getTime() / 1000);
+      }
+
+      const resp = await axios.post(endpoint, body);
+      result = resp.data;
+
+    } else if (platform === "instagram") {
+      // Instagram Publishing (Content Publishing API)
+      // 1. Create Media Container
+      // 2. Publish Media Container
+      
+      if (!imageUrl) {
+         return res.status(400).json({ error: "Instagram requer uma imagem (imageUrl)" });
+      }
+
+      const containerParams: any = {
+        access_token: accessToken, // User token is fine if it has permissions, or use Page Token linked to IG
+        image_url: imageUrl,
+        caption: message
+      };
+
+      // Check if we need to use page token (usually safer for business actions)
+      // Getting page token for the connected page? 
+      // Assuming accountId is the IG Business User ID.
+      // We need to act on behalf of the Page that owns the IG account.
+      // Actually, standard practice is to use the User Token with 'instagram_content_publish' permission 
+      // OR Page Token with 'instagram_content_publish'.
+      // Let's use the User Access Token we have (admin).
+      
+      const createContainer = await axios.post(
+        `https://graph.facebook.com/${GRAPH_VERSION}/${accountId}/media`,
+        null, 
+        { params: containerParams }
+      );
+      
+      const creationId = createContainer.data.id;
+
+      // Publish
+      const publishParams: any = {
+        access_token: accessToken,
+        creation_id: creationId
+      };
+
+      const publishResp = await axios.post(
+        `https://graph.facebook.com/${GRAPH_VERSION}/${accountId}/media_publish`,
+        null,
+        { params: publishParams }
+      );
+      
+      result = publishResp.data;
+    }
+
+    return res.json(result);
+
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.response?.data || error.message });
+  }
+};
+
 
 export const createCampaign = async (req: Request, res: Response): Promise<Response> => {
   try {
