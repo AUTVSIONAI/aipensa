@@ -174,6 +174,131 @@ const Marketing = () => {
         <Grid item xs={12} md={6}>
           <Card className={classes.card}>
             <CardContent>
+              <Typography variant="h6">Status Campanha/AdSet</Typography>
+              <TextField fullWidth label="Campaign ID" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ marginTop: 12 }} />
+              <Box mt={2} display="flex">
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={async () => {
+                    try {
+                      await api.post("/marketing/campaign/status", { campaign_id: campaignId, status: "ACTIVE" });
+                      alert("Campanha ativada");
+                    } catch (err) {
+                      toastError(err);
+                    }
+                  }}
+                >
+                  Ativar Campanha
+                </Button>
+                <Box ml={2}>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={async () => {
+                      try {
+                        await api.post("/marketing/campaign/status", { campaign_id: campaignId, status: "PAUSED" });
+                        alert("Campanha pausada");
+                      } catch (err) {
+                        toastError(err);
+                      }
+                    }}
+                  >
+                    Pausar Campanha
+                  </Button>
+                </Box>
+              </Box>
+              <TextField fullWidth label="AdSet ID" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} style={{ marginTop: 12 }} />
+              <Box mt={2} display="flex">
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={async () => {
+                    try {
+                      await api.post("/marketing/adset/status", { adset_id: adsetId, status: "ACTIVE" });
+                      alert("AdSet ativado");
+                    } catch (err) {
+                      toastError(err);
+                    }
+                  }}
+                >
+                  Ativar AdSet
+                </Button>
+                <Box ml={2}>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={async () => {
+                      try {
+                        await api.post("/marketing/adset/status", { adset_id: adsetId, status: "PAUSED" });
+                        alert("AdSet pausado");
+                      } catch (err) {
+                        toastError(err);
+                      }
+                    }}
+                  >
+                    Pausar AdSet
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card className={classes.card}>
+            <CardContent>
+              <Typography variant="h6">Imagem para Creative</Typography>
+              <Typography variant="body2" style={{ color: "#6b7280", marginBottom: 12 }}>
+                Faça upload para gerar image_hash e use no campo acima.
+              </Typography>
+              <input
+                type="file"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const form = new FormData();
+                    form.append("image", file);
+                    const { data } = await api.post("/marketing/adimage", form);
+                    const hash = Object.keys(data?.images || {})[0];
+                    setImageHash(hash || "");
+                    alert(`Image hash: ${hash}`);
+                  } catch (err) {
+                    toastError(err);
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12}>
+          <Card className={classes.card}>
+            <CardContent>
+              <Typography variant="h6">Enviar DM por Ticket</Typography>
+              <TextField fullWidth label="Ticket ID" onChange={(e) => (window.__ticketId = e.target.value)} style={{ marginTop: 12 }} />
+              <TextField fullWidth label="Mensagem" onChange={(e) => (window.__dmMessage = e.target.value)} style={{ marginTop: 12 }} />
+              <Box mt={2}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={async () => {
+                    try {
+                      await api.post("/instagram/message", { ticketId: window.__ticketId, message: window.__dmMessage });
+                      alert("Mensagem enviada");
+                    } catch (err) {
+                      toastError(err);
+                    }
+                  }}
+                >
+                  Enviar DM
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card className={classes.card}>
+            <CardContent>
               <Typography variant="h6">Criar Campanha</Typography>
               <TextField fullWidth label="Nome" value={name} onChange={(e) => setName(e.target.value)} style={{ marginTop: 12, marginBottom: 12 }} />
               <TextField fullWidth label="Objetivo" value={objective} onChange={(e) => setObjective(e.target.value)} />

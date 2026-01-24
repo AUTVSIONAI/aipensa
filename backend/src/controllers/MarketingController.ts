@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import axios from "axios";
 import Setting from "../models/Setting";
+import FormData from "form-data";
 
 const GRAPH_VERSION = "v19.0";
 
@@ -296,6 +297,71 @@ export const createWhatsappAdFlow = async (req: Request, res: Response): Promise
       creative_id,
       ad_id: adResp.data.id
     });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.response?.data || error.message });
+  }
+};
+
+export const updateCampaignStatus = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { accessToken } = await getFbConfig(companyId);
+    const { campaign_id, status } = req.body || {};
+    if (!accessToken || !campaign_id || !status) {
+      return res.status(400).json({ error: "params_missing" });
+    }
+    const resp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${campaign_id}`,
+      { status },
+      { params: { access_token: accessToken } }
+    );
+    return res.json(resp.data);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.response?.data || error.message });
+  }
+};
+
+export const updateAdSetStatus = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { accessToken } = await getFbConfig(companyId);
+    const { adset_id, status } = req.body || {};
+    if (!accessToken || !adset_id || !status) {
+      return res.status(400).json({ error: "params_missing" });
+    }
+    const resp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${adset_id}`,
+      { status },
+      { params: { access_token: accessToken } }
+    );
+    return res.json(resp.data);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.response?.data || error.message });
+  }
+};
+
+export const uploadAdImage = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { accessToken, adAccountId } = await getFbConfig(companyId);
+    if (!accessToken || !adAccountId) {
+      return res.status(400).json({ error: "config_missing" });
+    }
+    const file = (req as any).file;
+    if (!file) {
+      return res.status(400).json({ error: "file_missing" });
+    }
+    const form = new FormData();
+    form.append("source", file.buffer, { filename: file.originalname, contentType: file.mimetype });
+    const resp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adimages`,
+      form,
+      {
+        params: { access_token: accessToken },
+        headers: form.getHeaders()
+      }
+    );
+    return res.json(resp.data);
   } catch (error: any) {
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
