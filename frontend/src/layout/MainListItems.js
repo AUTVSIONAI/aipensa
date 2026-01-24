@@ -938,6 +938,21 @@ const MainListItems = ({ collapsed, drawerClose }) => {
                 />
               )}
 
+              {planExpired && (
+                <Can
+                  role={user.profile}
+                  perform="drawer-admin-items:view"
+                  yes={() => (
+                    <ListItemLink
+                      to="/marketing"
+                      primary={"Marketing"}
+                      icon={<CampaignIcon />}
+                      tooltip={collapsed}
+                    />
+                  )}
+                />
+              )}
+
               {user.super && (
                 <ListItemLink
                   to="/allConnections"
