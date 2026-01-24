@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem } from "@material-ui/core";
+import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -21,7 +21,9 @@ const Marketing = () => {
   const [objective, setObjective] = useState("MESSAGES");
   const [creating, setCreating] = useState(false);
   const [status, setStatus] = useState(null);
+  const [statusError, setStatusError] = useState(false);
   const [insights, setInsights] = useState([]);
+  const [insightsError, setInsightsError] = useState(false);
   const [campaignId, setCampaignId] = useState("");
   const [adsetName, setAdsetName] = useState("AdSet WhatsApp");
   const [dailyBudget, setDailyBudget] = useState("1000"); // R$10,00 => 1000 centavos
@@ -40,6 +42,8 @@ const Marketing = () => {
   const [waPhoneE164, setWaPhoneE164] = useState("");
   const [waFlowCreating, setWaFlowCreating] = useState(false);
   const [pages, setPages] = useState([]);
+  const [pagesError, setPagesError] = useState(false);
+  const [tab, setTab] = useState(0);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -48,6 +52,7 @@ const Marketing = () => {
         setStatus(data);
       } catch (err) {
         toastError(err);
+        setStatusError(true);
       }
     };
     const fetchInsights = async () => {
@@ -56,6 +61,7 @@ const Marketing = () => {
         setInsights(data.data || []);
       } catch (err) {
         toastError(err);
+        setInsightsError(true);
       }
     };
     fetchStatus();
@@ -66,6 +72,7 @@ const Marketing = () => {
         setPages(data?.data || []);
       } catch (err) {
         toastError(err);
+        setPagesError(true);
       }
     };
     fetchPages();
@@ -148,30 +155,70 @@ const Marketing = () => {
   return (
     <Container maxWidth="lg" className={classes.root}>
       <Box mb={4}>
-        <Typography variant="h3">Marketing (Meta)</Typography>
+        <Typography variant="h3">Marketing</Typography>
         <Typography variant="body1" style={{ color: "#6b7280" }}>
-          Criar campanha e visualizar insights da conta
+          Conecte sua conta Meta, crie campanhas e acompanhe resultados
         </Typography>
+        <Box mt={2}>
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            indicatorColor="primary"
+            textColor="primary"
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab label="Visão Geral" />
+            <Tab label="Criador de Campanha" />
+            <Tab label="AdSet" />
+            <Tab label="Creative & Ad" />
+            <Tab label="Fluxo WhatsApp" />
+            <Tab label="Controles" />
+            <Tab label="Insights" />
+          </Tabs>
+        </Box>
       </Box>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+      <Grid container spacing={3} hidden={tab !== 0}>
+        <Grid item xs={12}>
           <Card className={classes.card}>
             <CardContent>
               <Typography variant="h6">Status</Typography>
-              <Typography variant="body2">
-                {status ? `Conectado: ${status?.me?.name} (${status?.me?.id})` : "Carregando..."}
-              </Typography>
-              <Typography variant="body2">
-                {status ? `Ad Account: ${status?.adAccountId || "-"}` : ""}
-              </Typography>
-              <Typography variant="body2">
-                {status ? `Business: ${status?.businessId || "-"}` : ""}
-              </Typography>
+              {!statusError ? (
+                <>
+                  <Typography variant="body2">
+                    {status ? `Conectado: ${status?.me?.name} (${status?.me?.id})` : "Carregando..."}
+                  </Typography>
+                  <Typography variant="body2">
+                    {status ? `Ad Account: ${status?.adAccountId || "-"}` : ""}
+                  </Typography>
+                  <Typography variant="body2">
+                    {status ? `Business: ${status?.businessId || "-"}` : ""}
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Typography variant="body2" style={{ color: "#ef4444" }}>
+                    Não autorizado ou configuração ausente.
+                  </Typography>
+                  <Box mt={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => (window.location.href = "/connections")}
+                    >
+                      Conectar Facebook/Instagram
+                    </Button>
+                  </Box>
+                </>
+              )}
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={6}>
+      </Grid>
+
+      <Grid container spacing={3} hidden={tab !== 5}>
+        <Grid item xs={12}>
           <Card className={classes.card}>
             <CardContent>
               <Typography variant="h6">Status Campanha/AdSet</Typography>
@@ -244,7 +291,10 @@ const Marketing = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={6}>
+      </Grid>
+
+      <Grid container spacing={3} hidden={tab !== 3}>
+        <Grid item xs={12}>
           <Card className={classes.card}>
             <CardContent>
               <Typography variant="h6">Imagem para Creative</Typography>
@@ -296,6 +346,9 @@ const Marketing = () => {
             </CardContent>
           </Card>
         </Grid>
+      </Grid>
+
+      <Grid container spacing={3} hidden={tab !== 1}>
         <Grid item xs={12} md={6}>
           <Card className={classes.card}>
             <CardContent>
@@ -313,6 +366,9 @@ const Marketing = () => {
             </CardContent>
           </Card>
         </Grid>
+      </Grid>
+
+      <Grid container spacing={3} hidden={tab !== 2}>
         <Grid item xs={12} md={6}>
           <Card className={classes.card}>
             <CardContent>
@@ -332,6 +388,9 @@ const Marketing = () => {
             </CardContent>
           </Card>
         </Grid>
+      </Grid>
+
+      <Grid container spacing={3} hidden={tab !== 3}>
         <Grid item xs={12} md={6}>
           <Card className={classes.card}>
             <CardContent>
@@ -366,6 +425,9 @@ const Marketing = () => {
             </CardContent>
           </Card>
         </Grid>
+      </Grid>
+
+      <Grid container spacing={3} hidden={tab !== 4}>
         <Grid item xs={12}>
           <Card className={classes.card}>
             <CardContent>
@@ -419,11 +481,15 @@ const Marketing = () => {
             </CardContent>
           </Card>
         </Grid>
+      </Grid>
+
+      <Grid container spacing={3} hidden={tab !== 6}>
         <Grid item xs={12}>
           <Card className={classes.card}>
             <CardContent>
               <Typography variant="h6">Insights (últimos 7 dias)</Typography>
-              <Table size="small">
+              {!insightsError ? (
+                <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>Impressões</TableCell>
@@ -446,7 +512,23 @@ const Marketing = () => {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+                </Table>
+              ) : (
+                <>
+                  <Typography variant="body2" style={{ color: "#ef4444" }}>
+                    Não autorizado ou configuração ausente. Conecte em Conexões e tente novamente.
+                  </Typography>
+                  <Box mt={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => (window.location.href = "/connections")}
+                    >
+                      Ir para Conexões
+                    </Button>
+                  </Box>
+                </>
+              )}
             </CardContent>
           </Card>
         </Grid>
