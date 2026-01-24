@@ -51,6 +51,12 @@ import empresa from "../pages/Empresa";
 import documentacao from "../pages/documentacao";
 
 import LandingPage from "../pages/LandingPage";
+import HelpCenter from "../pages/HelpCenter";
+import ApiDocs from "../pages/ApiDocs";
+import Status from "../pages/Status";
+import Privacy from "../pages/Privacy";
+import Terms from "../pages/Terms";
+import LGPD from "../pages/LGPD";
 
 const Routes = () => {
   const [showCampaigns, setShowCampaigns] = useState(false);
@@ -68,6 +74,12 @@ const Routes = () => {
         <TicketsContextProvider>
           <Switch>
             <Route exact path="/" component={LandingPage} />
+            <Route exact path="/help" component={HelpCenter} />
+            <Route exact path="/docs" component={ApiDocs} />
+            <Route exact path="/status" component={Status} />
+            <Route exact path="/privacy" component={Privacy} />
+            <Route exact path="/terms" component={Terms} />
+            <Route exact path="/lgpd" component={LGPD} />
             <Route exact path="/login" component={Login} />
             <Route exact path="/signup" component={Signup} />
             <Route exact path="/forgetpsw" component={ForgetPassword} />

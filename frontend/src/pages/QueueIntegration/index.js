@@ -4,7 +4,7 @@ import n8n from "../../assets/n8n.png";
 import dialogflow from "../../assets/dialogflow.png";
 import webhooks from "../../assets/webhook.png";
 import typebot from "../../assets/typebot.jpg";
-import flowbuilder from "../../assets/flowbuilders.png"
+import flowbuilder from "../../assets/smartphone.jpeg"
 import { makeStyles } from "@material-ui/core/styles";
 import {
   Avatar,

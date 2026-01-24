@@ -23,7 +23,7 @@ import SpeedIcon from '@material-ui/icons/Speed';
 import SecurityIcon from '@material-ui/icons/Security';
 import MenuIcon from '@material-ui/icons/Menu';
 
-import background from '../../assets/wa-background.png'; 
+import heroPreview from '../../assets/smartphone.jpeg'; 
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -134,6 +134,27 @@ const useStyles = makeStyles((theme) => ({
     maxWidth: '600px',
     margin: '0 auto 64px auto',
   },
+  testimonialsSection: {
+    padding: theme.spacing(10, 0),
+    backgroundColor: '#ffffff',
+  },
+  testimonialCard: {
+    height: '100%',
+    borderRadius: '16px',
+    padding: theme.spacing(4),
+    border: '1px solid #e5e7eb',
+    backgroundColor: '#f9fafb',
+  },
+  testimonialQuote: {
+    color: '#111827',
+    fontWeight: 600,
+    marginBottom: theme.spacing(2),
+    lineHeight: 1.5,
+  },
+  testimonialAuthor: {
+    color: '#6b7280',
+    fontWeight: 500,
+  },
   featureCard: {
     height: '100%',
     display: 'flex',
@@ -175,6 +196,49 @@ const useStyles = makeStyles((theme) => ({
   pricingSection: {
     padding: theme.spacing(10, 0),
     backgroundColor: '#f9fafb',
+  },
+  ctaSection: {
+    padding: theme.spacing(10, 0),
+    background: 'linear-gradient(135deg,#eff6ff 0%, #ffffff 100%)',
+  },
+  heroMock: {
+    marginTop: theme.spacing(6),
+    borderRadius: '16px',
+    border: '1px solid #e5e7eb',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 10px 20px rgba(0,0,0,0.06)',
+    overflow: 'hidden'
+  },
+  heroMockHeader: {
+    display: 'flex',
+    gap: theme.spacing(1),
+    padding: theme.spacing(1.5),
+    borderBottom: '1px solid #e5e7eb',
+    backgroundColor: '#f9fafb'
+  },
+  heroMockDot: {
+    width: 10,
+    height: 10,
+    borderRadius: '9999px',
+    backgroundColor: '#d1d5db'
+  },
+  ctaContainer: {
+    borderRadius: '16px',
+    border: '1px solid #e5e7eb',
+    padding: theme.spacing(6),
+    backgroundColor: '#ffffff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing(4),
+  },
+  ctaText: {
+    color: '#111827',
+    fontWeight: 700,
+  },
+  ctaSubText: {
+    color: '#6b7280',
+    marginTop: theme.spacing(1),
   },
   pricingCard: {
     height: '100%',
@@ -382,6 +446,14 @@ const LandingPage = () => {
           >
             Teste Grátis Agora
           </Button>
+          <Box className={classes.heroMock}>
+            <div className={classes.heroMockHeader}>
+              <div className={classes.heroMockDot} />
+              <div className={classes.heroMockDot} />
+              <div className={classes.heroMockDot} />
+            </div>
+            <img src={heroPreview} alt="Dashboard preview" style={{ width: '100%', display: 'block' }} />
+          </Box>
         </Container>
       </Box>
 
@@ -432,6 +504,50 @@ const LandingPage = () => {
                 </Typography>
                 <Typography variant="body2" className={classes.featureText}>
                   Crie fluxos de conversa, agende mensagens e organize leads com um Kanban intuitivo e eficaz.
+                </Typography>
+              </Card>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* Testimonials */}
+      <Box className={classes.testimonialsSection}>
+        <Container maxWidth="lg">
+          <Typography variant="h3" className={classes.sectionTitle}>
+            Quem usa, recomenda
+          </Typography>
+          <Typography variant="body1" className={classes.sectionSubtitle}>
+            Resultados reais de negócios que adotaram atendimento inteligente
+          </Typography>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={4}>
+              <Card className={classes.testimonialCard}>
+                <Typography variant="body1" className={classes.testimonialQuote}>
+                  “A centralização dos atendimentos e a automação nos deram escala. Hoje vendemos mais com menos esforço.”
+                </Typography>
+                <Typography variant="body2" className={classes.testimonialAuthor}>
+                  Maria Silva, E‑Commerce
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Card className={classes.testimonialCard}>
+                <Typography variant="body1" className={classes.testimonialQuote}>
+                  “A IA responde rápido e com contexto. O time foca no que importa e o cliente é atendido mais rápido.”
+                </Typography>
+                <Typography variant="body2" className={classes.testimonialAuthor}>
+                  João Pereira, Serviços
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Card className={classes.testimonialCard}>
+                <Typography variant="body1" className={classes.testimonialQuote}>
+                  “Integrações simples e métricas claras. Conseguimos enxergar gargalos e melhorar nosso funil.”
+                </Typography>
+                <Typography variant="body2" className={classes.testimonialAuthor}>
+                  Ana Costa, Educação
                 </Typography>
               </Card>
             </Grid>
@@ -499,6 +615,84 @@ const LandingPage = () => {
         </Container>
       </Box>
 
+      {/* FAQ */}
+      <Box className={classes.featuresSection}>
+        <Container maxWidth="lg">
+          <Typography variant="h3" className={classes.sectionTitle}>
+            Perguntas Frequentes
+          </Typography>
+          <Typography variant="body1" className={classes.sectionSubtitle}>
+            Dúvidas comuns sobre implantação, suporte e recursos
+          </Typography>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <Card className={classes.featureCard}>
+                <Typography variant="h6" className={classes.featureTitle}>
+                  Como faço a conexão do WhatsApp?
+                </Typography>
+                <Typography variant="body2" className={classes.featureText}>
+                  Pelo menu Conexões, gere o QR Code e leia com o seu WhatsApp. Em minutos você estará atendendo centralizado.
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card className={classes.featureCard}>
+                <Typography variant="h6" className={classes.featureTitle}>
+                  A IA funciona com qualquer plano?
+                </Typography>
+                <Typography variant="body2" className={classes.featureText}>
+                  Sim. Todos os planos têm suporte a IA com modelos otimizados. Basta ativar o agente no menu Prompts.
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card className={classes.featureCard}>
+                <Typography variant="h6" className={classes.featureTitle}>
+                  Posso integrar com ferramentas externas?
+                </Typography>
+                <Typography variant="body2" className={classes.featureText}>
+                  Temos APIs e integrações oficiais. No plano Growth+ você habilita integrações externas rapidamente.
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card className={classes.featureCard}>
+                <Typography variant="h6" className={classes.featureTitle}>
+                  Como é o suporte?
+                </Typography>
+                <Typography variant="body2" className={classes.featureText}>
+                  Suporte prioritário nos planos superiores e central de ajuda com material atualizado para todos.
+                </Typography>
+              </Card>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* CTA Section */}
+      <Box className={classes.ctaSection}>
+        <Container maxWidth="lg">
+          <Box className={classes.ctaContainer}>
+            <Box>
+              <Typography variant="h5" className={classes.ctaText}>
+                Pronto para escalar seu atendimento?
+              </Typography>
+              <Typography variant="body1" className={classes.ctaSubText}>
+                Comece agora e tenha múltiplos WhatsApps, IA e automações em poucos minutos.
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              color="primary"
+              className={classes.planButton}
+              onClick={handleSignup}
+            >
+              Começar Agora
+            </Button>
+          </Box>
+        </Container>
+      </Box>
+
       {/* Footer */}
       <Box id="contact" className={classes.footer}>
         <Container maxWidth="lg">
@@ -521,9 +715,9 @@ const LandingPage = () => {
               <Typography variant="h6" style={{ color: '#ffffff', marginBottom: 16, fontSize: '1rem' }}>
                 Suporte
               </Typography>
-              <a href="#" className={classes.footerLink}>Central de Ajuda</a>
-              <a href="#" className={classes.footerLink}>API Docs</a>
-              <a href="#" className={classes.footerLink}>Status</a>
+              <a href="/help" className={classes.footerLink}>Central de Ajuda</a>
+              <a href="/docs" className={classes.footerLink}>API Docs</a>
+              <a href="/status" className={classes.footerLink}>Status</a>
             </Grid>
             <Grid item xs={12} md={4}>
               <Typography variant="h6" style={{ color: '#ffffff', marginBottom: 16, fontSize: '1rem' }}>
@@ -533,8 +727,11 @@ const LandingPage = () => {
                 Email: contato@aipensa.com
               </Typography>
               <Typography variant="body2" style={{ color: '#9ca3af' }}>
-                WhatsApp: +55 (11) 99999-9999
+                WhatsApp: +55 (11) 91249-9850
               </Typography>
+              <a href="/privacy" className={classes.footerLink}>Política de Privacidade</a>
+              <a href="/terms" className={classes.footerLink}>Termos de Uso</a>
+              <a href="/lgpd" className={classes.footerLink}>LGPD</a>
             </Grid>
           </Grid>
           <Box mt={8} pt={4} borderTop="1px solid #374151" textAlign="center">
