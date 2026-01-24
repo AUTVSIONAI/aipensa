@@ -55,7 +55,7 @@ const NotificationsPopOver = (volume) => {
 	const history = useHistory();
 	// const socketManager = useContext(SocketContext);
 	const { user, socket } = useContext(AuthContext);
-	const { profile, queues } = user;
+	const { profile, queues = [] } = user || {};
 
 	const ticketIdUrl = +history.location.pathname.split("/")[2];
 	const ticketIdRef = useRef(ticketIdUrl);

@@ -57,6 +57,8 @@ import Status from "../pages/Status";
 import Privacy from "../pages/Privacy";
 import Terms from "../pages/Terms";
 import LGPD from "../pages/LGPD";
+import HowItWorks from "../pages/HowItWorks";
+import Marketing from "../pages/Marketing";
 
 const Routes = () => {
   const [showCampaigns, setShowCampaigns] = useState(false);
@@ -74,6 +76,8 @@ const Routes = () => {
         <TicketsContextProvider>
           <Switch>
             <Route exact path="/" component={LandingPage} />
+            <Route exact path="/how-it-works" component={HowItWorks} />
+            <Route exact path="/marketing" component={Marketing} isPrivate />
             <Route exact path="/help" component={HelpCenter} />
             <Route exact path="/docs" component={ApiDocs} />
             <Route exact path="/status" component={Status} />

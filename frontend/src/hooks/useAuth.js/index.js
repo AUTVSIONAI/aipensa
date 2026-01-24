@@ -50,7 +50,8 @@ const useAuth = () => {
           originalRequest &&
           !originalRequest._retry &&
           !requestUrl.includes("/auth/login") &&
-          !requestUrl.includes("/auth/refresh_token")
+          !requestUrl.includes("/auth/refresh_token") &&
+          !requestUrl.includes("/auth/logout")
         ) {
           originalRequest._retry = true;
 
@@ -251,16 +252,14 @@ Entre em contato com o Suporte para mais informações! `);
     setLoading(true);
 
     try {
-      // socket.disconnect();
-      await api.delete("/auth/logout");
-      setIsAuth(false);
-      setUser({});
+      api.defaults.headers.Authorization = undefined;
       localStorage.removeItem("token");
       localStorage.removeItem("cshow");
-      // localStorage.removeItem("public-token");
-      api.defaults.headers.Authorization = undefined;
-      setLoading(false);
+      setIsAuth(false);
+      setUser({});
       history.push("/login");
+      try { await api.delete("/auth/logout"); } catch (_) {}
+      setLoading(false);
     } catch (err) {
       toastError(err);
       setLoading(false);

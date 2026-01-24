@@ -110,6 +110,9 @@ routes.use(marketingRoutes);
 // Instagram/Facebook Webhooks (Meta) - alias conforme configuração no Meta
 routes.get("/webhooks/instagram", WebHooksController.index);
 routes.post("/webhooks/instagram", WebHooksController.webHook);
+
+// Healthcheck
+routes.get("/health", (req, res) => res.json({ ok: true }));
 routes.use(instagramRoutes);
 
 // HubEcosystem

@@ -1,4 +1,7 @@
-const OnlyForSuperUser = ({ user, yes, no }) => user.super ? yes() : no();
+const OnlyForSuperUser = ({ user, yes, no }) =>
+  (user?.super === true || (user?.profile && String(user.profile).toUpperCase() === "ADMIN"))
+    ? yes()
+    : no();
 
 OnlyForSuperUser.defaultProps = {
     user: {},

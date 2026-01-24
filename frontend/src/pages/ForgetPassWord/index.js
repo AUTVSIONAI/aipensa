@@ -27,7 +27,7 @@ import toastError from '../../errors/toastError';
 import 'react-toastify/dist/ReactToastify.css';
 import { Helmet } from "react-helmet";
 import wallfundo from "../../assets/f002.png";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/logo.PNG";
 import EmailIcon from '@mui/icons-material/Email';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import LockIcon from '@mui/icons-material/Lock';

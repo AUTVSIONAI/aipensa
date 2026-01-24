@@ -21,7 +21,7 @@ import ColorModeContext from "../../layout/themeContext";
 import api from "../../services/api";
 import { getBackendUrl } from "../../config";
 
-import defaultLogoLight from "../../assets/logo.png";
+import defaultLogoLight from "../../assets/logo.PNG";
 import defaultLogoDark from "../../assets/logo-black.png";
 import defaultLogoFavicon from "../../assets/favicon.ico";
 import ColorBoxModal from "../ColorBoxModal/index.js";

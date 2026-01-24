@@ -10,7 +10,7 @@ import { ActiveMenuProvider } from "./context/ActiveMenuContext";
 import Favicon from "react-favicon";
 import { getBackendUrl } from "./config";
 import Routes from "./routes";
-import defaultLogoLight from "./assets/logo.png";
+import defaultLogoLight from "./assets/logo.PNG";
 import defaultLogoDark from "./assets/logo-black.png";
 import defaultLogoFavicon from "./assets/favicon.ico";
 import useSettings from "./hooks/useSettings";
@@ -198,51 +198,59 @@ const App = () => {
     console.log("|=========== handleSaveSetting ==========|")
     console.log("APP START")
     console.log("|========================================|")
-   
     
-    getPublicSetting("primaryColorLight")
-      .then((color) => {
-        if (isMounted) setPrimaryColorLight(color || "#0000FF");
-      })
-      .catch((error) => {
-        console.log("Error reading setting", error);
-      });
-    getPublicSetting("primaryColorDark")
-      .then((color) => {
-        if (isMounted) setPrimaryColorDark(color || "#39ACE7");
-      })
-      .catch((error) => {
-        console.log("Error reading setting", error);
-      });
-    getPublicSetting("appLogoLight")
-      .then((file) => {
-        if (isMounted) setAppLogoLight(file ? getBackendUrl() + "/public/" + file : defaultLogoLight);
-      })
-      .catch((error) => {
-        console.log("Error reading setting", error);
-      });
-    getPublicSetting("appLogoDark")
-      .then((file) => {
-        if (isMounted) setAppLogoDark(file ? getBackendUrl() + "/public/" + file : defaultLogoDark);
-      })
-      .catch((error) => {
-        console.log("Error reading setting", error);
-      });
-    getPublicSetting("appLogoFavicon")
-      .then((file) => {
-        if (isMounted) setAppLogoFavicon(file ? getBackendUrl() + "/public/" + file : defaultLogoFavicon);
-      })
-      .catch((error) => {
-        console.log("Error reading setting", error);
-      });
-    getPublicSetting("appName")
-      .then((name) => {
-        if (isMounted) setAppName(name || "Chat-flow");
-      })
-      .catch((error) => {
-        console.log("!==== Erro ao carregar temas: ====!", error);
-        if (isMounted) setAppName("chat-flow");
-      });
+    if (process.env.REACT_APP_DISABLE_PUBLIC_SETTINGS === "true") {
+      setPrimaryColorLight("#065183");
+      setPrimaryColorDark("#065183");
+      setAppLogoLight(defaultLogoLight);
+      setAppLogoDark(defaultLogoDark);
+      setAppLogoFavicon(defaultLogoFavicon);
+      setAppName("Empresa Admin - Não Deletar!");
+    } else {
+      getPublicSetting("primaryColorLight")
+        .then((color) => {
+          if (isMounted) setPrimaryColorLight(color || "#0000FF");
+        })
+        .catch((error) => {
+          console.log("Error reading setting", error);
+        });
+      getPublicSetting("primaryColorDark")
+        .then((color) => {
+          if (isMounted) setPrimaryColorDark(color || "#39ACE7");
+        })
+        .catch((error) => {
+          console.log("Error reading setting", error);
+        });
+      getPublicSetting("appLogoLight")
+        .then((file) => {
+          if (isMounted) setAppLogoLight(file ? getBackendUrl() + "/public/" + file : defaultLogoLight);
+        })
+        .catch((error) => {
+          console.log("Error reading setting", error);
+        });
+      getPublicSetting("appLogoDark")
+        .then((file) => {
+          if (isMounted) setAppLogoDark(file ? getBackendUrl() + "/public/" + file : defaultLogoDark);
+        })
+        .catch((error) => {
+          console.log("Error reading setting", error);
+        });
+      getPublicSetting("appLogoFavicon")
+        .then((file) => {
+          if (isMounted) setAppLogoFavicon(file ? getBackendUrl() + "/public/" + file : defaultLogoFavicon);
+        })
+        .catch((error) => {
+          console.log("Error reading setting", error);
+        });
+      getPublicSetting("appName")
+        .then((name) => {
+          if (isMounted) setAppName(name || "Chat-flow");
+        })
+        .catch((error) => {
+          console.log("!==== Erro ao carregar temas: ====!", error);
+          if (isMounted) setAppName("chat-flow");
+        });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return () => {
       isMounted = false;

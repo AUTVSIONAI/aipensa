@@ -558,11 +558,6 @@ const Login = () => {
                     className={classes.passwordStrengthBar}
                     variant="determinate"
                     value={(passwordStrength / 5) * 100}
-                    style={{ 
-                      "& .MuiLinearProgress-bar": {
-                        backgroundColor: getPasswordStrengthColor(passwordStrength)
-                      }
-                    }}
                   />
                   <Typography className={classes.passwordStrengthText}>
                     {getPasswordStrengthText(passwordStrength)}
