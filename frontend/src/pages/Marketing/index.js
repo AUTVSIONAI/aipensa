@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider } from "@material-ui/core";
+import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider, Chip, Stepper, Step, StepLabel, CircularProgress } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -22,8 +22,10 @@ const Marketing = () => {
   const [creating, setCreating] = useState(false);
   const [status, setStatus] = useState(null);
   const [statusError, setStatusError] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(true);
   const [insights, setInsights] = useState([]);
   const [insightsError, setInsightsError] = useState(false);
+  const [insightsLoading, setInsightsLoading] = useState(true);
   const [campaignId, setCampaignId] = useState("");
   const [adsetName, setAdsetName] = useState("AdSet WhatsApp");
   const [dailyBudget, setDailyBudget] = useState("1000"); // R$10,00 => 1000 centavos
@@ -44,30 +46,38 @@ const Marketing = () => {
   const [pages, setPages] = useState([]);
   const [pagesError, setPagesError] = useState(false);
   const [tab, setTab] = useState(0);
+  const [flowStep, setFlowStep] = useState(0);
 
   useEffect(() => {
     const fetchStatus = async () => {
       try {
+        setStatusLoading(true);
         const { data } = await api.get("/marketing/status");
         setStatus(data);
       } catch (err) {
         toastError(err);
         setStatusError(true);
+      } finally {
+        setStatusLoading(false);
       }
     };
     const fetchInsights = async () => {
       try {
+        setInsightsLoading(true);
         const { data } = await api.get("/marketing/insights");
         setInsights(data.data || []);
       } catch (err) {
         toastError(err);
         setInsightsError(true);
+      } finally {
+        setInsightsLoading(false);
       }
     };
     fetchStatus();
     fetchInsights();
     const fetchPages = async () => {
       try {
+        setPagesError(false);
         const { data } = await api.get("/marketing/pages");
         setPages(data?.data || []);
       } catch (err) {
@@ -159,6 +169,11 @@ const Marketing = () => {
         <Typography variant="body1" style={{ color: "#6b7280" }}>
           Conecte sua conta Meta, crie campanhas e acompanhe resultados
         </Typography>
+        <Box mt={2} display="flex" gap={8}>
+          <Chip label={status?.adAccountId ? "Ad Account conectado" : "Ad Account não conectado"} color={status?.adAccountId ? "primary" : "default"} />
+          <Chip label={status?.businessId ? "Business conectado" : "Business não conectado"} color={status?.businessId ? "primary" : "default"} />
+          <Chip label={`Objetivo: ${objective}`} />
+        </Box>
         <Box mt={2}>
           <Tabs
             value={tab}
@@ -186,15 +201,24 @@ const Marketing = () => {
               <Typography variant="h6">Status</Typography>
               {!statusError ? (
                 <>
-                  <Typography variant="body2">
-                    {status ? `Conectado: ${status?.me?.name} (${status?.me?.id})` : "Carregando..."}
-                  </Typography>
-                  <Typography variant="body2">
-                    {status ? `Ad Account: ${status?.adAccountId || "-"}` : ""}
-                  </Typography>
-                  <Typography variant="body2">
-                    {status ? `Business: ${status?.businessId || "-"}` : ""}
-                  </Typography>
+                  {statusLoading ? (
+                    <Box display="flex" alignItems="center" gap={8}>
+                      <CircularProgress size={20} />
+                      <Typography variant="body2">Carregando status...</Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Typography variant="body2">
+                        {status ? `Conectado: ${status?.me?.name} (${status?.me?.id})` : "-"}
+                      </Typography>
+                      <Typography variant="body2">
+                        {status ? `Ad Account: ${status?.adAccountId || "-"}` : "-"}
+                      </Typography>
+                      <Typography variant="body2">
+                        {status ? `Business: ${status?.businessId || "-"}` : "-"}
+                      </Typography>
+                    </>
+                  )}
                 </>
               ) : (
                 <>
@@ -432,6 +456,14 @@ const Marketing = () => {
           <Card className={classes.card}>
             <CardContent>
               <Typography variant="h6">Fluxo WhatsApp (Campanha+AdSet+Creative+Ad)</Typography>
+              <Box mt={1} mb={2}>
+                <Stepper activeStep={flowStep} alternativeLabel>
+                  <Step><StepLabel>Campanha</StepLabel></Step>
+                  <Step><StepLabel>AdSet</StepLabel></Step>
+                  <Step><StepLabel>Creative</StepLabel></Step>
+                  <Step><StepLabel>Ad</StepLabel></Step>
+                </Stepper>
+              </Box>
               <Typography variant="body2" style={{ color: "#6b7280", marginBottom: 12 }}>
                 Use Page ID e o número em E.164 sem símbolos (ex.: 5511912499850). Image Hash é opcional.
               </Typography>
@@ -467,6 +499,7 @@ const Marketing = () => {
                         targeting: { geo_locations: { countries: ["BR"] } },
                         daily_budget: dailyBudget || 1000
                       });
+                      setFlowStep(3);
                       alert(`Fluxo criado: Campaign ${data.campaign_id}, AdSet ${data.adset_id}, Creative ${data.creative_id}, Ad ${data.ad_id}`);
                     } catch (err) {
                       toastError(err);
@@ -489,7 +522,13 @@ const Marketing = () => {
             <CardContent>
               <Typography variant="h6">Insights (últimos 7 dias)</Typography>
               {!insightsError ? (
-                <Table size="small">
+                insightsLoading ? (
+                  <Box display="flex" alignItems="center" gap={8}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2">Carregando insights...</Typography>
+                  </Box>
+                ) : (
+                  <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>Impressões</TableCell>
@@ -512,7 +551,8 @@ const Marketing = () => {
                     </TableRow>
                   ))}
                 </TableBody>
-                </Table>
+                  </Table>
+                )
               ) : (
                 <>
                   <Typography variant="body2" style={{ color: "#ef4444" }}>
