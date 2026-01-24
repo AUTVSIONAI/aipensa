@@ -11,7 +11,9 @@ const useStyles = makeStyles((theme) => ({
   },
   card: {
     border: "1px solid #e5e7eb",
-    borderRadius: 12
+    borderRadius: 12,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+    padding: theme.spacing(2)
   }
 }));
 
@@ -377,8 +379,8 @@ const Marketing = () => {
           <Card className={classes.card}>
             <CardContent>
               <Typography variant="h6">Criar Campanha</Typography>
-              <TextField fullWidth label="Nome" value={name} onChange={(e) => setName(e.target.value)} style={{ marginTop: 12, marginBottom: 12 }} />
-              <TextField fullWidth label="Objetivo" value={objective} onChange={(e) => setObjective(e.target.value)} />
+              <TextField fullWidth label="Nome da Campanha" value={name} onChange={(e) => setName(e.target.value)} style={{ marginTop: 12, marginBottom: 12 }} />
+              <TextField fullWidth label="Objetivo (MESSAGES)" value={objective} onChange={(e) => setObjective(e.target.value)} helperText="Use 'MESSAGES' para campanhas de mensagens." />
               <Box mt={2}>
                 <Button variant="contained" color="primary" disabled={creating} onClick={handleCreateCampaign}>
                   {creating ? "Criando..." : "Criar campanha PAUSED"}
@@ -398,11 +400,11 @@ const Marketing = () => {
             <CardContent>
               <Typography variant="h6">Criar AdSet</Typography>
               <TextField fullWidth label="Nome do AdSet" value={adsetName} onChange={(e) => setAdsetName(e.target.value)} style={{ marginTop: 12, marginBottom: 12 }} />
-              <TextField fullWidth label="Daily Budget (centavos)" value={dailyBudget} onChange={(e) => setDailyBudget(e.target.value)} />
-              <TextField fullWidth label="Start Time (ISO)" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={{ marginTop: 12 }} />
-              <TextField fullWidth label="End Time (ISO)" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={{ marginTop: 12 }} />
+              <TextField fullWidth label="Daily Budget (centavos)" value={dailyBudget} onChange={(e) => setDailyBudget(e.target.value)} helperText="Ex.: 1000 = R$10,00" />
+              <TextField fullWidth label="Start Time (ISO)" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={{ marginTop: 12 }} helperText="Opcional. Ex.: 2026-01-25T00:00:00Z" />
+              <TextField fullWidth label="End Time (ISO)" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={{ marginTop: 12 }} helperText="Opcional. Ex.: 2026-02-01T00:00:00Z" />
               <Box mt={2}>
-                <Button variant="contained" color="primary" disabled={adsetCreating} onClick={handleCreateAdSet}>
+                <Button variant="contained" color="primary" disabled={adsetCreating || !campaignId} onClick={handleCreateAdSet}>
                   {adsetCreating ? "Criando..." : "Criar AdSet PAUSED"}
                 </Button>
               </Box>
@@ -419,12 +421,12 @@ const Marketing = () => {
           <Card className={classes.card}>
             <CardContent>
               <Typography variant="h6">Criar Creative (Link)</Typography>
-              <TextField fullWidth label="Page ID" value={pageId} onChange={(e) => setPageId(e.target.value)} style={{ marginTop: 12, marginBottom: 12 }} />
-              <TextField fullWidth label="Link" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
-              <TextField fullWidth label="Image Hash" value={imageHash} onChange={(e) => setImageHash(e.target.value)} style={{ marginTop: 12 }} />
-              <TextField fullWidth label="Mensagem" value={messageText} onChange={(e) => setMessageText(e.target.value)} style={{ marginTop: 12 }} />
+              <TextField fullWidth label="Page ID" value={pageId} onChange={(e) => setPageId(e.target.value)} style={{ marginTop: 12, marginBottom: 12 }} helperText="Selecione a Página conectada em Conexões ou informe o ID manualmente." />
+              <TextField fullWidth label="Link" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} helperText="Use um link válido. Para WhatsApp: https://wa.me/5511912499850" />
+              <TextField fullWidth label="Image Hash" value={imageHash} onChange={(e) => setImageHash(e.target.value)} style={{ marginTop: 12 }} helperText="Gere em 'Imagem para Creative' (upload)." />
+              <TextField fullWidth label="Mensagem" value={messageText} onChange={(e) => setMessageText(e.target.value)} style={{ marginTop: 12 }} helperText="Texto exibido no anúncio (call-to-action)." />
               <Box mt={2}>
-                <Button variant="contained" color="primary" disabled={creativeCreating} onClick={handleCreateCreative}>
+                <Button variant="contained" color="primary" disabled={creativeCreating || !pageId} onClick={handleCreateCreative}>
                   {creativeCreating ? "Criando..." : "Criar Creative"}
                 </Button>
               </Box>
@@ -439,10 +441,10 @@ const Marketing = () => {
             <CardContent>
               <Typography variant="h6">Criar Ad</Typography>
               <TextField fullWidth label="Nome do Ad" value={adName} onChange={(e) => setAdName(e.target.value)} style={{ marginTop: 12, marginBottom: 12 }} />
-              <TextField fullWidth label="AdSet ID" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} />
-              <TextField fullWidth label="Creative ID" value={creativeId} onChange={(e) => setCreativeId(e.target.value)} style={{ marginTop: 12 }} />
+              <TextField fullWidth required label="AdSet ID" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} helperText="Informe o AdSet ID criado acima." />
+              <TextField fullWidth required label="Creative ID" value={creativeId} onChange={(e) => setCreativeId(e.target.value)} style={{ marginTop: 12 }} helperText="Informe o Creative ID criado acima." />
               <Box mt={2}>
-                <Button variant="contained" color="primary" disabled={adCreating} onClick={handleCreateAd}>
+                <Button variant="contained" color="primary" disabled={adCreating || !adsetId || !creativeId} onClick={handleCreateAd}>
                   {adCreating ? "Criando..." : "Criar Ad PAUSED"}
                 </Button>
               </Box>
@@ -467,7 +469,7 @@ const Marketing = () => {
               <Typography variant="body2" style={{ color: "#6b7280", marginBottom: 12 }}>
                 Use Page ID e o número em E.164 sem símbolos (ex.: 5511912499850). Image Hash é opcional.
               </Typography>
-              <TextField fullWidth label="Page ID" value={pageId} onChange={(e) => setPageId(e.target.value)} style={{ marginTop: 12 }} />
+              <TextField fullWidth label="Page ID" value={pageId} onChange={(e) => setPageId(e.target.value)} style={{ marginTop: 12 }} helperText="Selecione abaixo para preencher automaticamente." />
               <TextField
                 select
                 fullWidth
@@ -476,13 +478,23 @@ const Marketing = () => {
                 onChange={(e) => setPageId(e.target.value)}
                 style={{ marginTop: 12 }}
               >
-                {pages.map((p) => (
-                  <MenuItem key={p.id} value={p.id}>{p.name} ({p.id})</MenuItem>
-                ))}
+                {!pagesError && pages.length === 0 ? (
+                  <MenuItem disabled value="">
+                    Carregando páginas...
+                  </MenuItem>
+                ) : pagesError ? (
+                  <MenuItem disabled value="">
+                    Erro ao carregar páginas. Verifique a conexão.
+                  </MenuItem>
+                ) : (
+                  pages.map((p) => (
+                    <MenuItem key={p.id} value={p.id}>{p.name} ({p.id})</MenuItem>
+                  ))
+                )}
               </TextField>
-              <TextField fullWidth label="Número E.164 (ex.: 5511912499850)" value={waPhoneE164} onChange={(e) => setWaPhoneE164(e.target.value)} style={{ marginTop: 12 }} />
-              <TextField fullWidth label="Image Hash (opcional)" value={imageHash} onChange={(e) => setImageHash(e.target.value)} style={{ marginTop: 12 }} />
-              <TextField fullWidth label="Mensagem" value={messageText} onChange={(e) => setMessageText(e.target.value)} style={{ marginTop: 12 }} />
+              <TextField fullWidth label="Número E.164 (ex.: 5511912499850)" value={waPhoneE164} onChange={(e) => setWaPhoneE164(e.target.value)} style={{ marginTop: 12 }} helperText="Formato internacional sem símbolos." />
+              <TextField fullWidth label="Image Hash (opcional)" value={imageHash} onChange={(e) => setImageHash(e.target.value)} style={{ marginTop: 12 }} helperText="Se vazio, será criado um anúncio de link sem imagem." />
+              <TextField fullWidth label="Mensagem" value={messageText} onChange={(e) => setMessageText(e.target.value)} style={{ marginTop: 12 }} helperText="Texto do anúncio (call-to-action)." />
               <Box mt={2}>
                 <Button
                   variant="contained"
