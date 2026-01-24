@@ -27,6 +27,7 @@ import SecurityIcon from '@material-ui/icons/Security';
 import MenuIcon from '@material-ui/icons/Menu';
 
 import heroPreview from '../../assets/smartphone.jpeg'; 
+import DashboardMock from '../../components/DashboardMock';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -176,6 +177,25 @@ const useStyles = makeStyles((theme) => ({
       borderColor: '#bfdbfe',
     },
   },
+  stepAnimated1: {
+    animation: '$fadeUp 0.6s ease-out',
+    animationDelay: '0.1s',
+    animationFillMode: 'backwards'
+  },
+  stepAnimated2: {
+    animation: '$fadeUp 0.6s ease-out',
+    animationDelay: '0.25s',
+    animationFillMode: 'backwards'
+  },
+  stepAnimated3: {
+    animation: '$fadeUp 0.6s ease-out',
+    animationDelay: '0.4s',
+    animationFillMode: 'backwards'
+  },
+  '@keyframes fadeUp': {
+    '0%': { opacity: 0, transform: 'translateY(8px)' },
+    '100%': { opacity: 1, transform: 'translateY(0)' }
+  },
   featureIconBox: {
     width: 64,
     height: 64,
@@ -211,6 +231,21 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: '#ffffff',
     boxShadow: '0 10px 20px rgba(0,0,0,0.06)',
     overflow: 'hidden'
+  },
+  heroVisuals: {
+    marginTop: theme.spacing(6),
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(3),
+    alignItems: 'stretch'
+  },
+  smartphoneImg: {
+    width: '100%',
+    borderRadius: 16,
+    border: '1px solid #e5e7eb',
+    boxShadow: '0 10px 20px rgba(0,0,0,0.06)',
+    objectFit: 'cover',
+    marginBottom: theme.spacing(2)
   },
   heroMockHeader: {
     display: 'flex',
@@ -452,13 +487,16 @@ const LandingPage = () => {
           >
             Teste Grátis Agora
           </Button>
-          <Box className={classes.heroMock}>
-            <div className={classes.heroMockHeader}>
-              <div className={classes.heroMockDot} />
-              <div className={classes.heroMockDot} />
-              <div className={classes.heroMockDot} />
-            </div>
-            <img src={heroPreview} alt="Dashboard preview" style={{ width: '100%', display: 'block' }} />
+          <Box className={classes.heroVisuals}>
+            <img src={heroPreview} alt="Smartphone preview" className={classes.smartphoneImg} />
+            <Box className={classes.heroMock}>
+              <div className={classes.heroMockHeader}>
+                <div className={classes.heroMockDot} />
+                <div className={classes.heroMockDot} />
+                <div className={classes.heroMockDot} />
+              </div>
+              <DashboardMock />
+            </Box>
           </Box>
         </Container>
       </Box>
@@ -473,7 +511,7 @@ const LandingPage = () => {
           </Typography>
           <Grid container spacing={4}>
             <Grid item xs={12} md={4}>
-              <Card className={classes.featureCard}>
+              <Card className={`${classes.featureCard} ${classes.stepAnimated1}`}>
                 <Box className={classes.featureIconBox}>
                   <QrCodeScannerIcon style={{ fontSize: 32 }} />
                 </Box>
@@ -486,7 +524,7 @@ const LandingPage = () => {
               </Card>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Card className={classes.featureCard}>
+              <Card className={`${classes.featureCard} ${classes.stepAnimated2}`}>
                 <Box className={classes.featureIconBox}>
                   <PsychologyIcon style={{ fontSize: 32 }} />
                 </Box>
@@ -499,7 +537,7 @@ const LandingPage = () => {
               </Card>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Card className={classes.featureCard}>
+              <Card className={`${classes.featureCard} ${classes.stepAnimated3}`}>
                 <Box className={classes.featureIconBox}>
                   <TrendingUpIcon style={{ fontSize: 32 }} />
                 </Box>
