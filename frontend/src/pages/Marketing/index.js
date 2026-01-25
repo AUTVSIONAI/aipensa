@@ -544,18 +544,31 @@ const Marketing = () => {
                 ) : (
                   <Box textAlign="center" py={4}>
                     <InfoOutlinedIcon style={{ fontSize: 48, color: "#ef4444", marginBottom: 16 }} />
-                    <Typography variant="h6" gutterBottom>Conexão Necessária</Typography>
+                    <Typography variant="h6" gutterBottom>
+                       {statusErrorMsg ? "Erro de Conexão" : "Conexão Necessária"}
+                    </Typography>
                     <Typography variant="body2" color="textSecondary" paragraph>
-                      Para utilizar as ferramentas de marketing, você precisa conectar sua conta do Facebook/Instagram.
+                      {statusErrorMsg || "Para utilizar as ferramentas de marketing, você precisa conectar sua conta do Facebook/Instagram."}
                     </Typography>
                     <Button
                       variant="contained"
                       color="primary"
                       size="large"
                       onClick={() => (window.location.href = "/connections")}
+                      style={{ marginRight: 16 }}
                     >
-                      Conectar Agora
+                      Verificar Conexões
                     </Button>
+                    {statusErrorMsg && (
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        size="large"
+                        onClick={() => window.location.reload()}
+                      >
+                        Tentar Novamente
+                      </Button>
+                    )}
                   </Box>
                 )}
                 </Section>

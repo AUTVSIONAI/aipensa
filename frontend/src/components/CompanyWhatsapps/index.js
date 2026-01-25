@@ -153,7 +153,7 @@ const WhatsAppModalCompany = ({
       const id = response.id || response.userID;
 
       api
-        .post("/facebook", {
+        .post("/facebook/", {
           facebookUserId: id,
           facebookUserToken: accessToken
         })
