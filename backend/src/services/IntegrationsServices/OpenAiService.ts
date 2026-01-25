@@ -134,6 +134,73 @@ const transcribeWithGemini = async (
   return "Áudio recebido (transcrição não disponível com Gemini)";
 };
 
+import { getMarketingInsights, getMarketingCampaigns } from "../MarketingServices/MarketingToolService";
+
+const handleMarketingAction = async (
+  response: string,
+  ticket: Ticket,
+  contact: Contact
+): Promise<string> => {
+  // Regex para capturar tags [MARKETING]
+  // Exemplo: [MARKETING] { "action": "get_insights", "period": "last_7d" } [/MARKETING]
+  const marketingRegex = /\[MARKETING\]([\s\S]*?)\[\/MARKETING\]/;
+  const match = response.match(marketingRegex);
+
+  if (match && match[1]) {
+    try {
+      const jsonContent = match[1].trim();
+      console.log("[OpenAiService] Marketing JSON Content:", jsonContent);
+      
+      const actionData = JSON.parse(jsonContent);
+      const { action, period, status } = actionData;
+      
+      let result = "";
+
+      if (action === "get_insights") {
+        const insights = await getMarketingInsights(ticket.companyId, period || "last_7d");
+        
+        // Formatar insights para texto amigável
+        const data = insights.data[0];
+        if (data) {
+          result = `📊 *Resumo de Insights (${period || "Últimos 7 dias"})*\n\n` +
+                   `👁️ Impressões: ${data.impressions}\n` +
+                   `👥 Alcance: ${data.reach}\n` +
+                   `👆 Cliques: ${data.clicks}\n` +
+                   `💰 Gasto: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.spend)}\n` +
+                   `📉 CPM: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.cpm)}\n` +
+                   `🖱️ CTR: ${parseFloat(data.ctr).toFixed(2)}%`;
+        } else {
+          result = "Não encontrei dados de insights para este período.";
+        }
+      } else if (action === "get_campaigns") {
+        const campaigns = await getMarketingCampaigns(ticket.companyId, status || "ACTIVE");
+        
+        if (campaigns.data && campaigns.data.length > 0) {
+          result = `📢 *Campanhas Ativas*\n\n`;
+          campaigns.data.forEach((camp: any) => {
+             result += `🔹 *${camp.name}*\n` +
+                       `   Status: ${camp.status}\n` +
+                       `   Objetivo: ${camp.objective}\n` +
+                       `   Orçamento: ${camp.daily_budget ? `Diário: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(camp.daily_budget/100)}` : `Total: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(camp.lifetime_budget/100)}`}\n\n`;
+          });
+        } else {
+          result = "Não encontrei campanhas ativas no momento.";
+        }
+      } else {
+        result = "Ação de marketing não reconhecida.";
+      }
+
+      // Remover a tag e adicionar o resultado na resposta
+      return response.replace(match[0], "").trim() + "\n\n" + result;
+
+    } catch (e) {
+      console.error("Erro ao executar ação de Marketing via AI:", e);
+      return response.replace(match[0], "").trim() + "\n\n(Erro ao processar solicitação de marketing)";
+    }
+  }
+  return response;
+};
+
 const handleScheduleAction = async (
   response: string, 
   ticket: Ticket, 
@@ -257,7 +324,14 @@ export const handleOpenAi = async (
   )} para identificar o cliente.\nData e Hora atual: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}\nSua resposta deve usar no máximo ${
     openAiSettings.maxTokens
   } tokens e cuide para não truncar o final.\nSempre que possível, mencione o nome dele para ser mais personalizado o atendimento e mais educado. Quando a resposta requer uma transferência para o setor de atendimento, comece sua resposta com 'Ação: Transferir para o setor de atendimento'.\n
-                ${openAiSettings.prompt}\n`;
+  
+  CAPACIDADES DE MARKETING (SUPERAGENT):
+  Você pode acessar dados de marketing (Meta/Facebook Ads) usando comandos JSON específicos.
+  - Para ver métricas (insights): Use a tag [MARKETING] { "action": "get_insights", "period": "last_7d" } [/MARKETING] (periodos: today, yesterday, last_7d, last_30d)
+  - Para listar campanhas: Use a tag [MARKETING] { "action": "get_campaigns", "status": "ACTIVE" } [/MARKETING] (status: ACTIVE, PAUSED)
+  NÃO invente dados. Se o usuário perguntar sobre campanhas ou desempenho, use essas tags e aguarde a resposta do sistema.
+
+  ${openAiSettings.prompt}\n`;
 
   let messagesOpenAi = [];
 
@@ -338,8 +412,18 @@ export const handleOpenAi = async (
       }
 
       if (response) {
-        response = await handleScheduleAction(response, ticket, contact);
-      }
+    // Processar ações de agendamento
+    response = await handleScheduleAction(response, ticket, contact);
+    
+    // Processar ações de marketing
+    response = await handleMarketingAction(response, ticket, contact);
+  }
+
+  // Verifica se a resposta foi processada (schedule ou marketing)
+  // Se ainda contiver tags (erro ou não processado), poderíamos limpar ou deixar como está.
+  // Vamos assumir que as funções acima já limpam as tags.
+
+  if (response) {
       const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
         text: `\u200e ${response!}`
       });
