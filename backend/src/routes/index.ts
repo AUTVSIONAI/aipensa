@@ -83,6 +83,7 @@ routes.use(announcementRoutes);
 routes.use(chatRoutes);
 routes.use(chatBotRoutes);
 routes.use("/webhook", webHookRoutes);
+routes.use("/webhooks/instagram", webHookRoutes);
 routes.use(subScriptionRoutes);
 routes.use(invoiceRoutes);
 routes.use(versionRouter);
