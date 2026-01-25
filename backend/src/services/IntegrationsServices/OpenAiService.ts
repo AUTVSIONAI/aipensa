@@ -428,6 +428,7 @@ export const handleOpenAi = async (
         text: `\u200e ${response!}`
       });
       await verifyMessage(sentMessage!, ticket, contact);
+    }
     } catch (error) {
       console.error(`Error calling ${provider}:`, error);
       // Fallback: enviar mensagem de erro
