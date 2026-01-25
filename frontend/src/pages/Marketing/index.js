@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useHistory } from "react-router-dom";
-import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider, Chip, Stepper, Step, StepLabel, CircularProgress, Avatar, Tooltip, InputAdornment, List, ListItem, ListItemAvatar, ListItemText, IconButton, Paper, Collapse } from "@material-ui/core";
+import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider, Chip, Stepper, Step, StepLabel, CircularProgress, Avatar, Tooltip, InputAdornment, List, ListItem, ListItemAvatar, ListItemText, IconButton, Paper, Collapse, Dialog, DialogTitle, DialogContent, DialogActions } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import api from "../../services/api";
 import { socketConnection } from "../../services/socket";
@@ -23,54 +23,113 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import DynamicFeedIcon from "@mui/icons-material/DynamicFeed";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { Skeleton } from "@material-ui/lab";
+import Chart from "react-apexcharts";
 
 const useStyles = makeStyles((theme) => ({
   root: {
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(8),
-    backgroundColor: "#f3f4f6",
-    minHeight: "100vh"
+    background: "linear-gradient(135deg, #1e1e2f 0%, #2d2b42 100%)", // Dark futuristic bg
+    minHeight: "100vh",
+    color: "#fff"
   },
   header: {
     marginBottom: theme.spacing(4)
   },
   card: {
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    boxShadow: "0 4px 6px rgba(0,0,0,0.04)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: 16,
+    background: "rgba(255, 255, 255, 0.05)",
+    backdropFilter: "blur(10px)",
+    boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
     height: "100%",
-    transition: "transform 0.2s",
+    transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
     "&:hover": {
-      transform: "translateY(-2px)",
-      boxShadow: "0 10px 15px rgba(0,0,0,0.08)"
-    }
+      transform: "translateY(-5px)",
+      boxShadow: "0 12px 40px 0 rgba(31, 38, 135, 0.5)",
+      border: "1px solid rgba(255, 255, 255, 0.2)"
+    },
+    color: "#fff"
   },
   cardHeader: {
     padding: theme.spacing(2),
-    borderBottom: "1px solid #e5e7eb",
-    backgroundColor: "#f9fafb",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+    background: "rgba(255, 255, 255, 0.02)",
     display: "flex",
     alignItems: "center",
     gap: theme.spacing(2)
   },
   cardTitle: {
-    fontWeight: 600,
-    fontSize: "1rem",
-    color: "#1f2937"
+    fontWeight: 700,
+    fontSize: "1.1rem",
+    color: "#fff",
+    textShadow: "0 0 10px rgba(255,255,255,0.3)"
   },
   cardContent: {
     padding: theme.spacing(3)
   },
   tabRoot: {
-    backgroundColor: "white",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backdropFilter: "blur(10px)",
+    borderRadius: 16,
     marginBottom: theme.spacing(3),
-    boxShadow: "0 2px 4px rgba(0,0,0,0.04)"
+    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+    "& .MuiTab-root": {
+      color: "rgba(255, 255, 255, 0.7)",
+      "&.Mui-selected": {
+        color: "#60a5fa",
+        fontWeight: "bold"
+      }
+    },
+    "& .MuiTabs-indicator": {
+      backgroundColor: "#60a5fa"
+    }
   },
   statVal: {
-    fontWeight: 700,
-    fontSize: "1.5rem"
+    fontWeight: 800,
+    fontSize: "2rem",
+    background: "linear-gradient(45deg, #60a5fa 30%, #a78bfa 90%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent"
+  },
+  input: {
+    "& .MuiOutlinedInput-root": {
+      color: "#fff",
+      "& fieldset": {
+        borderColor: "rgba(255, 255, 255, 0.23)",
+      },
+      "&:hover fieldset": {
+        borderColor: "rgba(255, 255, 255, 0.5)",
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: "#60a5fa",
+      },
+    },
+    "& .MuiInputLabel-root": {
+      color: "rgba(255, 255, 255, 0.7)",
+      "&.Mui-focused": {
+        color: "#60a5fa",
+      },
+    },
+    "& .MuiInputBase-input": {
+        color: "#fff"
+    }
+  },
+  button: {
+    background: "linear-gradient(45deg, #2563eb 30%, #7c3aed 90%)",
+    border: 0,
+    borderRadius: 30,
+    boxShadow: "0 3px 5px 2px rgba(37, 99, 235, .3)",
+    color: "white",
+    height: 48,
+    padding: "0 30px",
+    fontWeight: "bold",
+    "&:hover": {
+      background: "linear-gradient(45deg, #1d4ed8 30%, #6d28d9 90%)",
+      boxShadow: "0 6px 10px 4px rgba(37, 99, 235, .3)",
+    }
   }
 }));
 
@@ -123,12 +182,30 @@ const Marketing = () => {
   const [tab, setTab] = useState(0);
   const [flowStep, setFlowStep] = useState(0);
   const [lastActionSummary, setLastActionSummary] = useState("");
+  const [adAccountError, setAdAccountError] = useState(false);
+  const [customAdAccountId, setCustomAdAccountId] = useState("");
+  const [settingLoading, setSettingLoading] = useState(false);
   
   // Feed comments expansion state
   const [expandedComments, setExpandedComments] = useState({});
 
   const toggleComments = (postId) => {
     setExpandedComments(prev => ({ ...prev, [postId]: !prev[postId] }));
+  };
+
+  const handleSaveAdAccount = async () => {
+      setSettingLoading(true);
+      try {
+          await api.post("/settings", { key: "facebook_ad_account_id", value: customAdAccountId });
+          toast.success("Ad Account ID salvo com sucesso!");
+          setAdAccountError(false);
+          // Reload page or re-fetch status
+          window.location.reload();
+      } catch (err) {
+          toastError(err);
+      } finally {
+          setSettingLoading(false);
+      }
   };
 
   const Section = ({ icon, title, children }) => (
@@ -150,7 +227,13 @@ const Marketing = () => {
         const { data } = await api.get("/marketing/status");
         setStatus(data);
       } catch (err) {
-        toastError(err);
+        if (err.response?.data?.error === "ERR_NO_AD_ACCOUNT") {
+            setAdAccountError(true);
+            setTab(9); // Switch to settings tab (we will add it at index 9)
+            toast.warn("Configure sua conta de anúncios para continuar.");
+        } else {
+            toastError(err);
+        }
         setStatusError(true);
         setStatusErrorMsg(String(err?.response?.data?.error || err?.message || "Erro ao obter status"));
       } finally {
@@ -163,7 +246,9 @@ const Marketing = () => {
         const { data } = await api.get("/marketing/insights", { params: { date_preset: datePreset } });
         setInsights(data.data || []);
       } catch (err) {
-        if (err.response?.status !== 400) {
+        if (err.response?.status === 400 && err.response?.data?.error === "ERR_NO_AD_ACCOUNT") {
+             setAdAccountError(true);
+        } else if (err.response?.status !== 400) {
           toastError(err);
         }
         setInsightsError(true);
@@ -487,11 +572,47 @@ const Marketing = () => {
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><MonetizationOnIcon style={{marginRight: 8}}/> Relatórios</div>} />
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><PostAddIcon style={{marginRight: 8}}/> Publicar</div>} />
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><DynamicFeedIcon style={{marginRight: 8}}/> Feed</div>} />
+            <Tab label={<div style={{display:'flex', alignItems:'center'}}><SettingsIcon style={{marginRight: 8}}/> Configuração</div>} />
           </Tabs>
         </Paper>
 
         <TabPanel value={tab} index={0}>
           <Grid container spacing={3}>
+            <Grid item xs={12}>
+                <Card className={classes.card}>
+                    <Section icon={<AutoGraphIcon style={{ color: "white" }} />} title="Performance Geral (Últimos 7 dias)">
+                        {!statusError && !insightsLoading && insights.length > 0 ? (
+                            <Chart
+                                options={{
+                                    chart: { id: "basic-bar", toolbar: { show: false }, background: 'transparent', fontFamily: 'Inherit' },
+                                    theme: { mode: 'dark' },
+                                    xaxis: { 
+                                        categories: insights.map(i => new Date(i.date_start).toLocaleDateString().slice(0,5)).reverse(),
+                                        labels: { style: { colors: 'rgba(255,255,255,0.7)' } }
+                                    },
+                                    yaxis: { labels: { style: { colors: 'rgba(255,255,255,0.7)' } } },
+                                    colors: ['#3b82f6', '#10b981'],
+                                    grid: { borderColor: 'rgba(255,255,255,0.1)' },
+                                    dataLabels: { enabled: false },
+                                    stroke: { curve: 'smooth', width: 3 },
+                                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.2, stops: [0, 90, 100] } }
+                                }}
+                                series={[
+                                    { name: "Impressões", data: insights.map(i => i.impressions).reverse() },
+                                    { name: "Alcance", data: insights.map(i => i.reach).reverse() }
+                                ]}
+                                type="area"
+                                height={300}
+                                width="100%"
+                            />
+                        ) : (
+                             <Box p={4} textAlign="center">
+                                {insightsLoading ? <CircularProgress /> : <Typography style={{color: 'rgba(255,255,255,0.5)'}}>Sem dados de insights disponíveis para exibir o gráfico.</Typography>}
+                             </Box>
+                        )}
+                    </Section>
+                </Card>
+            </Grid>
             <Grid item xs={12} md={8}>
               <Card className={classes.card}>
                 <Section icon={<PublicIcon style={{ color: "white" }} />} title="Visão Geral da Conta">
@@ -506,19 +627,19 @@ const Marketing = () => {
                       <Box>
                         <Grid container spacing={3}>
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="caption" color="textSecondary">Usuário Conectado</Typography>
+                            <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Usuário Conectado</Typography>
                             <Typography variant="h6">{status?.me?.name || "-"}</Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <Typography variant="caption" color="textSecondary">Ad Account ID</Typography>
+                             <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Ad Account ID</Typography>
                              <Typography variant="h6">{status?.adAccountId || "-"}</Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <Typography variant="caption" color="textSecondary">Business Manager ID</Typography>
+                             <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Business Manager ID</Typography>
                              <Typography variant="h6">{status?.businessId || "-"}</Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <Typography variant="caption" color="textSecondary">Status da API</Typography>
+                             <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Status da API</Typography>
                              <Typography variant="h6" style={{ color: "#10b981" }}>Ativo</Typography>
                           </Grid>
                         </Grid>
@@ -547,7 +668,7 @@ const Marketing = () => {
                     <Typography variant="h6" gutterBottom>
                        {statusErrorMsg ? "Erro de Conexão" : "Conexão Necessária"}
                     </Typography>
-                    <Typography variant="body2" color="textSecondary" paragraph>
+                    <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
                       {statusErrorMsg || "Para utilizar as ferramentas de marketing, você precisa conectar sua conta do Facebook/Instagram."}
                     </Typography>
                     <Button
@@ -586,28 +707,31 @@ const Marketing = () => {
                               <ListItemText 
                                 primary="Postagens e Feed" 
                                 secondary="GRATUITO (API Orgânica)" 
-                                primaryTypographyProps={{ style: { fontWeight: 500 } }}
+                                primaryTypographyProps={{ style: { fontWeight: 500, color: "#fff" } }}
+                                secondaryTypographyProps={{ style: { color: "rgba(255, 255, 255, 0.7)" } }}
                               />
                             </ListItem>
-                            <Divider component="li" />
+                            <Divider component="li" style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }} />
                             <ListItem>
                               <ListItemText 
                                 primary="Anúncios (Ads)" 
                                 secondary="Custo por visualização/clique (pago ao Facebook)" 
-                                primaryTypographyProps={{ style: { fontWeight: 500 } }}
+                                primaryTypographyProps={{ style: { fontWeight: 500, color: "#fff" } }}
+                                secondaryTypographyProps={{ style: { color: "rgba(255, 255, 255, 0.7)" } }}
                               />
                             </ListItem>
-                            <Divider component="li" />
+                            <Divider component="li" style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }} />
                             <ListItem>
                               <ListItemText 
                                 primary="Agendamento" 
                                 secondary="GRATUITO (Incluso na API)" 
-                                primaryTypographyProps={{ style: { fontWeight: 500 } }}
+                                primaryTypographyProps={{ style: { fontWeight: 500, color: "#fff" } }}
+                                secondaryTypographyProps={{ style: { color: "rgba(255, 255, 255, 0.7)" } }}
                               />
                             </ListItem>
                           </List>
-                          <Box mt={1} p={1} bgcolor="#f3f4f6" borderRadius={4}>
-                             <Typography variant="caption" display="block" align="center" color="textSecondary">
+                          <Box mt={1} p={1} bgcolor="rgba(255, 255, 255, 0.05)" borderRadius={4}>
+                             <Typography variant="caption" display="block" align="center" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
                                Os custos de anúncios são cobrados diretamente na sua conta do Gerenciador de Anúncios.
                              </Typography>
                           </Box>
@@ -618,8 +742,8 @@ const Marketing = () => {
                  <Grid item>
                     <Card className={classes.card}>
                       <Section icon={<SettingsSuggestIcon style={{ color: "white" }} />} title="Última Atividade">
-                        <Box p={2} bgcolor="#f9fafb" borderRadius={8} border="1px dashed #d1d5db">
-                          <Typography variant="body2" style={{ fontFamily: 'monospace', color: "#4b5563" }}>
+                        <Box p={2} bgcolor="rgba(255, 255, 255, 0.05)" borderRadius={8} border="1px dashed rgba(255, 255, 255, 0.2)">
+                          <Typography variant="body2" style={{ fontFamily: 'monospace', color: "rgba(255, 255, 255, 0.7)" }}>
                             {lastActionSummary || "Nenhuma ação recente registrada."}
                           </Typography>
                         </Box>
@@ -636,22 +760,22 @@ const Marketing = () => {
             <Grid item xs={12} md={8}>
               <Card className={classes.card}>
                 <Section icon={<CampaignIcon style={{ color: "white" }} />} title="1. Criar Nova Campanha">
-                  <Typography variant="body2" paragraph color="textSecondary">
+                  <Typography variant="body2" paragraph style={{ color: "rgba(255, 255, 255, 0.7)" }}>
                     A campanha é o primeiro nível da estrutura de anúncios. Defina o nome e o objetivo principal.
                   </Typography>
-                  <TextField fullWidth label="Nome da Campanha" value={name} onChange={(e) => setName(e.target.value)} variant="outlined" margin="normal" />
-                  <TextField fullWidth label="Objetivo" value={objective} onChange={(e) => setObjective(e.target.value)} variant="outlined" margin="normal" helperText="Recomendado para WhatsApp: MESSAGES" InputProps={{ readOnly: true }} />
+                  <TextField fullWidth label="Nome da Campanha" value={name} onChange={(e) => setName(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
+                  <TextField fullWidth label="Objetivo" value={objective} onChange={(e) => setObjective(e.target.value)} variant="outlined" margin="normal" helperText="Recomendado para WhatsApp: MESSAGES" InputProps={{ readOnly: true }} className={classes.input} />
                   <Box mt={3} display="flex" justifyContent="flex-end">
-                    <Button variant="contained" color="primary" size="large" disabled={creating} onClick={handleCreateCampaign}>
+                    <Button variant="contained" color="primary" size="large" disabled={creating} onClick={handleCreateCampaign} className={classes.button}>
                       {creating ? <CircularProgress size={24} /> : "Criar Campanha"}
                     </Button>
                   </Box>
                   {campaignId && (
-                    <Box mt={3} p={2} bgcolor="#ecfdf5" borderRadius={4} border="1px solid #10b981" display="flex" alignItems="center" gap={2}>
-                      <ThumbUpIcon style={{ color: "#047857" }} />
+                    <Box mt={3} p={2} bgcolor="rgba(16, 185, 129, 0.1)" borderRadius={4} border="1px solid #10b981" display="flex" alignItems="center" gap={2}>
+                      <ThumbUpIcon style={{ color: "#10b981" }} />
                       <Box>
-                         <Typography variant="subtitle2" style={{ color: "#047857" }}>Campanha Criada com Sucesso!</Typography>
-                         <Typography variant="body2">ID da Campanha: <strong>{campaignId}</strong></Typography>
+                         <Typography variant="subtitle2" style={{ color: "#10b981" }}>Campanha Criada com Sucesso!</Typography>
+                         <Typography variant="body2" style={{ color: "#fff" }}>ID da Campanha: <strong>{campaignId}</strong></Typography>
                       </Box>
                     </Box>
                   )}
@@ -666,26 +790,26 @@ const Marketing = () => {
             <Grid item xs={12} md={8}>
               <Card className={classes.card}>
                 <Section icon={<AutoGraphIcon style={{ color: "white" }} />} title="2. Configurar Conjunto de Anúncios (AdSet)">
-                  <TextField fullWidth label="Campaign ID" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} variant="outlined" margin="normal" required helperText="ID da campanha criada no passo anterior" />
-                  <TextField fullWidth label="Nome do AdSet" value={adsetName} onChange={(e) => setAdsetName(e.target.value)} variant="outlined" margin="normal" />
-                  <TextField fullWidth label="Orçamento Diário (centavos)" value={dailyBudget} onChange={(e) => setDailyBudget(e.target.value)} variant="outlined" margin="normal" helperText="Ex: 1000 = R$ 10,00. O mínimo geralmente é R$ 5,50." />
+                  <TextField fullWidth label="Campaign ID" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} variant="outlined" margin="normal" required helperText="ID da campanha criada no passo anterior" className={classes.input} />
+                  <TextField fullWidth label="Nome do AdSet" value={adsetName} onChange={(e) => setAdsetName(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
+                  <TextField fullWidth label="Orçamento Diário (centavos)" value={dailyBudget} onChange={(e) => setDailyBudget(e.target.value)} variant="outlined" margin="normal" helperText="Ex: 1000 = R$ 10,00. O mínimo geralmente é R$ 5,50." className={classes.input} />
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
-                       <TextField fullWidth label="Início (ISO 8601)" value={startTime} onChange={(e) => setStartTime(e.target.value)} variant="outlined" margin="normal" placeholder="2023-12-31T23:59:00-0300" helperText="Opcional: Deixe em branco para iniciar imediatamente" />
+                       <TextField fullWidth label="Início (ISO 8601)" value={startTime} onChange={(e) => setStartTime(e.target.value)} variant="outlined" margin="normal" placeholder="2023-12-31T23:59:00-0300" helperText="Opcional: Deixe em branco para iniciar imediatamente" className={classes.input} />
                     </Grid>
                     <Grid item xs={6}>
-                       <TextField fullWidth label="Fim (ISO 8601)" value={endTime} onChange={(e) => setEndTime(e.target.value)} variant="outlined" margin="normal" placeholder="2024-01-31T23:59:00-0300" helperText="Opcional" />
+                       <TextField fullWidth label="Fim (ISO 8601)" value={endTime} onChange={(e) => setEndTime(e.target.value)} variant="outlined" margin="normal" placeholder="2024-01-31T23:59:00-0300" helperText="Opcional" className={classes.input} />
                     </Grid>
                   </Grid>
                   <Box mt={3} display="flex" justifyContent="flex-end">
-                    <Button variant="contained" color="primary" size="large" disabled={adsetCreating || !campaignId} onClick={handleCreateAdSet}>
+                    <Button variant="contained" color="primary" size="large" disabled={adsetCreating || !campaignId} onClick={handleCreateAdSet} className={classes.button}>
                       {adsetCreating ? <CircularProgress size={24} /> : "Criar AdSet"}
                     </Button>
                   </Box>
                   {adsetId && (
-                    <Box mt={3} p={2} bgcolor="#ecfdf5" borderRadius={4} border="1px solid #10b981">
-                      <Typography variant="subtitle2" style={{ color: "#047857" }}>AdSet Criado!</Typography>
-                      <Typography variant="body2">ID: {adsetId}</Typography>
+                    <Box mt={3} p={2} bgcolor="rgba(16, 185, 129, 0.1)" borderRadius={4} border="1px solid #10b981">
+                      <Typography variant="subtitle2" style={{ color: "#10b981" }}>AdSet Criado!</Typography>
+                      <Typography variant="body2" style={{ color: "#fff" }}>ID: {adsetId}</Typography>
                     </Box>
                   )}
                 </Section>
@@ -699,7 +823,7 @@ const Marketing = () => {
             <Grid item xs={12} md={6}>
               <Card className={classes.card}>
                 <Section icon={<WidgetsIcon style={{ color: "white" }} />} title="3.1 Upload de Mídia">
-                  <Box p={4} border="2px dashed #e5e7eb" borderRadius={8} textAlign="center" style={{ backgroundColor: "#f9fafb" }}>
+                  <Box p={4} border="2px dashed rgba(255, 255, 255, 0.2)" borderRadius={8} textAlign="center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
                     <input
                       accept="image/*"
                       style={{ display: 'none' }}
@@ -722,14 +846,14 @@ const Marketing = () => {
                       }}
                     />
                     <label htmlFor="raised-button-file">
-                      <Button variant="contained" color="default" component="span" startIcon={<PublicIcon />}>
+                      <Button variant="contained" component="span" startIcon={<PublicIcon />} className={classes.button}>
                         Selecionar Imagem do Computador
                       </Button>
                     </label>
                     {imageHash && (
-                        <Box mt={2} p={1} bgcolor="#e0e7ff" borderRadius={4}>
-                             <Typography variant="caption" display="block">Hash Gerado:</Typography>
-                             <Typography variant="body2" style={{ wordBreak: "break-all", fontWeight: "bold" }}>{imageHash}</Typography>
+                        <Box mt={2} p={1} bgcolor="rgba(255, 255, 255, 0.1)" borderRadius={4}>
+                             <Typography variant="caption" display="block" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Hash Gerado:</Typography>
+                             <Typography variant="body2" style={{ wordBreak: "break-all", fontWeight: "bold", color: "#fff" }}>{imageHash}</Typography>
                         </Box>
                     )}
                   </Box>
@@ -738,16 +862,16 @@ const Marketing = () => {
               <Box mt={3}>
                  <Card className={classes.card}>
                   <Section icon={<SettingsSuggestIcon style={{ color: "white" }} />} title="3.2 Criar Criativo (Creative)">
-                    <TextField fullWidth label="Page ID" value={pageId} onChange={(e) => setPageId(e.target.value)} variant="outlined" margin="normal" helperText="ID da página do Facebook" />
-                    <TextField fullWidth label="Link Destino" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} variant="outlined" margin="normal" />
-                    <TextField fullWidth label="Image Hash" value={imageHash} onChange={(e) => setImageHash(e.target.value)} variant="outlined" margin="normal" />
-                    <TextField fullWidth label="Texto do Anúncio" value={messageText} onChange={(e) => setMessageText(e.target.value)} variant="outlined" margin="normal" multiline minRows={3} />
+                    <TextField fullWidth label="Page ID" value={pageId} onChange={(e) => setPageId(e.target.value)} variant="outlined" margin="normal" helperText="ID da página do Facebook" className={classes.input} />
+                    <TextField fullWidth label="Link Destino" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
+                    <TextField fullWidth label="Image Hash" value={imageHash} onChange={(e) => setImageHash(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
+                    <TextField fullWidth label="Texto do Anúncio" value={messageText} onChange={(e) => setMessageText(e.target.value)} variant="outlined" margin="normal" multiline minRows={3} className={classes.input} />
                     <Box mt={2}>
-                      <Button fullWidth variant="contained" color="primary" disabled={creativeCreating || !pageId} onClick={handleCreateCreative}>
+                      <Button fullWidth variant="contained" color="primary" disabled={creativeCreating || !pageId} onClick={handleCreateCreative} className={classes.button}>
                         Criar Creative
                       </Button>
                     </Box>
-                    {creativeId && <Typography variant="body2" style={{ marginTop: 8, color: "green", fontWeight: "bold" }}>ID Creative: {creativeId}</Typography>}
+                    {creativeId && <Typography variant="body2" style={{ marginTop: 8, color: "#10b981", fontWeight: "bold" }}>ID Creative: {creativeId}</Typography>}
                   </Section>
                 </Card>
               </Box>
@@ -755,33 +879,33 @@ const Marketing = () => {
             <Grid item xs={12} md={6}>
               <Card className={classes.card}>
                 <Section icon={<CampaignIcon style={{ color: "white" }} />} title="3.3 Publicar Anúncio (Ad)">
-                   <TextField fullWidth label="Nome do Anúncio" value={adName} onChange={(e) => setAdName(e.target.value)} variant="outlined" margin="normal" />
-                   <TextField fullWidth label="AdSet ID" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} variant="outlined" margin="normal" />
-                   <TextField fullWidth label="Creative ID" value={creativeId} onChange={(e) => setCreativeId(e.target.value)} variant="outlined" margin="normal" />
+                   <TextField fullWidth label="Nome do Anúncio" value={adName} onChange={(e) => setAdName(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
+                   <TextField fullWidth label="AdSet ID" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
+                   <TextField fullWidth label="Creative ID" value={creativeId} onChange={(e) => setCreativeId(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
                    <Box mt={3}>
-                     <Button fullWidth variant="contained" color="primary" size="large" disabled={adCreating || !adsetId || !creativeId} onClick={handleCreateAd}>
+                     <Button fullWidth variant="contained" color="primary" size="large" disabled={adCreating || !adsetId || !creativeId} onClick={handleCreateAd} className={classes.button}>
                        Publicar Anúncio Final
                      </Button>
                    </Box>
                    <Box mt={2}>
-                     <Typography variant="caption" color="textSecondary">O anúncio será criado com status PAUSED por segurança. Ative-o na aba 'Gerenciar'.</Typography>
+                     <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.7)" }}>O anúncio será criado com status PAUSED por segurança. Ative-o na aba 'Gerenciar'.</Typography>
                    </Box>
                 </Section>
               </Card>
                <Box mt={3}>
                 <Card className={classes.card}>
                   <Section icon={<SendIcon style={{ color: "white" }} />} title="Teste de DM (Instagram)">
-                    <Typography variant="body2" color="textSecondary" paragraph>
+                    <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }} paragraph>
                        Envie uma mensagem direta de teste para um ticket aberto no sistema.
                     </Typography>
-                    <TextField fullWidth label="Ticket ID" onChange={(e) => (window.__ticketId = e.target.value)} variant="outlined" margin="normal" size="small" />
-                    <TextField fullWidth label="Mensagem" onChange={(e) => (window.__dmMessage = e.target.value)} variant="outlined" margin="normal" size="small" />
-                    <Button variant="outlined" color="primary" onClick={async () => {
+                    <TextField fullWidth label="Ticket ID" onChange={(e) => (window.__ticketId = e.target.value)} variant="outlined" margin="normal" size="small" className={classes.input} />
+                    <TextField fullWidth label="Mensagem" onChange={(e) => (window.__dmMessage = e.target.value)} variant="outlined" margin="normal" size="small" className={classes.input} />
+                    <Button variant="contained" color="primary" onClick={async () => {
                         try {
                           await api.post("/instagram/message", { ticketId: window.__ticketId, message: window.__dmMessage });
                           toast.success("Enviada!");
                         } catch(e) { toastError(e); }
-                    }}>Enviar Teste</Button>
+                    }} className={classes.button}>Enviar Teste</Button>
                   </Section>
                 </Card>
               </Box>
@@ -796,15 +920,15 @@ const Marketing = () => {
                   <Section icon={<LinkIcon style={{ color: "white" }} />} title="Fluxo Rápido: Anúncio Click-to-WhatsApp">
                      <Box py={2}>
                         <Stepper activeStep={flowStep} alternativeLabel style={{ backgroundColor: 'transparent', padding: 0 }}>
-                          <Step><StepLabel>Campanha</StepLabel></Step>
-                          <Step><StepLabel>AdSet</StepLabel></Step>
-                          <Step><StepLabel>Creative</StepLabel></Step>
-                          <Step><StepLabel>Publicação</StepLabel></Step>
+                          <Step><StepLabel style={{ color: '#fff' }}>Campanha</StepLabel></Step>
+                          <Step><StepLabel style={{ color: '#fff' }}>AdSet</StepLabel></Step>
+                          <Step><StepLabel style={{ color: '#fff' }}>Creative</StepLabel></Step>
+                          <Step><StepLabel style={{ color: '#fff' }}>Publicação</StepLabel></Step>
                         </Stepper>
                      </Box>
-                     <Box maxWidth={700} mx="auto" mt={4} p={3} border="1px solid #e5e7eb" borderRadius={8} bgcolor="#f9fafb">
-                        <Typography variant="h6" gutterBottom align="center">Configuração Expressa</Typography>
-                        <Typography variant="body2" color="textSecondary" align="center" paragraph>
+                     <Box maxWidth={700} mx="auto" mt={4} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
+                        <Typography variant="h6" gutterBottom align="center" style={{ color: "#fff" }}>Configuração Expressa</Typography>
+                        <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }} align="center" paragraph>
                            Crie toda a estrutura de campanha para WhatsApp em um clique.
                         </Typography>
                         <Grid container spacing={2}>
@@ -817,6 +941,7 @@ const Marketing = () => {
                                  onChange={(e) => setPageId(e.target.value)}
                                  variant="outlined"
                                  margin="normal"
+                                 className={classes.input}
                                >
                                  {pagesLoading ? <MenuItem disabled>Carregando...</MenuItem> : 
                                   pagesError ? <MenuItem disabled>Erro ao carregar</MenuItem> :
@@ -825,10 +950,10 @@ const Marketing = () => {
                                </TextField>
                            </Grid>
                            <Grid item xs={12} sm={6}>
-                              <TextField fullWidth label="Número WhatsApp (Ex: 5511999999999)" value={waPhoneE164} onChange={(e) => setWaPhoneE164(e.target.value)} variant="outlined" margin="normal" />
+                              <TextField fullWidth label="Número WhatsApp (Ex: 5511999999999)" value={waPhoneE164} onChange={(e) => setWaPhoneE164(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
                            </Grid>
                            <Grid item xs={12}>
-                              <TextField fullWidth label="Mensagem Inicial (Pre-filled)" value={messageText} onChange={(e) => setMessageText(e.target.value)} variant="outlined" margin="normal" />
+                              <TextField fullWidth label="Mensagem Inicial (Pre-filled)" value={messageText} onChange={(e) => setMessageText(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
                            </Grid>
                         </Grid>
                         
@@ -853,6 +978,7 @@ const Marketing = () => {
                                 } catch (err) { toastError(err); } finally { setWaFlowCreating(false); }
                               }}
                               style={{ paddingLeft: 40, paddingRight: 40 }}
+                              className={classes.button}
                             >
                               {waFlowCreating ? <CircularProgress size={24} color="inherit" /> : "Criar Campanha Completa Agora"}
                             </Button>
@@ -871,11 +997,11 @@ const Marketing = () => {
                   <Section icon={<SettingsSuggestIcon style={{ color: "white" }} />} title="Gerenciamento de Status">
                     <Grid container spacing={4}>
                        <Grid item xs={12} md={6}>
-                          <Paper elevation={0} style={{ padding: 16, border: "1px solid #e5e7eb" }}>
-                            <Typography variant="h6" gutterBottom style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Paper elevation={0} style={{ padding: 16, border: "1px solid rgba(255, 255, 255, 0.1)", backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                            <Typography variant="h6" gutterBottom style={{ display: 'flex', alignItems: 'center', gap: 8, color: "#fff" }}>
                                <CampaignIcon color="primary" /> Campanha
                             </Typography>
-                            <TextField fullWidth label="ID da Campanha" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} variant="outlined" size="small" margin="normal" />
+                            <TextField fullWidth label="ID da Campanha" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} variant="outlined" size="small" margin="normal" className={classes.input} />
                             <Box mt={2} display="flex" gap={2}>
                                <Button variant="contained" style={{ backgroundColor: "#10b981", color: "white", flex: 1 }} onClick={async () => {
                                   try { await api.post("/marketing/campaign/status", { campaign_id: campaignId, status: "ACTIVE" }); toast.success("Ativada"); } catch(e) { toastError(e); }
@@ -887,11 +1013,11 @@ const Marketing = () => {
                           </Paper>
                        </Grid>
                        <Grid item xs={12} md={6}>
-                          <Paper elevation={0} style={{ padding: 16, border: "1px solid #e5e7eb" }}>
-                            <Typography variant="h6" gutterBottom style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Paper elevation={0} style={{ padding: 16, border: "1px solid rgba(255, 255, 255, 0.1)", backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                            <Typography variant="h6" gutterBottom style={{ display: 'flex', alignItems: 'center', gap: 8, color: "#fff" }}>
                                <AutoGraphIcon color="primary" /> Conjunto de Anúncios (AdSet)
                             </Typography>
-                            <TextField fullWidth label="ID do AdSet" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} variant="outlined" size="small" margin="normal" />
+                            <TextField fullWidth label="ID do AdSet" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} variant="outlined" size="small" margin="normal" className={classes.input} />
                             <Box mt={2} display="flex" gap={2}>
                                <Button variant="contained" style={{ backgroundColor: "#10b981", color: "white", flex: 1 }} onClick={async () => {
                                   try { await api.post("/marketing/adset/status", { adset_id: adsetId, status: "ACTIVE" }); toast.success("Ativado"); } catch(e) { toastError(e); }
@@ -923,13 +1049,14 @@ const Marketing = () => {
                             value={datePreset}
                             onChange={(e) => setDatePreset(e.target.value)}
                             style={{ width: 200 }}
+                            className={classes.input}
                          >
                             <MenuItem value="today">Hoje</MenuItem>
                             <MenuItem value="yesterday">Ontem</MenuItem>
                             <MenuItem value="last_7d">Últimos 7 dias</MenuItem>
                             <MenuItem value="last_30d">Últimos 30 dias</MenuItem>
                          </TextField>
-                         <Button variant="outlined" startIcon={<AutoGraphIcon />} onClick={exportInsightsCsv}>Exportar CSV</Button>
+                         <Button variant="outlined" startIcon={<AutoGraphIcon />} onClick={exportInsightsCsv} className={classes.button}>Exportar CSV</Button>
                       </Box>
                       
                       {!insightsLoading && !insightsError && (
@@ -943,8 +1070,8 @@ const Marketing = () => {
                              { label: "CPM Médio", val: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(agg.avgCpm), color: "#8b5cf6" },
                            ].map((stat, i) => (
                              <Grid item xs={6} md={2} key={i}>
-                               <Paper elevation={0} style={{ padding: 16, border: "1px solid #e5e7eb", borderRadius: 8, textAlign: "center", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                  <Typography variant="caption" color="textSecondary" style={{ textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{stat.label}</Typography>
+                               <Paper elevation={0} style={{ padding: 16, border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 8, textAlign: "center", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                                  <Typography variant="caption" style={{ textTransform: "uppercase", letterSpacing: 1, marginBottom: 4, color: "rgba(255, 255, 255, 0.7)" }}>{stat.label}</Typography>
                                   <Typography variant="h5" style={{ color: stat.color, fontWeight: 700 }}>{stat.val}</Typography>
                                </Paper>
                              </Grid>
@@ -953,28 +1080,28 @@ const Marketing = () => {
                       )}
 
                       {insightsLoading ? <Box p={4} textAlign="center"><CircularProgress /></Box> :
-                       insightsError ? <Box p={2} bgcolor="#fee2e2" borderRadius={4}><Typography color="error">Erro ao carregar insights: {insightsErrorMsg}</Typography></Box> :
+                       insightsError ? <Box p={2} bgcolor="rgba(239, 68, 68, 0.1)" borderRadius={4}><Typography color="error">Erro ao carregar insights: {insightsErrorMsg}</Typography></Box> :
                        <div style={{ overflowX: "auto" }}>
                          <Table size="small">
                             <TableHead>
-                              <TableRow style={{ backgroundColor: "#f9fafb" }}>
-                                 <TableCell>Impressões</TableCell>
-                                 <TableCell>Alcance</TableCell>
-                                 <TableCell>Cliques</TableCell>
-                                 <TableCell>Gasto</TableCell>
-                                 <TableCell>CPM</TableCell>
-                                 <TableCell>CTR</TableCell>
+                              <TableRow style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                                 <TableCell style={{ color: "#fff" }}>Impressões</TableCell>
+                                 <TableCell style={{ color: "#fff" }}>Alcance</TableCell>
+                                 <TableCell style={{ color: "#fff" }}>Cliques</TableCell>
+                                 <TableCell style={{ color: "#fff" }}>Gasto</TableCell>
+                                 <TableCell style={{ color: "#fff" }}>CPM</TableCell>
+                                 <TableCell style={{ color: "#fff" }}>CTR</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
                                {insights.map((row, idx) => (
                                  <TableRow key={idx} hover>
-                                    <TableCell>{row.impressions}</TableCell>
-                                    <TableCell>{row.reach}</TableCell>
-                                    <TableCell>{row.clicks}</TableCell>
-                                    <TableCell>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(row.spend || 0)}</TableCell>
-                                    <TableCell>{Number(row.cpm || 0).toFixed(2)}</TableCell>
-                                    <TableCell>{Number(row.ctr || 0).toFixed(2)}%</TableCell>
+                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{row.impressions}</TableCell>
+                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{row.reach}</TableCell>
+                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{row.clicks}</TableCell>
+                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(row.spend || 0)}</TableCell>
+                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{Number(row.cpm || 0).toFixed(2)}</TableCell>
+                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{Number(row.ctr || 0).toFixed(2)}%</TableCell>
                                  </TableRow>
                                ))}
                             </TableBody>
@@ -992,18 +1119,18 @@ const Marketing = () => {
               <Grid item xs={12} md={8}>
                  <Card className={classes.card}>
                     <Section icon={<PostAddIcon style={{ color: "white" }} />} title="Publicar Conteúdo">
-                       <Typography variant="body2" color="textSecondary" paragraph>
+                       <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }} paragraph>
                           Publique ou agende posts para seu Feed do Instagram e Facebook.
                        </Typography>
                        <Grid container spacing={3}>
                           <Grid item xs={12} sm={6}>
-                             <TextField select fullWidth label="Plataforma" value={pubPlatform} onChange={(e) => setPubPlatform(e.target.value)} variant="outlined">
+                             <TextField select fullWidth label="Plataforma" value={pubPlatform} onChange={(e) => setPubPlatform(e.target.value)} variant="outlined" className={classes.input}>
                                 <MenuItem value="facebook">Facebook</MenuItem>
                                 <MenuItem value="instagram">Instagram</MenuItem>
                              </TextField>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <TextField select fullWidth label="Conta/Página" value={pubAccountId} onChange={(e) => setPubAccountId(e.target.value)} variant="outlined">
+                             <TextField select fullWidth label="Conta/Página" value={pubAccountId} onChange={(e) => setPubAccountId(e.target.value)} variant="outlined" className={classes.input}>
                                 {pubPlatform === "facebook" ? 
                                    pages.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>) : 
                                    pages.filter(p => p.instagram_business_account).map(p => <MenuItem key={p.instagram_business_account.id} value={p.instagram_business_account.id}>{p.instagram_business_account.username || p.name}</MenuItem>)
@@ -1011,16 +1138,16 @@ const Marketing = () => {
                              </TextField>
                           </Grid>
                           <Grid item xs={12}>
-                             <TextField fullWidth multiline minRows={4} label="Legenda / Texto" value={pubMessage} onChange={(e) => setPubMessage(e.target.value)} variant="outlined" placeholder="Escreva algo interessante..." />
+                             <TextField fullWidth multiline minRows={4} label="Legenda / Texto" value={pubMessage} onChange={(e) => setPubMessage(e.target.value)} variant="outlined" placeholder="Escreva algo interessante..." className={classes.input} />
                           </Grid>
                           <Grid item xs={12}>
-                             <TextField fullWidth label="URL da Imagem" value={pubImageUrl} onChange={(e) => setPubImageUrl(e.target.value)} variant="outlined" helperText="Link público direto da imagem (obrigatório para Instagram)" placeholder="https://..." />
+                             <TextField fullWidth label="URL da Imagem" value={pubImageUrl} onChange={(e) => setPubImageUrl(e.target.value)} variant="outlined" helperText="Link público direto da imagem (obrigatório para Instagram)" placeholder="https://..." className={classes.input} />
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <TextField fullWidth type="datetime-local" label="Agendar para (Opcional)" InputLabelProps={{ shrink: true }} value={pubScheduledTime} onChange={(e) => setPubScheduledTime(e.target.value)} variant="outlined" />
+                             <TextField fullWidth type="datetime-local" label="Agendar para (Opcional)" InputLabelProps={{ shrink: true }} value={pubScheduledTime} onChange={(e) => setPubScheduledTime(e.target.value)} variant="outlined" className={classes.input} />
                           </Grid>
                           <Grid item xs={12}>
-                             <Button fullWidth variant="contained" color="primary" size="large" onClick={handlePublish} disabled={pubLoading}>
+                             <Button fullWidth variant="contained" color="primary" size="large" onClick={handlePublish} disabled={pubLoading} className={classes.button}>
                                 {pubLoading ? "Processando..." : (pubScheduledTime ? "Agendar Publicação" : "Publicar Agora")}
                              </Button>
                           </Grid>
@@ -1034,11 +1161,11 @@ const Marketing = () => {
         <TabPanel value={tab} index={8}>
            <Grid container spacing={3} justifyContent="center">
               <Grid item xs={12} md={10}>
-                 <Paper elevation={0} style={{ padding: 24, marginBottom: 24, borderRadius: 16, backgroundColor: "white", border: "1px solid #e5e7eb" }}>
+                 <Paper elevation={0} style={{ padding: 24, marginBottom: 24, borderRadius: 16, backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", backdropFilter: "blur(10px)" }}>
                     <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
                        <Box flexGrow={1}>
-                          <Typography variant="h6" gutterBottom>Feed do Facebook/Instagram</Typography>
-                          <Typography variant="body2" color="textSecondary">Selecione uma página para visualizar e interagir com as postagens recentes.</Typography>
+                          <Typography variant="h6" gutterBottom style={{ color: "#fff" }}>Feed do Facebook/Instagram</Typography>
+                          <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Selecione uma página para visualizar e interagir com as postagens recentes.</Typography>
                        </Box>
                        <Box display="flex" gap={2} alignItems="center">
                           <TextField 
@@ -1048,13 +1175,13 @@ const Marketing = () => {
                             onChange={(e) => setFeedPageId(e.target.value)} 
                             variant="outlined" 
                             size="small" 
+                            className={classes.input}
                             style={{ minWidth: 250 }}
                           >
                              {pages.map((p) => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
                           </TextField>
                           <Button 
-                            variant="contained" 
-                            color="primary" 
+                            className={classes.button}
                             onClick={handleFetchFeed} 
                             disabled={feedLoading || !feedPageId}
                             startIcon={feedLoading ? <CircularProgress size={20} color="inherit" /> : <DynamicFeedIcon />}
@@ -1072,16 +1199,16 @@ const Marketing = () => {
                              <Card className={classes.card}>
                                 <CardContent>
                                    <Box display="flex" alignItems="center" mb={2}>
-                                      <Skeleton variant="circle" width={40} height={40} />
+                                      <Skeleton variant="circle" width={40} height={40} style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
                                       <Box ml={2} width="100%">
-                                         <Skeleton variant="text" width="60%" />
-                                         <Skeleton variant="text" width="40%" />
+                                         <Skeleton variant="text" width="60%" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+                                         <Skeleton variant="text" width="40%" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
                                       </Box>
                                    </Box>
-                                   <Skeleton variant="rect" height={200} style={{ borderRadius: 8 }} />
+                                   <Skeleton variant="rect" height={200} style={{ borderRadius: 8, backgroundColor: "rgba(255,255,255,0.1)" }} />
                                    <Box mt={2}>
-                                      <Skeleton variant="text" />
-                                      <Skeleton variant="text" />
+                                      <Skeleton variant="text" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+                                      <Skeleton variant="text" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
                                    </Box>
                                 </CardContent>
                              </Card>
@@ -1089,21 +1216,21 @@ const Marketing = () => {
                        ))}
                     </Grid>
                  ) : feed.length === 0 && feedPageId ? (
-                    <Box textAlign="center" py={8} bgcolor="#f9fafb" borderRadius={16} border="1px dashed #d1d5db">
-                       <DynamicFeedIcon style={{ fontSize: 64, color: "#9ca3af", marginBottom: 16 }} />
-                       <Typography variant="h6" color="textSecondary">Nenhuma publicação encontrada</Typography>
-                       <Typography variant="body2" color="textSecondary">Tente selecionar outra página ou verifique se há postagens recentes.</Typography>
+                    <Box textAlign="center" py={8} bgcolor="rgba(255, 255, 255, 0.05)" borderRadius={16} border="1px dashed rgba(255, 255, 255, 0.2)">
+                       <DynamicFeedIcon style={{ fontSize: 64, color: "rgba(255, 255, 255, 0.3)", marginBottom: 16 }} />
+                       <Typography variant="h6" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Nenhuma publicação encontrada</Typography>
+                       <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.5)" }}>Tente selecionar outra página ou verifique se há postagens recentes.</Typography>
                     </Box>
                  ) : (
                     <Grid container spacing={3}>
                        {feed.map((post) => (
                          <Grid item xs={12} md={6} lg={6} key={post.id}>
                             <Card className={classes.card} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                               <Box p={2} display="flex" alignItems="center" borderBottom="1px solid #f3f4f6">
+                               <Box p={2} display="flex" alignItems="center" borderBottom="1px solid rgba(255, 255, 255, 0.1)">
                                   <Avatar src={post.from?.picture?.data?.url} style={{ border: "2px solid #3b82f6" }}>{post.from?.name?.[0]}</Avatar>
                                   <Box ml={2}>
-                                     <Typography variant="subtitle2" style={{ fontWeight: 700 }}>{post.from?.name}</Typography>
-                                     <Typography variant="caption" color="textSecondary" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                     <Typography variant="subtitle2" style={{ fontWeight: 700, color: "#fff" }}>{post.from?.name}</Typography>
+                                     <Typography variant="caption" style={{ display: "flex", alignItems: "center", gap: 4, color: "rgba(255, 255, 255, 0.7)" }}>
                                         {new Date(post.created_time).toLocaleDateString()} às {new Date(post.created_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                         <PublicIcon style={{ fontSize: 12 }} />
                                      </Typography>
@@ -1117,21 +1244,21 @@ const Marketing = () => {
                                       backgroundImage: `url(${post.full_picture})`, 
                                       backgroundSize: "cover", 
                                       backgroundPosition: "center",
-                                      backgroundColor: "#f3f4f6"
+                                      backgroundColor: "rgba(0,0,0,0.2)"
                                     }} 
                                   />
                                )}
                                <CardContent style={{ flexGrow: 1, paddingTop: 16, paddingBottom: 8 }}>
-                                  <Typography variant="body2" color="textPrimary" style={{ whiteSpace: "pre-wrap", fontSize: "0.95rem", lineHeight: 1.5 }}>{post.message}</Typography>
+                                  <Typography variant="body2" style={{ whiteSpace: "pre-wrap", fontSize: "0.95rem", lineHeight: 1.5, color: "rgba(255, 255, 255, 0.7)" }}>{post.message}</Typography>
                                </CardContent>
-                               <Divider />
+                               <Divider style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }} />
                                <Box p={1} display="flex" justifyContent="space-between" alignItems="center">
                                   <Box display="flex" gap={1}>
                                      <Button 
                                        startIcon={<ThumbUpIcon />} 
                                        size="small" 
                                        onClick={() => handleLike(post.id)}
-                                       style={{ color: "#4b5563" }}
+                                       style={{ color: "rgba(255, 255, 255, 0.7)" }}
                                      >
                                         Curtir ({post.likes?.summary?.total_count || 0})
                                      </Button>
@@ -1139,32 +1266,32 @@ const Marketing = () => {
                                        startIcon={<ChatBubbleOutlineIcon />} 
                                        size="small" 
                                        onClick={() => toggleComments(post.id)}
-                                       style={{ color: "#4b5563" }}
+                                       style={{ color: "rgba(255, 255, 255, 0.7)" }}
                                      >
                                         Comentar ({post.comments?.summary?.total_count || 0})
                                      </Button>
                                   </Box>
-                                  <IconButton size="small" onClick={() => window.open(post.permalink_url, "_blank")}>
+                                  <IconButton size="small" onClick={() => window.open(post.permalink_url, "_blank")} style={{ color: "rgba(255, 255, 255, 0.7)" }}>
                                      <LinkIcon fontSize="small" />
                                   </IconButton>
                                </Box>
                                
                                <Collapse in={expandedComments[post.id]} timeout="auto" unmountOnExit>
-                                   <Box p={2} bgcolor="#f9fafb" borderTop="1px solid #e5e7eb">
+                                   <Box p={2} bgcolor="rgba(0, 0, 0, 0.2)" borderTop="1px solid rgba(255, 255, 255, 0.1)">
                                       <Box style={{ maxHeight: 300, overflowY: "auto", marginBottom: 16, paddingRight: 8 }}>
                                          {post.comments?.data?.length > 0 ? (
                                            post.comments.data.map((c) => (
                                              <Box key={c.id} mb={2} display="flex" alignItems="flex-start">
                                                 <Avatar style={{ width: 32, height: 32, marginRight: 12, fontSize: 14 }}>{c.from?.name?.[0]}</Avatar>
-                                                <Box bgcolor="white" p={2} borderRadius="0 12px 12px 12px" border="1px solid #e5e7eb" flexGrow={1} boxShadow="0 1px 2px rgba(0,0,0,0.05)">
-                                                   <Typography variant="subtitle2" style={{ fontSize: "0.85rem", fontWeight: "bold", color: "#111827" }}>{c.from?.name}</Typography>
-                                                   <Typography variant="body2" style={{ fontSize: "0.9rem", color: "#374151" }}>{c.message}</Typography>
+                                                <Box bgcolor="rgba(255, 255, 255, 0.1)" p={2} borderRadius="0 12px 12px 12px" border="1px solid rgba(255, 255, 255, 0.1)" flexGrow={1}>
+                                                   <Typography variant="subtitle2" style={{ fontSize: "0.85rem", fontWeight: "bold", color: "#fff" }}>{c.from?.name}</Typography>
+                                                   <Typography variant="body2" style={{ fontSize: "0.9rem", color: "#d1d5db" }}>{c.message}</Typography>
                                                 </Box>
                                              </Box>
                                            ))
                                          ) : (
                                            <Box py={2} textAlign="center">
-                                              <Typography variant="caption" color="textSecondary">Seja o primeiro a comentar.</Typography>
+                                              <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.5)" }}>Seja o primeiro a comentar.</Typography>
                                            </Box>
                                          )}
                                       </Box>
@@ -1175,9 +1302,10 @@ const Marketing = () => {
                                            placeholder="Escreva um comentário..." 
                                            size="small" 
                                            variant="outlined" 
+                                           className={classes.input}
                                            id={`comment-${post.id}`} 
                                            InputProps={{ 
-                                              style: { backgroundColor: "white", borderRadius: 20 },
+                                              style: { backgroundColor: "rgba(255, 255, 255, 0.05)", borderRadius: 20, color: "#fff" },
                                               endAdornment: (
                                                 <InputAdornment position="end">
                                                   <IconButton size="small" edge="end" color="primary" onClick={() => {
@@ -1200,6 +1328,42 @@ const Marketing = () => {
                  )}
               </Grid>
            </Grid>
+        </TabPanel>
+
+        <TabPanel value={tab} index={9}>
+            <Grid container spacing={3} justifyContent="center">
+                <Grid item xs={12} md={6}>
+                    <Card className={classes.card}>
+                        <Section icon={<SettingsIcon style={{ color: "white" }} />} title="Configurações de Marketing">
+                            <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
+                                Configure parâmetros manuais caso a detecção automática falhe.
+                            </Typography>
+                            
+                            <TextField
+                                fullWidth
+                                label="Facebook Ad Account ID"
+                                variant="outlined"
+                                className={classes.input}
+                                value={customAdAccountId}
+                                onChange={(e) => setCustomAdAccountId(e.target.value)}
+                                helperText="Ex: act_1234567890 (Opcional, apenas se não detectado automaticamente)"
+                                style={{ marginBottom: 16 }}
+                            />
+
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                fullWidth
+                                onClick={handleSaveAdAccount}
+                                disabled={settingLoading}
+                                className={classes.button}
+                            >
+                                {settingLoading ? <CircularProgress size={24} color="inherit" /> : "Salvar Configurações"}
+                            </Button>
+                        </Section>
+                    </Card>
+                </Grid>
+            </Grid>
         </TabPanel>
       </Container>
     </div>

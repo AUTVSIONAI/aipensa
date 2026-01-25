@@ -113,8 +113,11 @@ export const insights = async (req: Request, res: Response): Promise<Response> =
   try {
     const companyId = (req as any).user?.companyId;
     const { accessToken, adAccountId } = await getFbConfig(companyId);
-    if (!accessToken || !adAccountId) {
-      return res.status(400).json({ error: "Config ausente: access_token ou ad_account_id" });
+    if (!accessToken) {
+      return res.status(400).json({ error: "ERR_NO_TOKEN", message: "Conexão com Facebook ausente ou expirada." });
+    }
+    if (!adAccountId) {
+      return res.status(400).json({ error: "ERR_NO_AD_ACCOUNT", message: "Nenhuma conta de anúncios encontrada." });
     }
     const datePreset = (req.query?.date_preset as string) || "last_7d";
     const params = {
