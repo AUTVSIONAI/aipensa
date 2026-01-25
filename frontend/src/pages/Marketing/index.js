@@ -184,6 +184,7 @@ const Marketing = () => {
   const [lastActionSummary, setLastActionSummary] = useState("");
   const [adAccountError, setAdAccountError] = useState(false);
   const [customAdAccountId, setCustomAdAccountId] = useState("");
+  const [customAccessToken, setCustomAccessToken] = useState("");
   const [settingLoading, setSettingLoading] = useState(false);
   
   // Feed comments expansion state
@@ -196,10 +197,15 @@ const Marketing = () => {
   const handleSaveAdAccount = async () => {
       setSettingLoading(true);
       try {
-          await api.put("/settings/facebook_ad_account_id", { value: customAdAccountId });
-          toast.success("Ad Account ID salvo com sucesso!");
+          if (customAdAccountId) {
+            await api.put("/settings/facebook_ad_account_id", { value: customAdAccountId });
+          }
+          if (customAccessToken) {
+            await api.put("/settings/facebook_access_token", { value: customAccessToken });
+          }
+          toast.success("Configurações salvas com sucesso!");
           setAdAccountError(false);
-          window.location.reload();
+          // window.location.reload(); // Não recarregar para manter estado
       } catch (err) {
           toastError(err);
       } finally {
@@ -227,6 +233,9 @@ const Marketing = () => {
         setStatus(data);
         if (data.adAccountId) {
             setCustomAdAccountId(data.adAccountId);
+        }
+        if (data.accessToken) {
+            setCustomAccessToken(data.accessToken);
         }
       } catch (err) {
         const errorType = err.response?.data?.error;
