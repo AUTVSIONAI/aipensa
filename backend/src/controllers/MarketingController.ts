@@ -93,7 +93,7 @@ export const status = async (req: Request, res: Response): Promise<Response> => 
     const companyId = (req as any).user?.companyId;
     const { accessToken, businessId, adAccountId } = await getFbConfig(companyId);
     if (!accessToken) {
-      return res.status(400).json({ error: "facebook_access_token ausente" });
+      return res.status(400).json({ error: "ERR_NO_TOKEN", message: "Token de acesso não encontrado. Conecte o Facebook ou insira o token manualmente." });
     }
     const meResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me`, {
       params: { access_token: accessToken, fields: "id,name" }
@@ -120,6 +120,10 @@ export const insights = async (req: Request, res: Response): Promise<Response> =
     if (!adAccountId) {
       return res.status(400).json({ error: "ERR_NO_AD_ACCOUNT", message: "Nenhuma conta de anúncios encontrada." });
     }
+
+    // Remove act_ prefix if present to avoid act_act_ duplication
+    const cleanAdAccountId = adAccountId.replace(/^act_/, "");
+
     const datePreset = (req.query?.date_preset as string) || "last_7d";
     const params = {
       access_token: accessToken,
@@ -128,7 +132,7 @@ export const insights = async (req: Request, res: Response): Promise<Response> =
       fields: "impressions,reach,clicks,spend,cpm,ctr"
     };
     const resp = await axios.get(
-      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/insights`,
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${cleanAdAccountId}/insights`,
       { params }
     );
     return res.json(resp.data);
