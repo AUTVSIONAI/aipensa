@@ -196,10 +196,9 @@ const Marketing = () => {
   const handleSaveAdAccount = async () => {
       setSettingLoading(true);
       try {
-          await api.post("/settings", { key: "facebook_ad_account_id", value: customAdAccountId });
+          await api.put("/settings/facebook_ad_account_id", { value: customAdAccountId });
           toast.success("Ad Account ID salvo com sucesso!");
           setAdAccountError(false);
-          // Reload page or re-fetch status
           window.location.reload();
       } catch (err) {
           toastError(err);
