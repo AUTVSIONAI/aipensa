@@ -197,6 +197,74 @@ export const publishContent = async (req: Request, res: Response): Promise<Respo
   }
 };
 
+export const getFeed = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) {
+      return res.status(400).json({ error: "access_token ausente" });
+    }
+    const { pageId } = req.query;
+    if (!pageId) {
+      return res.status(400).json({ error: "pageId é obrigatório" });
+    }
+
+    const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed`, {
+      params: {
+        access_token: accessToken,
+        fields: "id,message,created_time,full_picture,permalink_url,comments.summary(true).limit(5){id,message,created_time,from},likes.summary(true)",
+        limit: 10
+      }
+    });
+
+    return res.json(resp.data);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.response?.data || error.message });
+  }
+};
+
+export const likePost = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) return res.status(400).json({ error: "access_token ausente" });
+
+    const { objectId, pageAccessToken } = req.body;
+    if (!objectId) return res.status(400).json({ error: "objectId é obrigatório" });
+
+    const tokenToUse = pageAccessToken || accessToken;
+
+    const resp = await axios.post(`https://graph.facebook.com/${GRAPH_VERSION}/${objectId}/likes`, null, {
+      params: { access_token: tokenToUse }
+    });
+
+    return res.json(resp.data);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.response?.data || error.message });
+  }
+};
+
+export const commentPost = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) return res.status(400).json({ error: "access_token ausente" });
+
+    const { objectId, message, pageAccessToken } = req.body;
+    if (!objectId || !message) return res.status(400).json({ error: "objectId e message são obrigatórios" });
+
+    const tokenToUse = pageAccessToken || accessToken;
+
+    const resp = await axios.post(`https://graph.facebook.com/${GRAPH_VERSION}/${objectId}/comments`, null, {
+      params: { access_token: tokenToUse, message }
+    });
+
+    return res.json(resp.data);
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.response?.data || error.message });
+  }
+};
+
 
 export const createCampaign = async (req: Request, res: Response): Promise<Response> => {
   try {

@@ -19,5 +19,8 @@ routes.post("/marketing/campaign/status", isAuth, MarketingController.updateCamp
 routes.post("/marketing/adset/status", isAuth, MarketingController.updateAdSetStatus);
 routes.post("/marketing/adimage", isAuth, upload.single("image"), MarketingController.uploadAdImage);
 routes.post("/marketing/publish", isAuth, MarketingController.publishContent);
+routes.get("/marketing/feed", isAuth, MarketingController.getFeed);
+routes.post("/marketing/like", isAuth, MarketingController.likePost);
+routes.post("/marketing/comment", isAuth, MarketingController.commentPost);
 
 export default routes;

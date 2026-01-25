@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Whatsapp from "../models/Whatsapp";
 import { handleMessage } from "../services/FacebookServices/facebookMessageListener";
+import { handleFacebookFeed } from "../services/FacebookServices/FacebookFeedListener";
 // import { handleMessage } from "../services/FacebookServices/facebookMessageListener";
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
@@ -52,6 +53,10 @@ export const webHook = async (
         if (getTokenPage) {
           entry.messaging?.forEach((data: any) => {
             handleMessage(getTokenPage, data, channel, getTokenPage.companyId);
+          });
+
+          entry.changes?.forEach((data: any) => {
+            handleFacebookFeed(getTokenPage, data, channel, getTokenPage.companyId);
           });
         }
       });

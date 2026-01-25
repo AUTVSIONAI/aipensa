@@ -74,6 +74,29 @@ export const sendText = async (
   }
 };
 
+export const replyComment = async (
+  commentId: string,
+  message: string,
+  token: string
+): Promise<void> => {
+  try {
+    const { data } = await apiBase(token).post(`${commentId}/replies`, {
+      message: message
+    });
+    return data;
+  } catch (error) {
+    console.error("Error replying comment:", error?.response?.data || error);
+    // Tentar fallback para /comments se /replies falhar (depende se é top-level ou reply)
+    try {
+        await apiBase(token).post(`${commentId}/comments`, {
+            message: message
+        });
+    } catch (e) {
+        console.error("Fallback reply failed:", e?.response?.data);
+    }
+  }
+};
+
 export const sendAttachmentFromUrl = async (
   id: string,
   url: string,
