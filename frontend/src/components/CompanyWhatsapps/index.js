@@ -171,7 +171,7 @@ const WhatsAppModalCompany = ({
       const id = response.id || response.userID;
 
       api
-        .post("/facebook", {
+        .post("/facebook/", {
           addInstagram: true,
           facebookUserId: id,
           facebookUserToken: accessToken
