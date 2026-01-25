@@ -33,10 +33,25 @@ async function getFbConfig(companyId?: number) {
           companyId,
           channel: { [Op.or]: ["facebook", "instagram"] },
           [Op.or]: [
-            { tokenMeta: { [Op.ne]: null } },
-            { facebookUserToken: { [Op.ne]: null } }
+            { 
+              tokenMeta: { 
+                [Op.and]: [
+                  { [Op.ne]: null },
+                  { [Op.ne]: "" }
+                ] 
+              } 
+            },
+            { 
+              facebookUserToken: { 
+                [Op.and]: [
+                  { [Op.ne]: null },
+                  { [Op.ne]: "" }
+                ] 
+              } 
+            }
           ]
-        }
+        },
+        order: [["updatedAt", "DESC"]]
       });
       
       if (whatsapp) {

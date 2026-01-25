@@ -12,11 +12,12 @@ export const initIO = (httpServer: Server): SocketIO => {
     allowRequest: (req, callback) => {
       callback(null, true);
     },
-    cors: {
-      origin: process.env.FRONTEND_URL || "https://aipensa.com",
-      credentials: true,
-      methods: ["GET", "POST"]
-    }
+    // CORS configuration removed to avoid conflict with Nginx
+    // cors: {
+    //   origin: process.env.FRONTEND_URL || "https://aipensa.com",
+    //   credentials: true,
+    //   methods: ["GET", "POST"]
+    // }
   });
 
   // if (process.env.SOCKET_ADMIN && JSON.parse(process.env.SOCKET_ADMIN)) {
