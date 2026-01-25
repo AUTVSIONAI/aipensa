@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import axios from "axios";
 import Setting from "../models/Setting";
+import Whatsapp from "../models/Whatsapp";
+import { Op } from "sequelize";
 import FormData from "form-data";
 
 const GRAPH_VERSION = "v19.0";
@@ -23,6 +25,45 @@ async function getFbConfig(companyId?: number) {
     accessToken = at?.value || null;
     businessId = bid?.value || null;
     adAccountId = act?.value || null;
+
+    // Fallback: Se não houver token nas configurações, tentar encontrar nas conexões (Whatsapps table)
+    if (!accessToken) {
+      const whatsapp = await Whatsapp.findOne({
+        where: {
+          companyId,
+          channel: { [Op.or]: ["facebook", "instagram"] },
+          [Op.or]: [
+            { tokenMeta: { [Op.ne]: null } },
+            { facebookUserToken: { [Op.ne]: null } }
+          ]
+        }
+      });
+      
+      if (whatsapp) {
+        // Prefer tokenMeta (User Token) over facebookUserToken (Page Token)
+        accessToken = whatsapp.tokenMeta || whatsapp.facebookUserToken;
+        console.log(`[Marketing] Usando token da conexão ${whatsapp.name} (ID: ${whatsapp.id})`);
+      }
+    }
+
+    // Se temos token mas não temos adAccountId, tentar buscar automaticamente
+    if (accessToken && !adAccountId) {
+      try {
+        const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/adaccounts`, {
+          params: { access_token: accessToken, fields: "account_id,id,name" }
+        });
+        if (resp.data?.data?.length > 0) {
+          // Pega a primeira conta de anúncios encontrada
+          adAccountId = resp.data.data[0].account_id;
+          console.log(`[Marketing] Ad Account ID recuperado automaticamente: ${adAccountId}`);
+          
+          // Opcional: Salvar no banco para não buscar sempre?
+          // Por enquanto, vamos apenas usar em memória para evitar efeitos colaterais indesejados
+        }
+      } catch (err) {
+        console.error("[Marketing] Erro ao buscar Ad Accounts:", err.message);
+      }
+    }
   }
 
   accessToken = accessToken || process.env.FACEBOOK_ACCESS_TOKEN || null;
