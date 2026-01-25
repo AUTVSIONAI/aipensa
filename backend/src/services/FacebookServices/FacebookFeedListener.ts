@@ -96,9 +96,7 @@ export const handleFacebookFeed = async (
             
             // Ação 2: Enviar DM (Privado) -> Inicia Ticket
             // Verificar se já existe ticket aberto? Se não, abrir.
-            
-            // @ts-ignore
-            const ticket = await FindOrCreateTicketService(contact, whatsapp, 0, companyId);
+           const ticket = await FindOrCreateTicketService(contact, whatsapp, 0, companyId);
             
             if (ticket) {
                 // Enviar mensagem de boas vindas na DM
