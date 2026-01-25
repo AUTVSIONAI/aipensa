@@ -105,6 +105,7 @@ export const status = async (req: Request, res: Response): Promise<Response> => 
       adAccountId
     });
   } catch (error: any) {
+    console.error("[Marketing] Erro em insights:", error?.response?.data || error.message);
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };
@@ -132,6 +133,7 @@ export const insights = async (req: Request, res: Response): Promise<Response> =
     );
     return res.json(resp.data);
   } catch (error: any) {
+    console.error("[Marketing] Erro em insights:", error?.response?.data || error.message);
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };
@@ -148,6 +150,7 @@ export const pages = async (req: Request, res: Response): Promise<Response> => {
     });
     return res.json(resp.data);
   } catch (error: any) {
+    console.error("[Marketing] Erro em getFeed:", error?.response?.data || error.message);
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };
@@ -252,6 +255,7 @@ export const publishContent = async (req: Request, res: Response): Promise<Respo
     return res.json(result);
 
   } catch (error: any) {
+    console.error("[Marketing] Erro em publishContent:", error?.response?.data || error.message);
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };
@@ -278,6 +282,7 @@ export const getFeed = async (req: Request, res: Response): Promise<Response> =>
 
     return res.json(resp.data);
   } catch (error: any) {
+    console.error("[Marketing] Erro em getFeed:", error?.response?.data || error.message);
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };

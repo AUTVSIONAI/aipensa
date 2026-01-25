@@ -522,22 +522,22 @@ const Marketing = () => {
   };
 
   return (
-    <div className={classes.root}>
+    <div className={classes.root} style={{ background: "linear-gradient(135deg, #1e1e2f 0%, #2d2b42 100%)", minHeight: "100vh" }}>
       <Container maxWidth="xl">
         <Box className={classes.header} display="flex" justifyContent="space-between" alignItems="center">
           <Box display="flex" alignItems="center" gap={2}>
             <Button
               startIcon={<ArrowBackIcon />}
               onClick={() => history.push("/")}
-              style={{ color: "#4b5563", marginRight: 16 }}
+              style={{ color: "rgba(255,255,255,0.7)", marginRight: 16 }}
             >
               Voltar
             </Button>
             <Box>
-              <Typography variant="h4" style={{ fontWeight: 700, color: "#111827" }}>
+              <Typography variant="h4" style={{ fontWeight: 800, background: "linear-gradient(90deg, #fff 0%, #a5b4fc 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                 Marketing Pro
               </Typography>
-              <Typography variant="subtitle1" style={{ color: "#6b7280" }}>
+              <Typography variant="subtitle1" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
                 Gerencie suas campanhas e redes sociais em um único lugar.
               </Typography>
             </Box>
