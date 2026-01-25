@@ -223,6 +223,8 @@ export const storeFacebook = async (
 
     const { data } = await getPageProfile(facebookUserId, facebookUserToken);
 
+    console.log("StoreFacebook Data:", JSON.stringify(data, null, 2));
+
     if (data.length === 0) {
       return res.status(400).json({
         error: "Facebook page not found 1"
@@ -255,6 +257,7 @@ export const storeFacebook = async (
           isMultidevice: false
         });
 
+        // Also add the Facebook page associated with this Instagram account
         pages.push({
           companyId,
           name,
@@ -321,7 +324,7 @@ export const storeFacebook = async (
 
       }
     }
-    return res.status(200);
+    return res.status(200).json({ count: pages.length });
   } catch (error) {
     console.log(error);
     return res.status(400).json({

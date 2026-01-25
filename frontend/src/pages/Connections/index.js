@@ -235,7 +235,11 @@ const Connections = () => {
           facebookUserToken: accessToken,
         })
         .then((response) => {
-          toast.success(i18n.t("connections.facebook.success"));
+          if (response.data.count === 0) {
+            toast.warn("Nenhuma conta do Instagram Business encontrada vinculada a esta conta do Facebook.");
+          } else {
+            toast.success(i18n.t("connections.facebook.success"));
+          }
         })
         .catch((error) => {
           toastError(error);

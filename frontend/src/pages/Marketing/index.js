@@ -225,11 +225,19 @@ const Marketing = () => {
         setStatusLoading(true);
         const { data } = await api.get("/marketing/status");
         setStatus(data);
+        if (data.adAccountId) {
+            setCustomAdAccountId(data.adAccountId);
+        }
       } catch (err) {
-        if (err.response?.data?.error === "ERR_NO_AD_ACCOUNT") {
+        const errorType = err.response?.data?.error;
+        if (errorType === "ERR_NO_AD_ACCOUNT") {
             setAdAccountError(true);
             setTab(9); // Switch to settings tab (we will add it at index 9)
             toast.warn("Configure sua conta de anúncios para continuar.");
+        } else if (errorType === "ERR_NO_TOKEN") {
+            setAdAccountError(true);
+            setTab(9);
+            toast.warn("Token de acesso ausente. Configure na aba Configurações.");
         } else {
             toastError(err);
         }
@@ -245,7 +253,8 @@ const Marketing = () => {
         const { data } = await api.get("/marketing/insights", { params: { date_preset: datePreset } });
         setInsights(data.data || []);
       } catch (err) {
-        if (err.response?.status === 400 && err.response?.data?.error === "ERR_NO_AD_ACCOUNT") {
+        const errorType = err.response?.data?.error;
+        if (err.response?.status === 400 && (errorType === "ERR_NO_AD_ACCOUNT" || errorType === "ERR_NO_TOKEN")) {
              setAdAccountError(true);
         } else if (err.response?.status !== 400) {
           toastError(err);
@@ -1347,6 +1356,18 @@ const Marketing = () => {
                                 onChange={(e) => setCustomAdAccountId(e.target.value)}
                                 helperText="Ex: act_1234567890 (Opcional, apenas se não detectado automaticamente)"
                                 style={{ marginBottom: 16 }}
+                            />
+
+                            <TextField
+                                fullWidth
+                                label="Facebook Access Token"
+                                variant="outlined"
+                                className={classes.input}
+                                value={customAccessToken}
+                                onChange={(e) => setCustomAccessToken(e.target.value)}
+                                helperText="Token de acesso de longa duração (EAAB...)"
+                                style={{ marginBottom: 16 }}
+                                type="password"
                             />
 
                             <Button
