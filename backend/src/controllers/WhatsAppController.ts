@@ -257,27 +257,10 @@ export const storeFacebook = async (
           isMultidevice: false
         });
 
-        // Also add the Facebook page associated with this Instagram account
-        pages.push({
-          companyId,
-          name,
-          facebookUserId: facebookUserId,
-          facebookPageUserId: id,
-          facebookUserToken: acessTokenPage,
-          tokenMeta: facebookUserToken,
-          isDefault: false,
-          channel: "facebook",
-          status: "CONNECTED",
-          greetingMessage: "",
-          farewellMessage: "",
-          queueIds: [],
-          isMultidevice: false
-        });
-
         await subscribeApp(id, acessTokenPage);
       }
 
-      if (!instagram_business_account) {
+      if (!addInstagram) {
         pages.push({
           companyId,
           name,
