@@ -85,6 +85,11 @@ async function getFbConfig(companyId?: number) {
   businessId = businessId || process.env.FACEBOOK_BUSINESS_ID || null;
   adAccountId = adAccountId || process.env.FACEBOOK_AD_ACCOUNT_ID || null;
 
+  // Ensure adAccountId is clean (without act_ prefix)
+  if (adAccountId) {
+    adAccountId = adAccountId.replace(/^act_/, "");
+  }
+
   return { accessToken, businessId, adAccountId };
 }
 
@@ -105,7 +110,7 @@ export const status = async (req: Request, res: Response): Promise<Response> => 
       adAccountId
     });
   } catch (error: any) {
-    console.error("[Marketing] Erro em insights:", error?.response?.data || error.message);
+    console.error("[Marketing] Erro em status:", error?.response?.data || error.message);
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };
@@ -121,9 +126,6 @@ export const insights = async (req: Request, res: Response): Promise<Response> =
       return res.status(400).json({ error: "ERR_NO_AD_ACCOUNT", message: "Nenhuma conta de anúncios encontrada." });
     }
 
-    // Remove act_ prefix if present to avoid act_act_ duplication
-    const cleanAdAccountId = adAccountId.replace(/^act_/, "");
-
     const datePreset = (req.query?.date_preset as string) || "last_7d";
     const params = {
       access_token: accessToken,
@@ -132,7 +134,7 @@ export const insights = async (req: Request, res: Response): Promise<Response> =
       fields: "impressions,reach,clicks,spend,cpm,ctr"
     };
     const resp = await axios.get(
-      `https://graph.facebook.com/${GRAPH_VERSION}/act_${cleanAdAccountId}/insights`,
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/insights`,
       { params }
     );
     return res.json(resp.data);
@@ -485,6 +487,10 @@ export const createWhatsappAdFlow = async (req: Request, res: Response): Promise
       ad_name = "Anúncio WhatsApp"
     } = req.body || {};
 
+    console.log("[Marketing] createWhatsappAdFlow params:", { 
+      adAccountId, page_id, phone_number_e164, image_hash 
+    });
+
     // 1) Campaign (MESSAGES)
     const campResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/campaigns`,
@@ -540,6 +546,7 @@ export const createWhatsappAdFlow = async (req: Request, res: Response): Promise
       ad_id: adResp.data.id
     });
   } catch (error: any) {
+    console.error("[Marketing] Erro em createWhatsappAdFlow:", JSON.stringify(error?.response?.data || error.message, null, 2));
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };
@@ -605,6 +612,7 @@ export const uploadAdImage = async (req: Request, res: Response): Promise<Respon
     );
     return res.json(resp.data);
   } catch (error: any) {
+    console.error("[Marketing] Erro em uploadAdImage:", JSON.stringify(error?.response?.data || error.message, null, 2));
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };
