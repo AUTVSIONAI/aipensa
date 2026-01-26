@@ -13,84 +13,59 @@ async function getFbConfig(companyId?: number) {
   let businessId: string | null = null;
   let adAccountId: string | null = null;
 
+  // Prioridade: Tentar encontrar nas conexões (Whatsapps table) pois é a conexão mais recente
   if (companyId) {
+    const whatsapp = await Whatsapp.findOne({
+      where: {
+        companyId,
+        channel: { [Op.or]: ["facebook", "instagram"] },
+        [Op.or]: [
+          { 
+            tokenMeta: { 
+              [Op.and]: [
+                { [Op.ne]: null },
+                { [Op.ne]: "" }
+              ] 
+            } 
+          },
+          { 
+            facebookUserToken: { 
+              [Op.and]: [
+                { [Op.ne]: null },
+                { [Op.ne]: "" }
+              ] 
+            } 
+          }
+        ]
+      },
+      order: [["updatedAt", "DESC"]]
+    });
+    
+    if (whatsapp) {
+      // Prefer tokenMeta (User Token) over facebookUserToken (Page Token)
+      accessToken = whatsapp.tokenMeta || whatsapp.facebookUserToken;
+      console.log(`[Marketing] Usando token da conexão ${whatsapp.name} (ID: ${whatsapp.id}, Channel: ${whatsapp.channel}) - Prioridade Alta`);
+    }
+  }
+
+  // Fallback: Se não encontrar nas conexões, tentar nas configurações (Setting table)
+  if (!accessToken && companyId) {
     const at = await Setting.findOne({
       where: { companyId, key: "facebook_access_token" }
     });
-    const bid = await Setting.findOne({
-      where: { companyId, key: "facebook_business_id" }
-    });
-    const act = await Setting.findOne({
-      where: { companyId, key: "facebook_ad_account_id" }
-    });
     accessToken = at?.value || null;
-    businessId = bid?.value || null;
-    adAccountId = act?.value || null;
-
-    // Fallback: Se não houver token nas configurações, tentar encontrar nas conexões (Whatsapps table)
-    if (!accessToken) {
-      console.log(`[Marketing] Token não encontrado em Settings para company ${companyId}. Buscando em Whatsapp table...`);
-      
-      const allConnections = await Whatsapp.findAll({
-        where: { companyId },
-        attributes: ['id', 'name', 'channel', 'tokenMeta', 'facebookUserToken']
-      });
-      console.log(`[Marketing] Debug Connections for company ${companyId}:`, allConnections.map(c => ({
-        id: c.id,
-        name: c.name,
-        channel: c.channel,
-        hasTokenMeta: !!c.tokenMeta,
-        hasFbUserToken: !!c.facebookUserToken
-      })));
-
-      const whatsapp = await Whatsapp.findOne({
-        where: {
-          companyId,
-          channel: { [Op.or]: ["facebook", "instagram"] },
-          [Op.or]: [
-            { 
-              tokenMeta: { 
-                [Op.and]: [
-                  { [Op.ne]: null },
-                  { [Op.ne]: "" }
-                ] 
-              } 
-            },
-            { 
-              facebookUserToken: { 
-                [Op.and]: [
-                  { [Op.ne]: null },
-                  { [Op.ne]: "" }
-                ] 
-              } 
-            }
-          ]
-        },
-        order: [["updatedAt", "DESC"]]
-      });
-      
-      if (whatsapp) {
-        // Prefer tokenMeta (User Token) over facebookUserToken (Page Token)
-        accessToken = whatsapp.tokenMeta || whatsapp.facebookUserToken;
-        console.log(`[Marketing] Usando token da conexão ${whatsapp.name} (ID: ${whatsapp.id}, Channel: ${whatsapp.channel})`);
-      } else {
-        console.log(`[Marketing] Nenhuma conexão com token encontrada para companyId: ${companyId}. Buscando em qualquer canal com token...`);
-        // Fallback agressivo: Tentar qualquer conexão que tenha tokenMeta (pode ser um canal antigo ou mal classificado)
-        const anyWhatsapp = await Whatsapp.findOne({
-           where: {
-             companyId,
-             tokenMeta: { [Op.ne]: null, [Op.ne]: "" }
-           },
-           order: [["updatedAt", "DESC"]]
-        });
-        if (anyWhatsapp) {
-            accessToken = anyWhatsapp.tokenMeta;
-            console.log(`[Marketing] Fallback: Usando token da conexão ${anyWhatsapp.name} (ID: ${anyWhatsapp.id}, Channel: ${anyWhatsapp.channel})`);
-        } else {
-            console.log(`[Marketing] REALMENTE nenhuma conexão com token encontrada.`);
-        }
-      }
+    if (accessToken) {
+       console.log(`[Marketing] Usando token das configurações (Setting) - Fallback`);
     }
+  }
+
+  // Restore adAccountId and businessId retrieval from Settings if not already set (independent of token source)
+  if (companyId) {
+     const bid = await Setting.findOne({ where: { companyId, key: "facebook_business_id" } });
+     const act = await Setting.findOne({ where: { companyId, key: "facebook_ad_account_id" } });
+     if (!businessId) businessId = bid?.value || null;
+     if (!adAccountId) adAccountId = act?.value || null;
+  }
 
     // Se temos token mas não temos adAccountId, tentar buscar automaticamente
     if (accessToken && !adAccountId) {
@@ -108,12 +83,10 @@ async function getFbConfig(companyId?: number) {
       }
     }
 
-    // Ensure adAccountId is clean (without act_ prefix)
-    if (adAccountId) {
-      adAccountId = adAccountId.replace(/^act_/, "");
-    }
+  // Ensure adAccountId is clean (without act_ prefix)
+  if (adAccountId) {
+    adAccountId = adAccountId.replace(/^act_/, "");
   }
-
 
   accessToken = accessToken || process.env.FACEBOOK_ACCESS_TOKEN || null;
   businessId = businessId || process.env.FACEBOOK_BUSINESS_ID || null;
