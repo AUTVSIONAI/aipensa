@@ -29,6 +29,20 @@ async function getFbConfig(companyId?: number) {
 
     // Fallback: Se não houver token nas configurações, tentar encontrar nas conexões (Whatsapps table)
     if (!accessToken) {
+      console.log(`[Marketing] Token não encontrado em Settings para company ${companyId}. Buscando em Whatsapp table...`);
+      
+      const allConnections = await Whatsapp.findAll({
+        where: { companyId },
+        attributes: ['id', 'name', 'channel', 'tokenMeta', 'facebookUserToken']
+      });
+      console.log(`[Marketing] Debug Connections for company ${companyId}:`, allConnections.map(c => ({
+        id: c.id,
+        name: c.name,
+        channel: c.channel,
+        hasTokenMeta: !!c.tokenMeta,
+        hasFbUserToken: !!c.facebookUserToken
+      })));
+
       const whatsapp = await Whatsapp.findOne({
         where: {
           companyId,
