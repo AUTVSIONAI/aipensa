@@ -5,6 +5,25 @@ const api = axios.create({
   withCredentials: true,
 });
 
+api.interceptors.request.use(
+  (config) => {
+    const rawToken = localStorage.getItem("token");
+    if (rawToken) {
+      let token = rawToken;
+      try {
+        token = JSON.parse(rawToken);
+      } catch (_) {}
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+/* 
+// Removed static initialization to prevent stale tokens
 try {
   const rawToken = localStorage.getItem("token");
   if (rawToken) {
@@ -15,6 +34,7 @@ try {
     api.defaults.headers.Authorization = `Bearer ${token}`;
   }
 } catch (_) {}
+*/
 
 export const openApi = axios.create({
   baseURL: process.env.REACT_APP_BACKEND_URL

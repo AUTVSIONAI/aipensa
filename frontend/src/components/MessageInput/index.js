@@ -733,27 +733,31 @@ const MessageInput = ({ ticketId, ticketStatus, droppedFiles, contactId, ticketC
   }, []);
 
   useEffect(() => {
-    if (
-      isString(inputMessage) &&
-      !isEmpty(inputMessage) &&
-      inputMessage.length >= 1
-    ) {
-      const firstWord = inputMessage.charAt(0);
+    const delayDebounceFn = setTimeout(() => {
+      if (
+        isString(inputMessage) &&
+        !isEmpty(inputMessage) &&
+        inputMessage.length >= 1
+      ) {
+        const firstWord = inputMessage.charAt(0);
 
-      if (firstWord === "/") {
-        setTypeBar(firstWord.indexOf("/") > -1);
+        if (firstWord === "/") {
+          setTypeBar(firstWord.indexOf("/") > -1);
 
-        const filteredOptions = quickAnswers.filter(
-          (m) => m.label.toLowerCase().indexOf(inputMessage.toLowerCase()) > -1
-        );
-        setTypeBar(filteredOptions);
+          const filteredOptions = quickAnswers.filter(
+            (m) => m.label.toLowerCase().indexOf(inputMessage.toLowerCase()) > -1
+          );
+          setTypeBar(filteredOptions);
+        } else {
+          setTypeBar(false);
+        }
       } else {
         setTypeBar(false);
       }
-    } else {
-      setTypeBar(false);
-    }
-  }, [inputMessage]);
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [inputMessage, quickAnswers]);
 
   const disableOption = () => {
     return (
