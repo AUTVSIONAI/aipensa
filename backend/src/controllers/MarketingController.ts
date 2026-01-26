@@ -6,105 +6,12 @@ import Whatsapp from "../models/Whatsapp";
 import { Op } from "sequelize";
 import FormData from "form-data";
 
+import * as SocialMediaService from "../services/FacebookServices/SocialMediaService";
+
 const GRAPH_VERSION = "v19.0";
 
-async function getFbConfig(companyId?: number) {
-  let accessToken: string | null = null;
-  let businessId: string | null = null;
-  let adAccountId: string | null = null;
-
-  // Prioridade: Tentar encontrar nas conexões (Whatsapps table) pois é a conexão mais recente
-  if (companyId) {
-    const whatsapp = await Whatsapp.findOne({
-      where: {
-        companyId,
-        channel: { [Op.or]: ["facebook", "instagram"] },
-        [Op.or]: [
-          { 
-            tokenMeta: { 
-              [Op.and]: [
-                { [Op.ne]: null },
-                { [Op.ne]: "" }
-              ] 
-            } 
-          },
-          { 
-            facebookUserToken: { 
-              [Op.and]: [
-                { [Op.ne]: null },
-                { [Op.ne]: "" }
-              ] 
-            } 
-          }
-        ]
-      },
-      order: [["updatedAt", "DESC"]]
-    });
-    
-    if (whatsapp) {
-      // Prefer tokenMeta (User Token) over facebookUserToken (Page Token)
-      accessToken = whatsapp.tokenMeta || whatsapp.facebookUserToken;
-      console.log(`[Marketing] Usando token da conexão ${whatsapp.name} (ID: ${whatsapp.id}, Channel: ${whatsapp.channel}) - Prioridade Alta`);
-    }
-  }
-
-  // Fallback: Se não encontrar nas conexões, tentar nas configurações (Setting table)
-  if (!accessToken && companyId) {
-    const at = await Setting.findOne({
-      where: { companyId, key: "facebook_access_token" }
-    });
-    accessToken = at?.value || null;
-    if (accessToken) {
-       console.log(`[Marketing] Usando token das configurações (Setting) - Fallback`);
-    }
-  }
-
-  // Restore adAccountId and businessId retrieval from Settings if not already set (independent of token source)
-  if (companyId) {
-     const bid = await Setting.findOne({ where: { companyId, key: "facebook_business_id" } });
-     const act = await Setting.findOne({ where: { companyId, key: "facebook_ad_account_id" } });
-     if (!businessId) businessId = bid?.value || null;
-     if (!adAccountId) adAccountId = act?.value || null;
-  }
-
-    // Se temos token mas não temos adAccountId, tentar buscar automaticamente
-    if (accessToken && !adAccountId) {
-      try {
-        const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/adaccounts`, {
-          params: { access_token: accessToken, fields: "account_id,id,name" }
-        });
-        if (resp.data?.data?.length > 0) {
-          // Pega a primeira conta de anúncios encontrada
-          adAccountId = resp.data.data[0].account_id;
-          console.log(`[Marketing] Ad Account ID recuperado automaticamente: ${adAccountId}`);
-        }
-      } catch (err) {
-        console.error("[Marketing] Erro ao buscar Ad Accounts:", err.message);
-      }
-    }
-
-  // Ensure adAccountId is clean (without act_ prefix)
-  if (adAccountId) {
-    adAccountId = adAccountId.replace(/^act_/, "");
-  }
-
-  accessToken = accessToken || process.env.FACEBOOK_ACCESS_TOKEN || null;
-  businessId = businessId || process.env.FACEBOOK_BUSINESS_ID || null;
-  adAccountId = adAccountId || process.env.FACEBOOK_AD_ACCOUNT_ID || null;
-
-  // Ensure adAccountId is clean (without act_ prefix)
-  if (adAccountId) {
-    adAccountId = adAccountId.replace(/^act_/, "");
-  }
-
-  console.log(`[Marketing] getFbConfig result for company ${companyId}:`, { 
-    hasAccessToken: !!accessToken, 
-    hasAdAccount: !!adAccountId,
-    adAccountId 
-  });
-
-  return { accessToken, businessId, adAccountId };
-}
+// Re-export getFbConfig for local use if needed, or use the service directly
+const getFbConfig = SocialMediaService.getFbConfig;
 
 export const status = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -608,7 +515,27 @@ export const createWhatsappAdFlow = async (req: Request, res: Response): Promise
     });
   } catch (error: any) {
     console.error("[Marketing] Erro em createWhatsappAdFlow:", JSON.stringify(error?.response?.data || error.message, null, 2));
-    return res.status(400).json({ error: error?.response?.data || error.message });
+    
+    // Provide detailed error to frontend
+    const fbError = error?.response?.data?.error;
+    let errorMessage = error.message;
+    let errorDetails = "";
+
+    if (fbError) {
+        errorMessage = `Facebook API Error: ${fbError.message}`;
+        if (fbError.error_user_title) {
+            errorMessage += ` - ${fbError.error_user_title}`;
+        }
+        if (fbError.error_user_msg) {
+            errorDetails = fbError.error_user_msg;
+        }
+    }
+
+    return res.status(400).json({ 
+        error: errorMessage,
+        details: errorDetails,
+        raw: error?.response?.data 
+    });
   }
 };
 

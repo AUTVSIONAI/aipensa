@@ -136,6 +136,7 @@ const transcribeWithGemini = async (
 
 import { getMarketingInsights, getMarketingCampaigns } from "../MarketingServices/MarketingToolService";
 import { getCatalog, getProductById, sendProduct } from "../WbotServices/CatalogService";
+import { getConnectedPages, publishToFacebook, publishToInstagram } from "../FacebookServices/SocialMediaService";
 
 const handleCatalogAction = async (
   response: string,
@@ -283,6 +284,64 @@ const handleScheduleAction = async (
   return response;
 };
 
+const handleSocialMediaAction = async (
+  response: string,
+  ticket: Ticket,
+  contact: Contact
+): Promise<string> => {
+  const socialRegex = /\[POST_FEED\]([\s\S]*?)\[\/POST_FEED\]/;
+  const match = response.match(socialRegex);
+
+  if (match && match[1]) {
+    try {
+      const jsonContent = match[1].trim();
+      console.log("[OpenAiService] Social Media JSON:", jsonContent);
+      
+      const postData = JSON.parse(jsonContent);
+      const { platform, message, image } = postData;
+      
+      if (!platform || !message) {
+        return response.replace(match[0], "").trim() + "\n\n(Erro: Plataforma ou mensagem ausente para postagem)";
+      }
+
+      // Get pages to find ID
+      const pages = await getConnectedPages(ticket.companyId);
+      if (pages.length === 0) {
+        return response.replace(match[0], "").trim() + "\n\n(Erro: Nenhuma página/conta conectada encontrada)";
+      }
+
+      let result = "";
+
+      if (platform === "facebook") {
+        // Use first page
+        const page = pages[0];
+        await publishToFacebook(ticket.companyId, page.id, message, image);
+        result = `Postado com sucesso no Facebook da página ${page.name}!`;
+      } else if (platform === "instagram") {
+        // Find page with instagram_business_account
+        const pageWithInsta = pages.find(p => p.instagram_business_account);
+        if (!pageWithInsta) {
+           return response.replace(match[0], "").trim() + "\n\n(Erro: Nenhuma conta de Instagram conectada à página)";
+        }
+        if (!image) {
+           return response.replace(match[0], "").trim() + "\n\n(Erro: Imagem é obrigatória para Instagram)";
+        }
+        await publishToInstagram(ticket.companyId, pageWithInsta.instagram_business_account.id, image, message);
+        result = `Postado com sucesso no Instagram @${pageWithInsta.instagram_business_account.username}!`;
+      } else {
+        result = "(Erro: Plataforma desconhecida)";
+      }
+
+      return response.replace(match[0], "").trim() + "\n\n✅ " + result;
+
+    } catch (e) {
+      console.error("Erro ao postar em social media via AI:", e);
+      return response.replace(match[0], "").trim() + "\n\n❌ Erro ao realizar postagem: " + e.message;
+    }
+  }
+  return response;
+};
+
 export const handleOpenAi = async (
   openAiSettings: IOpenAi,
   msg: proto.IWebMessageInfo,
@@ -386,6 +445,14 @@ export const handleOpenAi = async (
   Você pode acessar dados de marketing (Meta/Facebook Ads) usando comandos JSON específicos.
   - Para ver métricas (insights): Use a tag [MARKETING] { "action": "get_insights", "period": "last_7d" } [/MARKETING] (periodos: today, yesterday, last_7d, last_30d)
   - Para listar campanhas: Use a tag [MARKETING] { "action": "get_campaigns", "status": "ACTIVE" } [/MARKETING] (status: ACTIVE, PAUSED)
+  
+  CAPACIDADES DE MÍDIA SOCIAL (SUPERAGENT):
+  Você pode publicar conteúdo no Facebook e Instagram (Feed).
+  - Para publicar: Use a tag [POST_FEED] { "platform": "facebook", "message": "Texto do post", "image": "URL_da_imagem" } [/POST_FEED]
+  - Plataformas: "facebook" ou "instagram".
+  - Se o usuário pedir para postar um produto do catálogo, pegue a URL da imagem do produto e a descrição, e use esta tag.
+  - Imagem é OBRIGATÓRIA para Instagram. Opcional para Facebook.
+
   NÃO invente dados. Se o usuário perguntar sobre campanhas ou desempenho, use essas tags e aguarde a resposta do sistema.
 
   ${catalogContext}
@@ -479,6 +546,9 @@ export const handleOpenAi = async (
 
     // Processar ações de catálogo
     response = await handleCatalogAction(response, wbot, msg);
+
+    // Processar ações de social media
+    response = await handleSocialMediaAction(response, ticket, contact);
   }
 
   // Verifica se a resposta foi processada (schedule ou marketing)
