@@ -205,10 +205,6 @@ const Marketing = () => {
   const [lastActionSummary, setLastActionSummary] = useState("");
   const [adAccountError, setAdAccountError] = useState(false);
   
-  // Manual override tokens (local session only)
-  const [manualAdAccountId, setManualAdAccountId] = useState(localStorage.getItem("marketingManualAdAccountId") || "");
-  const [manualAccessToken, setManualAccessToken] = useState(localStorage.getItem("marketingManualAccessToken") || "");
-  
   const [settingLoading, setSettingLoading] = useState(false);
   const [flowImagePreview, setFlowImagePreview] = useState("");
   
@@ -236,22 +232,6 @@ const Marketing = () => {
   const toggleComments = (postId) => {
     setExpandedComments(prev => ({ ...prev, [postId]: !prev[postId] }));
   };
-
-  const handleSaveAdAccount = async () => {
-      setSettingLoading(true);
-      try {
-          localStorage.setItem("marketingManualAdAccountId", manualAdAccountId);
-          localStorage.setItem("marketingManualAccessToken", manualAccessToken);
-          toast.success("Tokens salvos e aplicados!");
-          setAdAccountError(false);
-      } catch (err) {
-          toastError(err);
-      } finally {
-          setSettingLoading(false);
-      }
-  };
-
-
 
   useEffect(() => {
   const fetchStatus = async () => {
@@ -1611,54 +1591,6 @@ const Marketing = () => {
                  )}
               </Grid>
            </Grid>
-        </TabPanel>
-
-        <TabPanel value={tab} index={9}>
-            <Grid container spacing={3} justifyContent="center">
-                <Grid item xs={12} md={6}>
-                    <Card className={classes.card}>
-                        <Section icon={<SettingsIcon style={{ color: "white" }} />} title="Configurações de Marketing">
-                            <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
-                                Configure parâmetros manuais caso a detecção automática falhe.
-                            </Typography>
-                            
-                            <TextField
-                                fullWidth
-                                label="Facebook Ad Account ID"
-                                variant="outlined"
-                                className={classes.input}
-                                value={manualAdAccountId}
-                                onChange={(e) => setManualAdAccountId(e.target.value)}
-                                helperText="Ex: act_1234567890 (Opcional, apenas se não detectado automaticamente)"
-                                style={{ marginBottom: 16 }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Facebook Access Token"
-                                variant="outlined"
-                                className={classes.input}
-                                value={manualAccessToken}
-                                onChange={(e) => setManualAccessToken(e.target.value)}
-                                helperText="Token de acesso de longa duração (EAAB...)"
-                                style={{ marginBottom: 16 }}
-                                type="password"
-                            />
-
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                fullWidth
-                                onClick={handleSaveAdAccount}
-                                disabled={settingLoading}
-                                className={classes.button}
-                            >
-                                {settingLoading ? <CircularProgress size={24} color="inherit" /> : "Salvar Configurações"}
-                            </Button>
-                        </Section>
-                    </Card>
-                </Grid>
-            </Grid>
         </TabPanel>
       </Container>
     </div>

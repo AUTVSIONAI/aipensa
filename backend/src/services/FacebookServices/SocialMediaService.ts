@@ -16,6 +16,8 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
   let businessId: string | null = null;
   let adAccountId: string | null = null;
 
+  console.log(`[getFbConfig] Starting for company ${companyId}`);
+
   // Prioridade: Tentar encontrar nas conexões (Whatsapps table)
   if (companyId) {
     const whatsapp = await Whatsapp.findOne({
@@ -31,12 +33,16 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
     });
     
     if (whatsapp) {
+      console.log(`[getFbConfig] Found Whatsapp connection ID ${whatsapp.id} for company ${companyId}`);
       accessToken = whatsapp.tokenMeta || whatsapp.facebookUserToken;
+    } else {
+        console.log(`[getFbConfig] No Whatsapp connection found for company ${companyId}`);
     }
   }
 
   // Fallback: Setting table
   if (!accessToken && companyId) {
+    console.log(`[getFbConfig] Checking Settings table for fallback token`);
     const at = await Setting.findOne({ where: { companyId, key: "facebook_access_token" } });
     accessToken = at?.value || null;
   }
