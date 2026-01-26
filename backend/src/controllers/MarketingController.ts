@@ -295,15 +295,57 @@ export const getFeed = async (req: Request, res: Response): Promise<Response> =>
       return res.status(400).json({ error: "pageId é obrigatório" });
     }
 
-    const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed`, {
+    // Detectar se é um ID de Instagram (geralmente numérico, mas vamos confiar no frontend enviar o ID correto)
+    // Se o frontend enviar platform, melhor.
+    const platform = (req.query.platform as string) || "facebook";
+
+    let url = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed`;
+    let fields = "id,message,created_time,full_picture,permalink_url,comments.summary(true).limit(5){id,message,created_time,from},likes.summary(true)";
+
+    if (platform === "instagram") {
+      url = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/media`;
+      // Campos do Instagram Media
+      // caption = message
+      // media_url = full_picture
+      // permalink = permalink_url
+      fields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count,comments.limit(5){id,text,timestamp,username}";
+    }
+
+    const resp = await axios.get(url, {
       params: {
         access_token: accessToken,
-        fields: "id,message,created_time,full_picture,permalink_url,comments.summary(true).limit(5){id,message,created_time,from},likes.summary(true)",
+        fields: fields,
         limit: 10
       }
     });
 
-    return res.json(resp.data);
+    // Normalizar dados para o frontend
+    const data = resp.data.data.map((item: any) => {
+      if (platform === "instagram") {
+        return {
+          id: item.id,
+          message: item.caption || "",
+          full_picture: item.media_type === "VIDEO" ? item.thumbnail_url : item.media_url,
+          created_time: item.timestamp,
+          permalink_url: item.permalink,
+          likes: { summary: { total_count: item.like_count || 0 } },
+          comments: { 
+            summary: { total_count: item.comments_count || 0 },
+            data: item.comments?.data?.map((c: any) => ({
+              id: c.id,
+              message: c.text,
+              created_time: c.timestamp,
+              from: { name: c.username || "Instagram User" }
+            })) || []
+          },
+          platform: "instagram"
+        };
+      } else {
+        return { ...item, platform: "facebook" };
+      }
+    });
+
+    return res.json({ data });
   } catch (error: any) {
     console.error("[Marketing] Erro em getFeed:", error?.response?.data || error.message);
     return res.status(400).json({ error: error?.response?.data || error.message });
@@ -611,19 +653,25 @@ export const updateAdSetStatus = async (req: Request, res: Response): Promise<Re
 export const uploadAdImage = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
+    console.log(`[Marketing] Iniciando upload de imagem para empresa ${companyId}`);
+    
     const { accessToken, adAccountId } = await getFbConfig(companyId);
     if (!accessToken || !adAccountId) {
-      return res.status(400).json({ error: "config_missing", message: "Configure o Ad Account ID e Token." });
-    }
-    const file = (req as any).file;
-    if (!file) {
-      return res.status(400).json({ error: "file_missing" });
+      console.warn(`[Marketing] Falha no upload: Token ou Ad Account ID ausente. Token: ${!!accessToken}, AdAccount: ${adAccountId}`);
+      return res.status(400).json({ error: "config_missing", message: "Configure o Ad Account ID e Token nas configurações." });
     }
 
-    console.log(`[Marketing] Uploading image: ${file.path} (${file.mimetype})`);
+    const file = (req as any).file;
+    if (!file) {
+      console.warn(`[Marketing] Falha no upload: Nenhum arquivo recebido pelo Multer.`);
+      return res.status(400).json({ error: "file_missing", message: "Nenhum arquivo de imagem enviado." });
+    }
+
+    console.log(`[Marketing] Uploading image: ${file.path} (${file.mimetype}) para conta ${adAccountId}`);
 
     const form = new FormData();
     form.append("source", fs.createReadStream(file.path), { filename: file.originalname, contentType: file.mimetype });
+    
     const resp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adimages`,
       form,
@@ -632,9 +680,20 @@ export const uploadAdImage = async (req: Request, res: Response): Promise<Respon
         headers: form.getHeaders()
       }
     );
+    
+    console.log(`[Marketing] Imagem enviada com sucesso. Hash: ${JSON.stringify(resp.data)}`);
     return res.json(resp.data);
   } catch (error: any) {
-    console.error("[Marketing] Upload error:", error?.response?.data || error.message);
-    return res.status(400).json({ error: error?.response?.data || error.message });
+    console.error("[Marketing] Upload error details:", error?.response?.data || error.message);
+    const fbError = error?.response?.data?.error;
+    let errorMsg = error?.response?.data || error.message;
+    
+    if (fbError) {
+        if (fbError.code === 100) errorMsg = "Erro de Parâmetro do Facebook (Verifique permissões ou conta)";
+        if (fbError.code === 190) errorMsg = "Token Inválido ou Expirado";
+        if (fbError.type === "OAuthException") errorMsg = `Erro de Autenticação: ${fbError.message}`;
+    }
+    
+    return res.status(400).json({ error: errorMsg });
   }
 };

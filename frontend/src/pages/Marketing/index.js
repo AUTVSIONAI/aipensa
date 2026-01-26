@@ -36,7 +36,8 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     flexDirection: "column",
     backgroundAttachment: "fixed",
-    color: "#fff"
+    color: "#fff",
+    flex: 1
   },
   header: {
     marginBottom: theme.spacing(4)
@@ -788,14 +789,14 @@ const Marketing = () => {
               <Grid container spacing={3} direction="column">
                  <Grid item>
                     <Card className={classes.card}>
-                      <Section icon={<InfoOutlinedIcon style={{ color: "white" }} />} title="Custos e Limites">
+                      <Section icon={<InfoOutlinedIcon style={{ color: "white" }} />} title="Plano Atual">
                         <Box>
-                          <Typography variant="subtitle2" gutterBottom style={{ fontWeight: 600 }}>Integrações Meta (Facebook/Instagram)</Typography>
+                          <Typography variant="subtitle2" gutterBottom style={{ fontWeight: 600 }}>Limites do Plano</Typography>
                           <List dense>
                             <ListItem>
                               <ListItemText 
                                 primary="Postagens e Feed" 
-                                secondary="GRATUITO (API Orgânica)" 
+                                secondary="ILIMITADO" 
                                 primaryTypographyProps={{ style: { fontWeight: 500, color: "#fff" } }}
                                 secondaryTypographyProps={{ style: { color: "rgba(255, 255, 255, 0.7)" } }}
                               />
@@ -803,8 +804,8 @@ const Marketing = () => {
                             <Divider component="li" style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }} />
                             <ListItem>
                               <ListItemText 
-                                primary="Anúncios (Ads)" 
-                                secondary="Custo por visualização/clique (pago ao Facebook)" 
+                                primary="Contas Conectadas" 
+                                secondary="De acordo com seu plano" 
                                 primaryTypographyProps={{ style: { fontWeight: 500, color: "#fff" } }}
                                 secondaryTypographyProps={{ style: { color: "rgba(255, 255, 255, 0.7)" } }}
                               />
@@ -813,7 +814,7 @@ const Marketing = () => {
                             <ListItem>
                               <ListItemText 
                                 primary="Agendamento" 
-                                secondary="GRATUITO (Incluso na API)" 
+                                secondary="Disponível" 
                                 primaryTypographyProps={{ style: { fontWeight: 500, color: "#fff" } }}
                                 secondaryTypographyProps={{ style: { color: "rgba(255, 255, 255, 0.7)" } }}
                               />
@@ -821,7 +822,7 @@ const Marketing = () => {
                           </List>
                           <Box mt={1} p={1} bgcolor="rgba(255, 255, 255, 0.05)" borderRadius={4}>
                              <Typography variant="caption" display="block" align="center" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
-                               Os custos de anúncios são cobrados diretamente na sua conta do Gerenciador de Anúncios.
+                               Para aumentar seus limites, entre em contato com o suporte.
                              </Typography>
                           </Box>
                         </Box>
@@ -1322,6 +1323,19 @@ const Marketing = () => {
                           <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Selecione uma página para visualizar e interagir com as postagens recentes.</Typography>
                        </Box>
                        <Box display="flex" gap={2} alignItems="center">
+                          <TextField 
+                            select 
+                            label="Plataforma" 
+                            value={feedPlatform} 
+                            onChange={(e) => setFeedPlatform(e.target.value)} 
+                            variant="outlined" 
+                            size="small" 
+                            className={classes.input}
+                            style={{ minWidth: 150 }}
+                          >
+                             <MenuItem value="facebook">Facebook</MenuItem>
+                             <MenuItem value="instagram">Instagram</MenuItem>
+                          </TextField>
                           <TextField 
                             select 
                             label="Página Conectada" 
