@@ -23,6 +23,7 @@ import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
 import Whatsapp from "../../models/Whatsapp";
 import CreateScheduleService from "../ScheduleServices/CreateService";
 import { zonedTimeToUtc } from "date-fns-tz";
+import Tag from "../../models/Tag";
 
 type Session = WASocket & {
   id?: number;
@@ -67,6 +68,22 @@ const sanitizeName = (name: string): string => {
   let sanitized = name.split(" ")[0];
   sanitized = sanitized.replace(/[^a-zA-Z0-9]/g, "");
   return sanitized.substring(0, 60);
+};
+
+const verifyAdminPermission = async (contact: Contact): Promise<boolean> => {
+  try {
+    const contactWithTags = await Contact.findByPk(contact.id, {
+      include: [{ model: Tag, as: "tags" }]
+    });
+
+    if (!contactWithTags || !contactWithTags.tags) return false;
+
+    // Check for "ADMIN" or "admin" tag
+    return contactWithTags.tags.some(t => t.name.toUpperCase() === "ADMIN");
+  } catch (e) {
+    console.error("Error verifying admin permission:", e);
+    return false;
+  }
 };
 
 // Função para chamar OpenAI
@@ -182,6 +199,10 @@ const handleMarketingAction = async (
 
   if (match && match[1]) {
     try {
+      if (!await verifyAdminPermission(contact)) {
+        return response.replace(match[0], "").trim() + "\n\n⛔ *Acesso Negado*: Esta ação requer permissão de administrador (Tag: ADMIN).";
+      }
+
       const jsonContent = match[1].trim();
       console.log("[OpenAiService] Marketing JSON Content:", jsonContent);
       
@@ -294,6 +315,10 @@ const handleSocialMediaAction = async (
 
   if (match && match[1]) {
     try {
+      if (!await verifyAdminPermission(contact)) {
+        return response.replace(match[0], "").trim() + "\n\n⛔ *Acesso Negado*: Esta ação requer permissão de administrador (Tag: ADMIN).";
+      }
+
       const jsonContent = match[1].trim();
       console.log("[OpenAiService] Social Media JSON:", jsonContent);
       
@@ -443,11 +468,13 @@ export const handleOpenAi = async (
   
   CAPACIDADES DE MARKETING (SUPERAGENT):
   Você pode acessar dados de marketing (Meta/Facebook Ads) usando comandos JSON específicos.
+  IMPORTANTE: Estas ações só funcionam se o usuário tiver a tag "ADMIN".
   - Para ver métricas (insights): Use a tag [MARKETING] { "action": "get_insights", "period": "last_7d" } [/MARKETING] (periodos: today, yesterday, last_7d, last_30d)
   - Para listar campanhas: Use a tag [MARKETING] { "action": "get_campaigns", "status": "ACTIVE" } [/MARKETING] (status: ACTIVE, PAUSED)
   
   CAPACIDADES DE MÍDIA SOCIAL (SUPERAGENT):
   Você pode publicar conteúdo no Facebook e Instagram (Feed).
+  IMPORTANTE: Esta ação só funciona se o usuário tiver a tag "ADMIN".
   - Para publicar: Use a tag [POST_FEED] { "platform": "facebook", "message": "Texto do post", "image": "URL_da_imagem" } [/POST_FEED]
   - Plataformas: "facebook" ou "instagram".
   - Se o usuário pedir para postar um produto do catálogo, pegue a URL da imagem do produto e a descrição, e use esta tag.
