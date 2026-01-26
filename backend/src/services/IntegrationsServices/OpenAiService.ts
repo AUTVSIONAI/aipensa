@@ -536,25 +536,34 @@ export const handleOpenAi = async (
   mediaSent: Message | undefined,
   ticketTraking: TicketTraking
 ): Promise<void> => {
+  console.log(`[handleOpenAi] Starting for ticket ${ticket.id} contact ${contact.id}`);
+  
   // REGRA PARA DESABILITAR O BOT PARA ALGUM CONTATO
   if (contact.disableBot) {
+    console.log(`[handleOpenAi] Bot disabled for contact ${contact.id}`);
     return;
   }
 
   // Check Agent AI Feature
-  if (!(await checkPlanFeature(ticket.companyId, "useAgentAi"))) {
+  const hasAgentAi = await checkPlanFeature(ticket.companyId, "useAgentAi");
+  console.log(`[handleOpenAi] Company ${ticket.companyId} has useAgentAi: ${hasAgentAi}`);
+  if (!hasAgentAi) {
     return;
   }
 
   // Check Voice Commands
   const isAudio = !!msg.message?.audioMessage;
   if (isAudio) {
-     if (!(await checkPlanFeature(ticket.companyId, "useVoiceCommands"))) {
+     const hasVoice = await checkPlanFeature(ticket.companyId, "useVoiceCommands");
+     console.log(`[handleOpenAi] Audio message. hasVoice: ${hasVoice}`);
+     if (!hasVoice) {
         return;
      }
      
      // Check Voice Limit
-     if (!(await checkPlanLimit(ticket.companyId, "limitVoiceMinutes", "VOICE_SECONDS"))) {
+     const hasVoiceLimit = await checkPlanLimit(ticket.companyId, "limitVoiceMinutes", "VOICE_SECONDS");
+     console.log(`[handleOpenAi] hasVoiceLimit: ${hasVoiceLimit}`);
+     if (!hasVoiceLimit) {
         return;
      }
 
@@ -563,9 +572,13 @@ export const handleOpenAi = async (
   }
 
   const bodyMessage = getBodyMessage(msg);
+  console.log(`[handleOpenAi] Body message: ${bodyMessage}`);
   if (!bodyMessage) return;
 
-  if (!openAiSettings) return;
+  if (!openAiSettings) {
+    console.log(`[handleOpenAi] No openAiSettings provided`);
+    return;
+  }
   if (msg.messageStubType) return;
 
   // Definir provider padrão se não estiver definido

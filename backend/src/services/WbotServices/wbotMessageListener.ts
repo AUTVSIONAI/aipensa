@@ -4909,6 +4909,7 @@ const handleMessage = async (
       !ticket.userId &&
       !isNil(whatsapp.promptId)
     ) {
+      console.log(`[wbotMessageListener] Triggering OpenAI for ticket ${ticket.id}`);
       const { prompt } = whatsapp;
 
       const promptWithFallback = {
@@ -4925,6 +4926,8 @@ const handleMessage = async (
         mediaSent,
         ticketTraking
       );
+    } else if (!isNil(whatsapp.promptId) && !isGroup && !msg.key.fromMe) {
+        console.log(`[wbotMessageListener] Skipping OpenAI for ticket ${ticket.id}. Reasons: queue=${!!ticket.queue}, userId=${!!ticket.userId}`);
     }
 
     console.log("log... 4444", { ticket });
