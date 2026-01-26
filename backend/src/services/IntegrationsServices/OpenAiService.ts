@@ -679,18 +679,23 @@ export const handleOpenAi = async (
 
       const products = await getCatalog(wbot, ownerJid);
       if (products && products.length > 0) {
-        catalogContext = `\n\n🛍️ LINK DO CATÁLOGO: ${catalogLink}\n`;
+        catalogContext = `\n\n🛍️ LINK GERAL DO CATÁLOGO: ${catalogLink}\n`;
         catalogContext += "🛍️ CATÁLOGO DE PRODUTOS DISPONÍVEIS:\n";
         products.forEach(p => {
             const price = (p.price / 1000).toLocaleString('pt-BR', { style: 'currency', currency: p.currency || 'BRL' });
+            const productLink = p.url || `https://wa.me/p/${p.id}/${phoneNumber}`;
+            
             catalogContext += `- ID: ${p.id} | ${p.name} | ${price}\n`;
+            catalogContext += `  Link: ${productLink}\n`;
             if (p.description) catalogContext += `  Desc: ${p.description.substring(0, 100)}${p.description.length > 100 ? '...' : ''}\n`;
         });
         catalogContext += "\nINSTRUÇÕES DE VENDA:\n" +
-                          "- Se o cliente pedir o link do catálogo, envie: " + catalogLink + "\n" +
-                          "- Se o cliente demonstrar interesse em um produto específico, você pode enviar o cartão do produto.\n" +
-                          "- Para enviar o cartão, use a tag [SEND_PRODUCT: ID_DO_PRODUTO] no final da sua resposta.\n" +
-                          "- Exemplo: 'Aqui está o nosso hambúrguer especial! [SEND_PRODUCT: 12345]'\n" + 
+                          "- Priorize recomendar produtos específicos que atendam à necessidade do cliente.\n" +
+                          "- Se o cliente pedir o link de um produto, envie o Link específico listado acima ou use a tag [SEND_PRODUCT: ID].\n" +
+                          "- A tag [SEND_PRODUCT: ID_DO_PRODUTO] envia um cartão interativo do produto. Use-a preferencialmente para destacar o produto.\n" +
+                          "- Só envie o LINK GERAL DO CATÁLOGO se o cliente pedir explicitamente por 'catálogo completo' ou 'todos os produtos'.\n" +
+                          "- NÃO envie o link geral e o produto específico na mesma mensagem para evitar duplicação.\n" +
+                          "- Exemplo: 'Aqui está o pacote ideal para você! [SEND_PRODUCT: 12345]'\n" + 
                           "- Não invente produtos que não estejam nesta lista.\n";
       }
     }
