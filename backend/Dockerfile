@@ -44,6 +44,8 @@ RUN npm install --only=production --legacy-peer-deps
 
 # Copiar a aplicação compilada do estágio de build
 COPY --from=builder /app/dist ./dist
+# Copiar .sequelizerc para que o CLI do Sequelize saiba onde estão as configs
+COPY --from=builder /app/.sequelizerc ./.sequelizerc
 # Copiar pasta public se existir (ativos estáticos)
 COPY --from=builder /app/public ./public
 # Copiar certificados se existirem (mas idealmente usar volumes)
