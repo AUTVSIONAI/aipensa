@@ -253,6 +253,7 @@ const Marketing = () => {
 
 
 
+  useEffect(() => {
   const fetchStatus = async () => {
       try {
         setStatusLoading(true);
