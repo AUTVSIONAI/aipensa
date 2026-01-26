@@ -43,6 +43,10 @@ import { get } from "http";
 import { WebhookModel } from "../../models/Webhook";
 import { is } from "bluebird";
 import ShowTicketService from "../TicketServices/ShowTicketService";
+import OpenAI from "openai";
+import { IOpenAi } from "../IntegrationsServices/OpenAiService";
+import Prompt from "../../models/Prompt";
+import { checkPlanFeature } from "../UsageTrackingServices/UsageTrackingService";
 
 interface IMe {
   name: string;
@@ -471,6 +475,142 @@ const flowbuilderIntegration = async (
   */
 };
 
+const handleOpenAiFacebook = async (
+  openAiSettings: IOpenAi,
+  msgText: string,
+  ticket: Ticket,
+  contact: Contact,
+  token: Whatsapp,
+  getSession: Whatsapp
+): Promise<void> => {
+  console.log(`[handleOpenAiFacebook] Starting for ticket ${ticket.id} contact ${contact.id}`);
+
+  if (contact.disableBot) {
+    return;
+  }
+
+  const hasAgentAi = await checkPlanFeature(ticket.companyId, "useAgentAi");
+  if (!hasAgentAi) {
+    return;
+  }
+
+  if (!openAiSettings) return;
+
+  const provider = openAiSettings.provider || "openai";
+  let aiClient: OpenAI | any;
+
+  if (provider === "openrouter") {
+    aiClient = new OpenAI({
+      apiKey: openAiSettings.apiKey,
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultHeaders: {
+        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
+        "X-Title": "AIPENSA.COM",
+      }
+    });
+  } else {
+    aiClient = new OpenAI({
+      apiKey: openAiSettings.apiKey
+    });
+  }
+
+  const messages = await Message.findAll({
+    where: { ticketId: ticket.id },
+    order: [["createdAt", "ASC"]],
+    limit: openAiSettings.maxMessages
+  });
+
+  const promptSystem = `Nas respostas utilize o nome ${
+    contact.name || "Amigo(a)"
+  } para identificar o cliente.\nData e Hora atual: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}\nSua resposta deve usar no máximo ${
+    openAiSettings.maxTokens
+  } tokens.\n${openAiSettings.prompt}\n`;
+
+  let messagesOpenAi = [];
+  messagesOpenAi.push({ role: "system", content: promptSystem });
+
+  for (let i = 0; i < Math.min(openAiSettings.maxMessages, messages.length); i++) {
+    const message = messages[i];
+    if (message.mediaType === "chat" || message.mediaType === "text") {
+      if (message.fromMe) {
+        messagesOpenAi.push({ role: "assistant", content: message.body });
+      } else {
+        messagesOpenAi.push({ role: "user", content: message.body });
+      }
+    }
+  }
+
+  messagesOpenAi.push({ role: "user", content: msgText });
+
+  const FALLBACK_MODELS = [
+    "mistralai/devstral-2512:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "mistralai/mistral-small-3.1-24b-instruct:free",
+    "google/gemini-2.0-flash-exp:free",
+    "openai/gpt-3.5-turbo"
+  ];
+
+  let model = openAiSettings.model || "gpt-3.5-turbo";
+  let modelsToTry = [model];
+  if (provider === "openrouter") {
+    const additionalModels = FALLBACK_MODELS.filter(m => m !== model);
+    modelsToTry = [...modelsToTry, ...additionalModels];
+  }
+
+  let response: string | undefined;
+
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const currentModel = modelsToTry[i];
+    try {
+      const chat = await aiClient.chat.completions.create({
+        model: currentModel,
+        messages: messagesOpenAi,
+        max_tokens: openAiSettings.maxTokens,
+        temperature: openAiSettings.temperature
+      });
+      response = chat.choices[0].message?.content;
+      break;
+    } catch (error) {
+      console.error(`[handleOpenAiFacebook] Error with model ${currentModel}:`, error.message);
+      if (i === modelsToTry.length - 1) {
+        console.error("All models failed");
+      }
+    }
+  }
+
+  if (response) {
+    if (response.includes("Ação: Transferir para o setor de atendimento")) {
+      await UpdateTicketService({
+        ticketData: { queueId: openAiSettings.queueId },
+        ticketId: ticket.id,
+        companyId: ticket.companyId
+      });
+      response = response.replace("Ação: Transferir para o setor de atendimento", "").trim();
+    }
+
+    if (response) {
+        await sendFacebookMessage({
+            ticket,
+            body: response
+        });
+        
+        // Save bot message to DB
+        const messageData = {
+            wid: `AI-${new Date().getTime()}`,
+            ticketId: ticket.id,
+            contactId: undefined,
+            body: response,
+            fromMe: true,
+            read: true,
+            quotedMsgId: null,
+            ack: 2,
+            channel: ticket.channel
+        };
+        await CreateMessageService({ messageData, companyId: ticket.companyId });
+    }
+  }
+};
+
 export const handleMessage = async (
   token: Whatsapp,
   webhookEvent: any,
@@ -516,6 +656,10 @@ export const handleMessage = async (
                 attributes: ["id", "name", "greetingMessage"]
               }
             ]
+          },
+          {
+            model: Prompt,
+            as: "prompt"
           }
         ],
         order: [
@@ -914,6 +1058,28 @@ export const handleMessage = async (
             message
           );
         }
+      }
+
+      if (
+        !ticket.queue &&
+        !fromMe &&
+        !ticket.userId &&
+        getSession.prompt
+      ) {
+        const promptWithFallback = {
+          ...getSession.prompt.toJSON(),
+          apiKey: getSession.prompt.apiKey || settings?.userApiToken
+        } as IOpenAi;
+
+        await handleOpenAiFacebook(
+          promptWithFallback,
+          bodyMessage,
+          ticket,
+          contact,
+          token,
+          getSession
+        );
+        return;
       }
 
       if (

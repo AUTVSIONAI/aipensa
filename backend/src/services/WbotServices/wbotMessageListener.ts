@@ -1804,6 +1804,12 @@ const verifyQueue = async (
         apiKey: prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken
       } as any;
 
+      console.log(`[wbotMessageListener] Calling handleOpenAi (Connection) for ${msg.key.remoteJid}`, {
+        promptName: promptWithFallback.name,
+        apiKey: promptWithFallback.apiKey ? `${promptWithFallback.apiKey.substring(0, 8)}...` : "undefined",
+        model: promptWithFallback.model // Add model logging
+      });
+
       await handleOpenAi(
         promptWithFallback,
         msg,
@@ -4916,6 +4922,12 @@ const handleMessage = async (
         ...prompt.toJSON(),
         apiKey: prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken
       } as any;
+
+      console.log(`[wbotMessageListener] Calling handleOpenAi (Connection) for ${msg.key.remoteJid}`, {
+        promptName: promptWithFallback.name,
+        apiKey: promptWithFallback.apiKey ? `${promptWithFallback.apiKey.substring(0, 8)}...` : "undefined",
+        model: promptWithFallback.model
+      });
 
       await handleOpenAi(
         promptWithFallback,

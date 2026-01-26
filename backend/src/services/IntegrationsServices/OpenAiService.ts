@@ -42,7 +42,7 @@ interface IMe {
 
 
 
-interface IOpenAi {
+export interface IOpenAi {
   name: string;
   prompt: string;
   voice: string;
@@ -842,9 +842,10 @@ export const handleOpenAi = async (
     }
     } catch (error) {
       console.error(`Error calling ${provider}:`, error);
+      console.error("OpenAI/OpenRouter Error Details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
       // Fallback: enviar mensagem de erro
       await wbot.sendMessage(msg.key.remoteJid!, {
-        text: "Desculpe, ocorreu um erro temporário. Tente novamente em alguns instantes."
+        text: `Desculpe, ocorreu um erro temporário: ${error.message || "Erro desconhecido"}. Tente novamente em alguns instantes.`
       });
     }
   } else if (msg.message?.audioMessage) {

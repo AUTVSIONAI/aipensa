@@ -1305,6 +1305,9 @@ async function handleRandomUser() {
               ativarRoteador: true,
               tempoRoteador: {
                 [Op.ne]: 0
+              },
+              id: {
+                [Op.ne]: 5
               }
             }
           },

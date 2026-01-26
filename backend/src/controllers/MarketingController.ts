@@ -43,19 +43,37 @@ export const status = async (req: Request, res: Response): Promise<Response> => 
     
     if (!accessToken) {
       console.warn(`[Marketing] Status failed: Token not found for company ${companyId}`);
-      return res.status(400).json({ error: "ERR_NO_TOKEN", message: "Token de acesso não encontrado. Conecte o Facebook ou insira o token manualmente." });
+      // Return success with null data to allow UI to show "Connect" button instead of crashing/empty
+      return res.json({
+        ok: true,
+        me: null,
+        businessId: null,
+        adAccountId: null
+      });
     }
     
     console.log(`[Marketing] Status: Validating token...`);
-    const meResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me`, {
-      params: { access_token: accessToken, fields: "id,name" }
-    });
-    return res.json({
-      ok: true,
-      me: meResp.data,
-      businessId,
-      adAccountId
-    });
+    try {
+      const meResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me`, {
+        params: { access_token: accessToken, fields: "id,name" }
+      });
+      return res.json({
+        ok: true,
+        me: meResp.data,
+        businessId,
+        adAccountId
+      });
+    } catch (tokenError: any) {
+      console.warn(`[Marketing] Token validation failed for company ${companyId}:`, tokenError.message);
+      // Return success with null data to allow UI to show "Connect" button
+      return res.json({
+        ok: true,
+        me: null,
+        businessId: null,
+        adAccountId: null,
+        error: "ERR_INVALID_TOKEN"
+      });
+    }
   } catch (error: any) {
     console.error("[Marketing] Erro em status:", error?.response?.data || error.message);
     return res.status(400).json({ error: error?.response?.data || error.message });

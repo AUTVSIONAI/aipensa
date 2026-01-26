@@ -180,8 +180,18 @@ export const profilePsid = async (id: string, token: string): Promise<any> => {
     const { data } = await apiBase(token).get(`${id}`);
     return data;
   } catch (error) {
-    console.log(error);
-    await getProfile(id, token);
+    console.log("Error profilePsid first attempt:", error?.message);
+    try {
+      return await getProfile(id, token);
+    } catch (e) {
+      console.log("Error profilePsid second attempt (fallback used):", e?.message);
+      return {
+        id: id,
+        name: "Instagram User " + id.substring(0, 4),
+        first_name: "Instagram",
+        last_name: "User"
+      };
+    }
   }
 };
 
