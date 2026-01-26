@@ -263,7 +263,6 @@ const Marketing = () => {
         setPagesLoading(true);
         setPagesError(false);
         const params = {};
-        if (manualAccessToken) params.accessToken = manualAccessToken;
 
         const { data } = await api.get("/marketing/pages", { params });
         setPages(data?.data || []);
@@ -278,15 +277,13 @@ const Marketing = () => {
       }
     };
     fetchPages();
-  }, [manualAccessToken]);
+  }, []);
 
   useEffect(() => {
     const fetchInsights = async () => {
       try {
         setInsightsLoading(true);
         const params = { date_preset: datePreset };
-        if (manualAccessToken) params.accessToken = manualAccessToken;
-        if (manualAdAccountId) params.adAccountId = manualAdAccountId;
         
         const { data } = await api.get("/marketing/insights", { params });
         setInsights(data.data || []);
@@ -304,7 +301,7 @@ const Marketing = () => {
       }
     };
     fetchInsights();
-  }, [datePreset, manualAccessToken, manualAdAccountId]);
+  }, [datePreset]);
 
   useEffect(() => {
     const socket = socketConnection({ user });
@@ -396,7 +393,6 @@ const Marketing = () => {
       }
 
       const params = { pageId: targetId, platform: feedPlatform };
-      if (manualAccessToken) params.accessToken = manualAccessToken;
 
       const { data } = await api.get("/marketing/feed", { params });
       setFeed(data.data || []);
@@ -416,7 +412,6 @@ const Marketing = () => {
           return;
       }
       const payload = { objectId: postId, pageAccessToken };
-      if (manualAccessToken) payload.accessToken = manualAccessToken;
       
       await api.post("/marketing/like", payload);
       toast.success("Curtiu!");
@@ -433,7 +428,6 @@ const Marketing = () => {
           return;
       }
       const payload = { objectId: postId, message, pageAccessToken };
-      if (manualAccessToken) payload.accessToken = manualAccessToken;
 
       await api.post("/marketing/comment", payload);
       toast.success("Comentário enviado!");
@@ -452,8 +446,6 @@ const Marketing = () => {
         status: "PAUSED",
         special_ad_categories: []
       };
-      if (manualAccessToken) payload.accessToken = manualAccessToken;
-      if (manualAdAccountId) payload.adAccountId = manualAdAccountId;
 
       const { data } = await api.post("/marketing/campaign", payload);
       toast.success(`Campanha criada: ${data.id}`);
@@ -478,8 +470,6 @@ const Marketing = () => {
         status: "PAUSED",
         targeting: { geo_locations: { countries: ["BR"] } }
       };
-      if (manualAccessToken) payload.accessToken = manualAccessToken;
-      if (manualAdAccountId) payload.adAccountId = manualAdAccountId;
 
       const { data } = await api.post("/marketing/adset", payload);
       toast.success(`AdSet criado: ${data.id}`);
@@ -501,8 +491,6 @@ const Marketing = () => {
         image_hash: imageHash,
         message: messageText
       };
-      if (manualAccessToken) payload.accessToken = manualAccessToken;
-      if (manualAdAccountId) payload.adAccountId = manualAdAccountId;
 
       const { data } = await api.post("/marketing/creative", payload);
       toast.success(`Creative criado: ${data.id}`);
@@ -524,8 +512,6 @@ const Marketing = () => {
         creative_id: creativeId,
         status: "PAUSED"
       };
-      if (manualAccessToken) payload.accessToken = manualAccessToken;
-      if (manualAdAccountId) payload.adAccountId = manualAdAccountId;
 
       const { data } = await api.post("/marketing/ad", payload);
       toast.success(`Ad criado: ${data.id}`);
@@ -566,8 +552,6 @@ const Marketing = () => {
           setPubLoading(false);
           return;
       }
-
-      if (manualAccessToken) payload.accessToken = manualAccessToken;
 
       const { data } = await api.post("/marketing/publish", payload);
       
