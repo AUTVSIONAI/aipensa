@@ -521,8 +521,8 @@ const Marketing = () => {
         image_hash: imageHash,
         message: messageText
       };
-      if (customAccessToken) payload.accessToken = customAccessToken;
-      if (customAdAccountId) payload.adAccountId = customAdAccountId;
+      if (manualAccessToken) payload.accessToken = manualAccessToken;
+      if (manualAdAccountId) payload.adAccountId = manualAdAccountId;
 
       const { data } = await api.post("/marketing/creative", payload);
       toast.success(`Creative criado: ${data.id}`);
@@ -544,8 +544,8 @@ const Marketing = () => {
         creative_id: creativeId,
         status: "PAUSED"
       };
-      if (customAccessToken) payload.accessToken = customAccessToken;
-      if (customAdAccountId) payload.adAccountId = customAdAccountId;
+      if (manualAccessToken) payload.accessToken = manualAccessToken;
+      if (manualAdAccountId) payload.adAccountId = manualAdAccountId;
 
       const { data } = await api.post("/marketing/ad", payload);
       toast.success(`Ad criado: ${data.id}`);
