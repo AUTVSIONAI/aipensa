@@ -105,8 +105,7 @@ export const sendProduct = async (
                 priceAmount1000: product.price || product.priceAmount1000,
                 retailerId: product.retailerId,
                 url: product.url,
-                productImageCount: product.productImageCount || 1,
-                businessOwnerJid: businessJid
+                productImageCount: product.productImageCount || 1
             },
             businessOwnerJid: businessJid
         });
