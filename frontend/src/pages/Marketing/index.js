@@ -33,11 +33,13 @@ const useStyles = makeStyles((theme) => ({
     paddingBottom: theme.spacing(8),
     background: "linear-gradient(135deg, #1e1e2f 0%, #2d2b42 100%)", // Dark futuristic bg
     minHeight: "100vh",
+    // height: "100%", // Removed to allow scrolling and prevent white bottom on overflow
     display: "flex",
     flexDirection: "column",
     backgroundAttachment: "fixed",
     color: "#fff",
-    flex: 1
+    flex: 1,
+    overflowX: "hidden"
   },
   header: {
     marginBottom: theme.spacing(4)
@@ -191,6 +193,7 @@ const Marketing = () => {
   const [customAdAccountId, setCustomAdAccountId] = useState("");
   const [customAccessToken, setCustomAccessToken] = useState("");
   const [settingLoading, setSettingLoading] = useState(false);
+  const [flowImagePreview, setFlowImagePreview] = useState("");
   
   // Feed comments expansion state
   const [expandedComments, setExpandedComments] = useState({});
@@ -436,6 +439,10 @@ const Marketing = () => {
   const handleLike = async (postId) => {
     try {
       const pageAccessToken = getPageToken(feedPageId);
+      if (!pageAccessToken) {
+          toast.warn("Selecione uma página conectada para interagir.");
+          return;
+      }
       await api.post("/marketing/like", { objectId: postId, pageAccessToken });
       toast.success("Curtiu!");
     } catch (err) {
@@ -446,6 +453,10 @@ const Marketing = () => {
   const handleComment = async (postId, message) => {
     try {
       const pageAccessToken = getPageToken(feedPageId);
+      if (!pageAccessToken) {
+          toast.warn("Selecione uma página conectada para interagir.");
+          return;
+      }
       await api.post("/marketing/comment", { objectId: postId, message, pageAccessToken });
       toast.success("Comentário enviado!");
       handleFetchFeed(); // Atualiza feed para ver o comentário
@@ -924,6 +935,7 @@ const Marketing = () => {
         </TabPanel>
 
         <TabPanel value={tab} index={3}>
+          <Box pb={8}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Card className={classes.card}>
@@ -1037,6 +1049,7 @@ const Marketing = () => {
               </Box>
             </Grid>
           </Grid>
+          </Box>
         </TabPanel>
 
         <TabPanel value={tab} index={4}>
@@ -1068,6 +1081,7 @@ const Marketing = () => {
                                   onChange={async (e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
+                                    setFlowImagePreview(URL.createObjectURL(file));
                                     try {
                                       const form = new FormData();
                                       form.append("image", file);
@@ -1085,9 +1099,14 @@ const Marketing = () => {
                                     Upload de Imagem do Anúncio
                                   </Button>
                                 </label>
+                                {flowImagePreview && (
+                                    <Box mt={2}>
+                                        <img src={flowImagePreview} alt="Ad Preview" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)" }} />
+                                    </Box>
+                                )}
                                 {imageHash && (
                                     <Typography variant="caption" display="block" style={{ marginTop: 8, color: "#10b981" }}>
-                                        Imagem carregada (Hash: {imageHash})
+                                        Imagem processada (Hash: {imageHash})
                                     </Typography>
                                 )}
                               </Box>
@@ -1122,8 +1141,12 @@ const Marketing = () => {
                               variant="contained"
                               color="primary"
                               size="large"
-                              disabled={waFlowCreating || !pageId || !imageHash}
+                              disabled={waFlowCreating}
                               onClick={async () => {
+                                if (pages.length === 0) { toast.error("Nenhuma página conectada! Vá em Configurações e conecte uma página."); return; }
+                                if (!pageId) { toast.warn("Selecione uma página para o anúncio!"); return; }
+                                if (!imageHash) { toast.warn("Faça o upload da imagem do anúncio primeiro!"); return; }
+                                
                                 setWaFlowCreating(true);
                                 try {
                                   const { data } = await api.post("/marketing/whatsapp-adflow", {
@@ -1135,10 +1158,10 @@ const Marketing = () => {
                                     image_hash: imageHash
                                   });
                                   setFlowStep(4);
-                                  toast.success("Fluxo criado com sucesso!");
+                                  toast.success("Fluxo criado com sucesso! Campanha, AdSet e Anúncio gerados.");
                                 } catch (err) { toastError(err); } finally { setWaFlowCreating(false); }
                               }}
-                              style={{ paddingLeft: 40, paddingRight: 40 }}
+                              style={{ paddingLeft: 40, paddingRight: 40, height: 56, fontSize: "1.1rem" }}
                               className={classes.button}
                             >
                               {waFlowCreating ? <CircularProgress size={24} color="inherit" /> : "Criar Campanha Completa Agora"}
@@ -1311,7 +1334,68 @@ const Marketing = () => {
                              <TextField fullWidth multiline minRows={4} label="Legenda / Texto" value={pubMessage} onChange={(e) => setPubMessage(e.target.value)} variant="outlined" placeholder="Escreva algo interessante..." className={classes.input} />
                           </Grid>
                           <Grid item xs={12}>
-                             <TextField fullWidth label="URL da Imagem" value={pubImageUrl} onChange={(e) => setPubImageUrl(e.target.value)} variant="outlined" helperText="Link público direto da imagem (obrigatório para Instagram)" placeholder="https://..." className={classes.input} />
+                             <Box p={4} border="2px dashed rgba(255, 255, 255, 0.3)" borderRadius={16} textAlign="center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)", cursor: 'pointer', transition: 'all 0.3s' }}>
+                               <input
+                                 accept="image/*,video/*"
+                                 style={{ display: 'none' }}
+                                 id="pub-file-upload"
+                                 type="file"
+                                 onChange={async (e) => {
+                                   const file = e.target.files?.[0];
+                                   if (!file) return;
+                                   try {
+                                     setPubLoading(true);
+                                     const form = new FormData();
+                                     form.append("file", file);
+                                     const { data } = await api.post("/marketing/upload-media", form);
+                                     setPubImageUrl(data.url);
+                                     toast.success("Mídia enviada com sucesso!");
+                                   } catch (err) {
+                                     toastError(err);
+                                   } finally {
+                                     setPubLoading(false);
+                                   }
+                                 }}
+                               />
+                               <label htmlFor="pub-file-upload" style={{ width: '100%', display: 'block', cursor: 'pointer' }}>
+                                 {pubImageUrl ? (
+                                     <Box>
+                                        {pubImageUrl.match(/\.(mp4|mov|avi)$/i) ? (
+                                            <video src={pubImageUrl} controls style={{ maxWidth: "100%", maxHeight: 300, borderRadius: 8, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }} />
+                                        ) : (
+                                            <img src={pubImageUrl} alt="Preview" style={{ maxWidth: "100%", maxHeight: 300, borderRadius: 8, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }} />
+                                        )}
+                                        <Box mt={2} display="flex" justifyContent="center" gap={2}>
+                                            <Button variant="outlined" color="secondary" onClick={(e) => {
+                                                e.preventDefault();
+                                                setPubImageUrl("");
+                                            }}>Remover Mídia</Button>
+                                            <Button variant="contained" component="span" startIcon={<PublicIcon />} color="primary">
+                                                Trocar Mídia
+                                            </Button>
+                                        </Box>
+                                     </Box>
+                                 ) : (
+                                     <Box py={4}>
+                                        <PublicIcon style={{ fontSize: 64, color: "rgba(255,255,255,0.5)", marginBottom: 16 }} />
+                                        <Typography variant="h6" style={{ color: "#fff", marginBottom: 8 }}>
+                                            Clique para fazer Upload de Foto ou Vídeo
+                                        </Typography>
+                                        <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.5)" }}>
+                                            Suporta JPG, PNG, MP4, MOV
+                                        </Typography>
+                                        <Button variant="contained" component="span" startIcon={<PublicIcon />} className={classes.button} style={{ marginTop: 24 }}>
+                                            Selecionar da Galeria
+                                        </Button>
+                                     </Box>
+                                 )}
+                               </label>
+                             </Box>
+                          </Grid>
+                          <Grid item xs={12}>
+                             {!pubImageUrl && (
+                                <TextField fullWidth label="Ou insira uma URL de Imagem (Opcional)" value={pubImageUrl} onChange={(e) => setPubImageUrl(e.target.value)} variant="outlined" helperText="Link público direto da imagem" placeholder="https://..." className={classes.input} />
+                             )}
                           </Grid>
                           <Grid item xs={12} sm={6}>
                              <TextField fullWidth type="datetime-local" label="Agendar para (Opcional)" InputLabelProps={{ shrink: true }} value={pubScheduledTime} onChange={(e) => setPubScheduledTime(e.target.value)} variant="outlined" className={classes.input} />

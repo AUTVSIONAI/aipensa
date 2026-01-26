@@ -18,6 +18,7 @@ routes.post("/marketing/whatsapp-adflow", isAuth, MarketingController.createWhat
 routes.post("/marketing/campaign/status", isAuth, MarketingController.updateCampaignStatus);
 routes.post("/marketing/adset/status", isAuth, MarketingController.updateAdSetStatus);
 routes.post("/marketing/adimage", isAuth, upload.single("image"), MarketingController.uploadAdImage);
+routes.post("/marketing/upload-media", isAuth, upload.single("file"), MarketingController.uploadPublicMedia);
 routes.post("/marketing/publish", isAuth, MarketingController.publishContent);
 routes.get("/marketing/feed", isAuth, MarketingController.getFeed);
 routes.post("/marketing/like", isAuth, MarketingController.likePost);

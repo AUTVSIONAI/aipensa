@@ -697,3 +697,24 @@ export const uploadAdImage = async (req: Request, res: Response): Promise<Respon
     return res.status(400).json({ error: errorMsg });
   }
 };
+
+export const uploadPublicMedia = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const file = (req as any).file;
+    
+    if (!file) {
+      return res.status(400).json({ error: "No file provided" });
+    }
+
+    const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 8080}`;
+    const filename = file.filename;
+    
+    // Based on uploadConfig logic, files without typeArch go to public/company{id}
+    const publicUrl = `${backendUrl}/public/company${companyId}/${filename}`;
+
+    return res.json({ url: publicUrl });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};

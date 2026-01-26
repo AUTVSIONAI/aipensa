@@ -135,6 +135,39 @@ const transcribeWithGemini = async (
 };
 
 import { getMarketingInsights, getMarketingCampaigns } from "../MarketingServices/MarketingToolService";
+import { getCatalog, getProductById, sendProduct } from "../WbotServices/CatalogService";
+
+const handleCatalogAction = async (
+  response: string,
+  wbot: Session,
+  msg: proto.IWebMessageInfo
+): Promise<string> => {
+  const productRegex = /\[SEND_PRODUCT: (.+?)\]/;
+  const match = response.match(productRegex);
+
+  if (match && match[1]) {
+    try {
+      const productId = match[1].trim();
+      const ownerJid = wbot.user?.id;
+      
+      if (ownerJid && msg.key.remoteJid) {
+        console.log(`[OpenAiService] Sending product ${productId} to ${msg.key.remoteJid}`);
+        const product = await getProductById(wbot, ownerJid, productId);
+        
+        if (product) {
+           await sendProduct(wbot, msg.key.remoteJid, ownerJid, product);
+        } else {
+           console.log(`[OpenAiService] Product ${productId} not found`);
+        }
+      }
+    } catch (e) {
+      console.error("Error sending product via AI:", e);
+    }
+    // Always remove the tag
+    return response.replace(match[0], "").trim();
+  }
+  return response;
+};
 
 const handleMarketingAction = async (
   response: string,
@@ -319,6 +352,30 @@ export const handleOpenAi = async (
     limit: openAiSettings.maxMessages
   });
 
+  // Fetch Catalog for Context
+  let catalogContext = "";
+  try {
+    const ownerJid = wbot.user?.id;
+    if (ownerJid) {
+      const products = await getCatalog(wbot, ownerJid);
+      if (products && products.length > 0) {
+        catalogContext = "\n\n🛍️ CATÁLOGO DE PRODUTOS DISPONÍVEIS:\n";
+        products.forEach(p => {
+            const price = (p.price / 1000).toLocaleString('pt-BR', { style: 'currency', currency: p.currency || 'BRL' });
+            catalogContext += `- ID: ${p.id} | ${p.name} | ${price}\n`;
+            if (p.description) catalogContext += `  Desc: ${p.description.substring(0, 100)}${p.description.length > 100 ? '...' : ''}\n`;
+        });
+        catalogContext += "\nINSTRUÇÕES DE VENDA:\n" +
+                          "- Se o cliente demonstrar interesse em um produto específico, você pode enviar o cartão do produto.\n" +
+                          "- Para enviar o cartão, use a tag [SEND_PRODUCT: ID_DO_PRODUTO] no final da sua resposta.\n" +
+                          "- Exemplo: 'Aqui está o nosso hambúrguer especial! [SEND_PRODUCT: 12345]'\n" + 
+                          "- Não invente produtos que não estejam nesta lista.\n";
+      }
+    }
+  } catch (e) {
+    console.error("[OpenAiService] Error fetching catalog:", e);
+  }
+
   const promptSystem = `Nas respostas utilize o nome ${sanitizeName(
     contact.name || "Amigo(a)"
   )} para identificar o cliente.\nData e Hora atual: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}\nSua resposta deve usar no máximo ${
@@ -330,6 +387,8 @@ export const handleOpenAi = async (
   - Para ver métricas (insights): Use a tag [MARKETING] { "action": "get_insights", "period": "last_7d" } [/MARKETING] (periodos: today, yesterday, last_7d, last_30d)
   - Para listar campanhas: Use a tag [MARKETING] { "action": "get_campaigns", "status": "ACTIVE" } [/MARKETING] (status: ACTIVE, PAUSED)
   NÃO invente dados. Se o usuário perguntar sobre campanhas ou desempenho, use essas tags e aguarde a resposta do sistema.
+
+  ${catalogContext}
 
   ${openAiSettings.prompt}\n`;
 
@@ -417,6 +476,9 @@ export const handleOpenAi = async (
     
     // Processar ações de marketing
     response = await handleMarketingAction(response, ticket, contact);
+
+    // Processar ações de catálogo
+    response = await handleCatalogAction(response, wbot, msg);
   }
 
   // Verifica se a resposta foi processada (schedule ou marketing)
@@ -545,6 +607,7 @@ export const handleOpenAi = async (
 
       if (response) {
         response = await handleScheduleAction(response, ticket, contact);
+        response = await handleCatalogAction(response, wbot, msg);
       }
       const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
       try {
