@@ -100,8 +100,6 @@ async function getFbConfig(companyId?: number) {
     }
   }
 
-  return { accessToken, businessId, adAccountId };
-}
 
   accessToken = accessToken || process.env.FACEBOOK_ACCESS_TOKEN || null;
   businessId = businessId || process.env.FACEBOOK_BUSINESS_ID || null;
