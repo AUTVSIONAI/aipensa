@@ -183,6 +183,7 @@ const Marketing = () => {
   const [feed, setFeed] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const [feedPageId, setFeedPageId] = useState("");
+  const [feedPlatform, setFeedPlatform] = useState("facebook");
   const [tab, setTab] = useState(0);
   const [flowStep, setFlowStep] = useState(0);
   const [lastActionSummary, setLastActionSummary] = useState("");
@@ -408,7 +409,21 @@ const Marketing = () => {
     if (!feedPageId) return;
     try {
       setFeedLoading(true);
-      const { data } = await api.get("/marketing/feed", { params: { pageId: feedPageId } });
+      
+      let targetId = feedPageId;
+      const selectedPage = pages.find(p => p.id === feedPageId);
+      
+      if (feedPlatform === "instagram") {
+           if (selectedPage && selectedPage.instagram_business_account) {
+               targetId = selectedPage.instagram_business_account.id;
+           } else {
+               toast.warn("Esta página não possui Instagram conectado.");
+               setFeedLoading(false);
+               return;
+           }
+      }
+
+      const { data } = await api.get("/marketing/feed", { params: { pageId: targetId, platform: feedPlatform } });
       setFeed(data.data || []);
     } catch (err) {
       toastError(err);
