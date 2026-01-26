@@ -44,6 +44,11 @@ const useAuth = () => {
         const originalRequest = error.config;
         const status = error?.response?.status;
         const requestUrl = originalRequest?.url || "";
+        const errorMsg = error?.response?.data?.error;
+
+        if (status === 403 && errorMsg === "ERR_PLAN_LIMIT") {
+             return Promise.reject(error);
+        }
 
         if (
           (status === 401 || status === 403) &&
