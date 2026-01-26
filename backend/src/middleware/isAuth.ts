@@ -54,7 +54,7 @@ const isAuth = async (req: Request, res: Response, next: NextFunction): Promise<
     } else {
       throw new AppError(
         "Invalid token. We'll try to assign a new one on next request",
-        403
+        401
       );
     }
   }

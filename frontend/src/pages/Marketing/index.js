@@ -77,8 +77,7 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(3)
   },
   tabRoot: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    backdropFilter: "blur(10px)",
+    backgroundColor: "#2d2b42",
     borderRadius: 16,
     marginBottom: theme.spacing(3),
     boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
@@ -139,6 +138,21 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
+const Section = ({ icon, title, children }) => {
+  const classes = useStyles();
+  return (
+    <Box>
+      <div className={classes.cardHeader}>
+        <Avatar style={{ width: 32, height: 32, backgroundColor: "#3b82f6" }}>{icon}</Avatar>
+        <Typography className={classes.cardTitle}>{title}</Typography>
+      </div>
+      <div className={classes.cardContent}>
+        {children}
+      </div>
+    </Box>
+  );
+};
+
 const Marketing = () => {
   const classes = useStyles();
   const history = useHistory();
@@ -190,8 +204,11 @@ const Marketing = () => {
   const [flowStep, setFlowStep] = useState(0);
   const [lastActionSummary, setLastActionSummary] = useState("");
   const [adAccountError, setAdAccountError] = useState(false);
-  const [customAdAccountId, setCustomAdAccountId] = useState("");
-  const [customAccessToken, setCustomAccessToken] = useState("");
+  
+  // Manual override tokens (local session only)
+  const [manualAdAccountId, setManualAdAccountId] = useState(localStorage.getItem("marketingManualAdAccountId") || "");
+  const [manualAccessToken, setManualAccessToken] = useState(localStorage.getItem("marketingManualAccessToken") || "");
+  
   const [settingLoading, setSettingLoading] = useState(false);
   const [flowImagePreview, setFlowImagePreview] = useState("");
   
@@ -223,15 +240,10 @@ const Marketing = () => {
   const handleSaveAdAccount = async () => {
       setSettingLoading(true);
       try {
-          if (customAdAccountId) {
-            await api.put("/settings/facebook_ad_account_id", { value: customAdAccountId });
-          }
-          if (customAccessToken) {
-            await api.put("/settings/facebook_access_token", { value: customAccessToken });
-          }
-          toast.success("Configurações salvas com sucesso!");
+          localStorage.setItem("marketingManualAdAccountId", manualAdAccountId);
+          localStorage.setItem("marketingManualAccessToken", manualAccessToken);
+          toast.success("Tokens salvos e aplicados!");
           setAdAccountError(false);
-          // window.location.reload(); // Não recarregar para manter estado
       } catch (err) {
           toastError(err);
       } finally {
@@ -239,30 +251,13 @@ const Marketing = () => {
       }
   };
 
-  const Section = ({ icon, title, children }) => (
-    <Box>
-      <div className={classes.cardHeader}>
-        <Avatar style={{ width: 32, height: 32, backgroundColor: "#3b82f6" }}>{icon}</Avatar>
-        <Typography className={classes.cardTitle}>{title}</Typography>
-      </div>
-      <div className={classes.cardContent}>
-        {children}
-      </div>
-    </Box>
-  );
 
-  useEffect(() => {
-    const fetchStatus = async () => {
+
+  const fetchStatus = async () => {
       try {
         setStatusLoading(true);
         const { data } = await api.get("/marketing/status");
         setStatus(data);
-        if (data.adAccountId) {
-            setCustomAdAccountId(data.adAccountId);
-        }
-        if (data.accessToken) {
-            setCustomAccessToken(data.accessToken);
-        }
       } catch (err) {
         const errorType = err.response?.data?.error;
         if (err.response?.status === 400 && (errorType === "ERR_NO_AD_ACCOUNT" || errorType === "ERR_NO_TOKEN")) {
@@ -279,11 +274,17 @@ const Marketing = () => {
       }
     };
     fetchStatus();
+  }, []);
+
+  useEffect(() => {
     const fetchPages = async () => {
       try {
         setPagesLoading(true);
         setPagesError(false);
-        const { data } = await api.get("/marketing/pages");
+        const params = {};
+        if (manualAccessToken) params.accessToken = manualAccessToken;
+
+        const { data } = await api.get("/marketing/pages", { params });
         setPages(data?.data || []);
       } catch (err) {
         if (err.response?.status !== 400) {
@@ -296,13 +297,17 @@ const Marketing = () => {
       }
     };
     fetchPages();
-  }, []);
+  }, [manualAccessToken]);
 
   useEffect(() => {
     const fetchInsights = async () => {
       try {
         setInsightsLoading(true);
-        const { data } = await api.get("/marketing/insights", { params: { date_preset: datePreset } });
+        const params = { date_preset: datePreset };
+        if (manualAccessToken) params.accessToken = manualAccessToken;
+        if (manualAdAccountId) params.adAccountId = manualAdAccountId;
+        
+        const { data } = await api.get("/marketing/insights", { params });
         setInsights(data.data || []);
       } catch (err) {
         const errorType = err.response?.data?.error;
@@ -318,7 +323,7 @@ const Marketing = () => {
       }
     };
     fetchInsights();
-  }, [datePreset]);
+  }, [datePreset, manualAccessToken, manualAdAccountId]);
 
   useEffect(() => {
     const socket = socketConnection({ user });
@@ -347,24 +352,7 @@ const Marketing = () => {
     };
   }, [user]);
 
-  useEffect(() => {
-    const refetchInsights = async () => {
-      try {
-        setInsightsLoading(true);
-        const { data } = await api.get("/marketing/insights", { params: { date_preset: datePreset } });
-        setInsights(data.data || []);
-      } catch (err) {
-        if (err.response?.status !== 400) {
-          toastError(err);
-        }
-        setInsightsError(true);
-        setInsightsErrorMsg(String(err?.response?.data?.error || err?.message || "Erro ao obter insights"));
-      } finally {
-        setInsightsLoading(false);
-      }
-    };
-    refetchInsights();
-  }, [datePreset]);
+
 
   const agg = React.useMemo(() => {
     const rows = insights || [];
@@ -426,7 +414,10 @@ const Marketing = () => {
            }
       }
 
-      const { data } = await api.get("/marketing/feed", { params: { pageId: targetId, platform: feedPlatform } });
+      const params = { pageId: targetId, platform: feedPlatform };
+      if (manualAccessToken) params.accessToken = manualAccessToken;
+
+      const { data } = await api.get("/marketing/feed", { params });
       setFeed(data.data || []);
     } catch (err) {
       toastError(err);
@@ -443,7 +434,10 @@ const Marketing = () => {
           toast.warn("Selecione uma página conectada para interagir.");
           return;
       }
-      await api.post("/marketing/like", { objectId: postId, pageAccessToken });
+      const payload = { objectId: postId, pageAccessToken };
+      if (manualAccessToken) payload.accessToken = manualAccessToken;
+      
+      await api.post("/marketing/like", payload);
       toast.success("Curtiu!");
     } catch (err) {
       toastError(err);
@@ -457,7 +451,10 @@ const Marketing = () => {
           toast.warn("Selecione uma página conectada para interagir.");
           return;
       }
-      await api.post("/marketing/comment", { objectId: postId, message, pageAccessToken });
+      const payload = { objectId: postId, message, pageAccessToken };
+      if (manualAccessToken) payload.accessToken = manualAccessToken;
+
+      await api.post("/marketing/comment", payload);
       toast.success("Comentário enviado!");
       handleFetchFeed(); // Atualiza feed para ver o comentário
     } catch (err) {
@@ -468,12 +465,16 @@ const Marketing = () => {
   const handleCreateCampaign = async () => {
     setCreating(true);
     try {
-      const { data } = await api.post("/marketing/campaign", {
+      const payload = {
         name,
         objective,
         status: "PAUSED",
         special_ad_categories: []
-      });
+      };
+      if (manualAccessToken) payload.accessToken = manualAccessToken;
+      if (manualAdAccountId) payload.adAccountId = manualAdAccountId;
+
+      const { data } = await api.post("/marketing/campaign", payload);
       toast.success(`Campanha criada: ${data.id}`);
       setCampaignId(data.id);
       setLastActionSummary(`Campanha criada: ${data.id}`);
@@ -487,7 +488,7 @@ const Marketing = () => {
   const handleCreateAdSet = async () => {
     setAdsetCreating(true);
     try {
-      const { data } = await api.post("/marketing/adset", {
+      const payload = {
         name: adsetName,
         campaign_id: campaignId,
         daily_budget: dailyBudget,
@@ -495,7 +496,11 @@ const Marketing = () => {
         end_time: endTime || undefined,
         status: "PAUSED",
         targeting: { geo_locations: { countries: ["BR"] } }
-      });
+      };
+      if (manualAccessToken) payload.accessToken = manualAccessToken;
+      if (manualAdAccountId) payload.adAccountId = manualAdAccountId;
+
+      const { data } = await api.post("/marketing/adset", payload);
       toast.success(`AdSet criado: ${data.id}`);
       setAdsetId(data.id);
       setLastActionSummary(`AdSet criado: ${data.id}`);
@@ -509,12 +514,16 @@ const Marketing = () => {
   const handleCreateCreative = async () => {
     setCreativeCreating(true);
     try {
-      const { data } = await api.post("/marketing/creative", {
+      const payload = {
         page_id: pageId,
         link: linkUrl,
         image_hash: imageHash,
         message: messageText
-      });
+      };
+      if (customAccessToken) payload.accessToken = customAccessToken;
+      if (customAdAccountId) payload.adAccountId = customAdAccountId;
+
+      const { data } = await api.post("/marketing/creative", payload);
       toast.success(`Creative criado: ${data.id}`);
       setCreativeId(data.id);
       setLastActionSummary(`Creative criado: ${data.id}`);
@@ -528,12 +537,16 @@ const Marketing = () => {
   const handleCreateAd = async () => {
     setAdCreating(true);
     try {
-      const { data } = await api.post("/marketing/ad", {
+      const payload = {
         name: adName,
         adset_id: adsetId,
         creative_id: creativeId,
         status: "PAUSED"
-      });
+      };
+      if (customAccessToken) payload.accessToken = customAccessToken;
+      if (customAdAccountId) payload.adAccountId = customAdAccountId;
+
+      const { data } = await api.post("/marketing/ad", payload);
       toast.success(`Ad criado: ${data.id}`);
       setLastActionSummary(`Ad criado: ${data.id}`);
     } catch (err) {
@@ -572,6 +585,8 @@ const Marketing = () => {
           setPubLoading(false);
           return;
       }
+
+      if (manualAccessToken) payload.accessToken = manualAccessToken;
 
       const { data } = await api.post("/marketing/publish", payload);
       
@@ -1611,8 +1626,8 @@ const Marketing = () => {
                                 label="Facebook Ad Account ID"
                                 variant="outlined"
                                 className={classes.input}
-                                value={customAdAccountId}
-                                onChange={(e) => setCustomAdAccountId(e.target.value)}
+                                value={manualAdAccountId}
+                                onChange={(e) => setManualAdAccountId(e.target.value)}
                                 helperText="Ex: act_1234567890 (Opcional, apenas se não detectado automaticamente)"
                                 style={{ marginBottom: 16 }}
                             />
@@ -1622,8 +1637,8 @@ const Marketing = () => {
                                 label="Facebook Access Token"
                                 variant="outlined"
                                 className={classes.input}
-                                value={customAccessToken}
-                                onChange={(e) => setCustomAccessToken(e.target.value)}
+                                value={manualAccessToken}
+                                onChange={(e) => setManualAccessToken(e.target.value)}
                                 helperText="Token de acesso de longa duração (EAAB...)"
                                 style={{ marginBottom: 16 }}
                                 type="password"

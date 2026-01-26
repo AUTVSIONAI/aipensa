@@ -24,6 +24,7 @@ import Whatsapp from "../../models/Whatsapp";
 import CreateScheduleService from "../ScheduleServices/CreateService";
 import { zonedTimeToUtc } from "date-fns-tz";
 import Tag from "../../models/Tag";
+import { checkPlanLimit, incrementUsage, checkPlanFeature } from "../UsageTrackingServices/UsageTrackingService";
 
 type Session = WASocket & {
   id?: number;
@@ -153,7 +154,9 @@ const transcribeWithGemini = async (
 
 import { getMarketingInsights, getMarketingCampaigns } from "../MarketingServices/MarketingToolService";
 import { getCatalog, getProductById, sendProduct } from "../WbotServices/CatalogService";
-import { getConnectedPages, publishToFacebook, publishToInstagram } from "../FacebookServices/SocialMediaService";
+import { getConnectedPages, publishToFacebook, publishToInstagram, publishVideoToFacebook, publishVideoToInstagram } from "../FacebookServices/SocialMediaService";
+import { downloadMediaMessage } from "@whiskeysockets/baileys";
+import logger from "../../utils/logger";
 
 const handleCatalogAction = async (
   response: string,
@@ -367,6 +370,163 @@ const handleSocialMediaAction = async (
   return response;
 };
 
+const executeVideoPost = async (ticket: Ticket, platform: string, url: string, caption: string, response: string, tag: string) => {
+  const pages = await getConnectedPages(ticket.companyId);
+  if (pages.length === 0) return response.replace(tag, "").trim() + "\n\n(Erro: Nenhuma página conectada)";
+
+  let result = "";
+  try {
+      if (platform === "facebook") {
+          const page = pages[0];
+          await publishVideoToFacebook(ticket.companyId, page.id, url, caption);
+          result = `Vídeo postado no Facebook (${page.name})!`;
+      } else if (platform === "instagram") {
+          const pageWithInsta = pages.find(p => p.instagram_business_account);
+          if (!pageWithInsta) return response.replace(tag, "").trim() + "\n\n(Erro: Instagram não conectado)";
+          await publishVideoToInstagram(ticket.companyId, pageWithInsta.instagram_business_account.id, url, caption);
+          result = `Vídeo postado no Instagram (@${pageWithInsta.instagram_business_account.username})!`;
+      }
+
+      await incrementUsage(ticket.companyId, "limitPosts", 1);
+      return response.replace(tag, "").trim() + "\n\n✅ " + result;
+  } catch (e) {
+      console.error("Erro no executeVideoPost:", e);
+      return response.replace(tag, "").trim() + "\n\n❌ Erro ao postar vídeo: " + e.message;
+  }
+}
+
+const handleVideoPostAction = async (
+  response: string,
+  ticket: Ticket,
+  contact: Contact,
+  wbot: Session,
+  msg: proto.IWebMessageInfo
+): Promise<string> => {
+  const videoRegex = /\[POST_VIDEO\]([\s\S]*?)\[\/POST_VIDEO\]/;
+  const match = response.match(videoRegex);
+
+  if (match && match[1]) {
+    try {
+      if (!await verifyAdminPermission(contact)) {
+        return response.replace(match[0], "").trim() + "\n\n⛔ *Acesso Negado*: Esta ação requer permissão de administrador (Tag: ADMIN).";
+      }
+
+      // Verifica se o módulo está ativo
+      if (!(await checkPlanFeature(ticket.companyId, "useAutoPosts"))) {
+         return response.replace(match[0], "").trim() + "\n\n⚠️ *Recurso Bloqueado*: O módulo de Postagem Automática não está ativo no seu plano. Deseja ativar? [UPGRADE_PLAN] { \"type\": \"posts\" } [/UPGRADE_PLAN]";
+      }
+      
+      // Check Plan Limit
+      if (!(await checkPlanLimit(ticket.companyId, "limitPosts", "POST"))) {
+         return response.replace(match[0], "").trim() + "\n\n⚠️ *Limite Atingido*: Você atingiu o limite de postagens do seu plano. Deseja adicionar mais postagens ao seu pacote?";
+      }
+
+      const jsonContent = match[1].trim();
+      const postData = JSON.parse(jsonContent);
+      const { platform, caption } = postData;
+
+      // Find Video Message
+      let videoMsg = msg;
+      let buffer: Buffer | null = null;
+      let filename = "";
+
+      // 1. Check current message
+      if (videoMsg.message?.videoMessage) {
+         buffer = await downloadMediaMessage(
+             videoMsg,
+             "buffer",
+             {},
+             { 
+                logger,
+                reuploadRequest: wbot.updateMediaMessage
+             }
+          ) as Buffer;
+         filename = `video_${new Date().getTime()}.mp4`;
+      } 
+      // 2. Check quoted message
+      else if (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage) {
+         // Need to construct a pseudo WAMessage for downloadMediaMessage or fetch it
+         // Creating a minimal object compatible with downloadMediaMessage
+         const quoted = msg.message.extendedTextMessage.contextInfo;
+         const pseudoMsg: any = {
+             message: quoted.quotedMessage,
+             key: {
+                 remoteJid: msg.key.remoteJid,
+                 id: quoted.stanzaId
+             }
+         };
+         buffer = await downloadMediaMessage(
+             pseudoMsg,
+             "buffer",
+             {},
+             { 
+                logger,
+                reuploadRequest: wbot.updateMediaMessage
+             }
+          ) as Buffer;
+         filename = `video_${new Date().getTime()}.mp4`;
+      }
+      // 3. Look in history (last video sent by user)
+      else {
+         const lastVideo = await Message.findOne({
+            where: { ticketId: ticket.id, mediaType: "video", fromMe: false },
+            order: [["createdAt", "DESC"]]
+         });
+         
+         if (lastVideo && lastVideo.mediaUrl) {
+             filename = lastVideo.mediaUrl.split("/").pop() || "";
+             // If local file
+             const publicFolder = path.resolve(__dirname, "..", "..", "..", "public", `company${ticket.companyId}`);
+             const filePath = path.join(publicFolder, filename);
+             
+             if (fs.existsSync(filePath)) {
+                 const publicUrl = `${process.env.BACKEND_URL}/public/company${ticket.companyId}/${filename}`;
+                 return await executeVideoPost(ticket, platform, publicUrl, caption, response, match[0]);
+             }
+         }
+         return response.replace(match[0], "").trim() + "\n\n(Erro: Nenhum vídeo encontrado para postar. Por favor, envie o vídeo agora.)";
+      }
+
+      if (buffer && filename) {
+         const publicFolder = path.resolve(__dirname, "..", "..", "..", "public", `company${ticket.companyId}`);
+         if (!fs.existsSync(publicFolder)) fs.mkdirSync(publicFolder, { recursive: true });
+         
+         const filePath = path.join(publicFolder, filename);
+         fs.writeFileSync(filePath, buffer);
+         
+         const publicUrl = `${process.env.BACKEND_URL}/public/company${ticket.companyId}/${filename}`;
+         return await executeVideoPost(ticket, platform, publicUrl, caption, response, match[0]);
+      }
+
+    } catch (e) {
+      console.error("Erro ao postar vídeo:", e);
+      return response.replace(match[0], "").trim() + `\n\n❌ Erro: ${e.message}`;
+    }
+  }
+  return response;
+};
+
+const handleUpgradeAction = async (response: string) => {
+  const upgradeRegex = /\[UPGRADE_PLAN\]([\s\S]*?)\[\/UPGRADE_PLAN\]/;
+  const match = response.match(upgradeRegex);
+  if (match && match[1]) {
+      try {
+          const json = JSON.parse(match[1]);
+          const type = json.type;
+          
+          let link = "https://aipensa.com/upgrade";
+          if (type === "posts") link = "https://aipensa.com/checkout/addon-posts";
+          if (type === "voice") link = "https://aipensa.com/checkout/addon-voice";
+          if (type === "agent") link = "https://aipensa.com/checkout/module-agent";
+          
+          return response.replace(match[0], "").trim() + `\n\n🚀 *Upgrade*: Para aumentar seu limite ou ativar este recurso, acesse: ${link}\nAssim que o pagamento for confirmado, o recurso será liberado automaticamente.`;
+      } catch (e) {
+          return response.replace(match[0], "").trim();
+      }
+  }
+  return response;
+}
+
 export const handleOpenAi = async (
   openAiSettings: IOpenAi,
   msg: proto.IWebMessageInfo,
@@ -379,6 +539,27 @@ export const handleOpenAi = async (
   // REGRA PARA DESABILITAR O BOT PARA ALGUM CONTATO
   if (contact.disableBot) {
     return;
+  }
+
+  // Check Agent AI Feature
+  if (!(await checkPlanFeature(ticket.companyId, "useAgentAi"))) {
+    return;
+  }
+
+  // Check Voice Commands
+  const isAudio = !!msg.message?.audioMessage;
+  if (isAudio) {
+     if (!(await checkPlanFeature(ticket.companyId, "useVoiceCommands"))) {
+        return;
+     }
+     
+     // Check Voice Limit
+     if (!(await checkPlanLimit(ticket.companyId, "limitVoiceMinutes", "VOICE_SECONDS"))) {
+        return;
+     }
+
+     const audioSeconds = msg.message?.audioMessage?.seconds || 0;
+     await incrementUsage(ticket.companyId, "VOICE_SECONDS", audioSeconds, msg.key.id);
   }
 
   const bodyMessage = getBodyMessage(msg);
@@ -441,15 +622,20 @@ export const handleOpenAi = async (
   try {
     const ownerJid = wbot.user?.id;
     if (ownerJid) {
+      const phoneNumber = ownerJid.split("@")[0].split(":")[0];
+      const catalogLink = `https://wa.me/c/${phoneNumber}`;
+
       const products = await getCatalog(wbot, ownerJid);
       if (products && products.length > 0) {
-        catalogContext = "\n\n🛍️ CATÁLOGO DE PRODUTOS DISPONÍVEIS:\n";
+        catalogContext = `\n\n🛍️ LINK DO CATÁLOGO: ${catalogLink}\n`;
+        catalogContext += "🛍️ CATÁLOGO DE PRODUTOS DISPONÍVEIS:\n";
         products.forEach(p => {
             const price = (p.price / 1000).toLocaleString('pt-BR', { style: 'currency', currency: p.currency || 'BRL' });
             catalogContext += `- ID: ${p.id} | ${p.name} | ${price}\n`;
             if (p.description) catalogContext += `  Desc: ${p.description.substring(0, 100)}${p.description.length > 100 ? '...' : ''}\n`;
         });
         catalogContext += "\nINSTRUÇÕES DE VENDA:\n" +
+                          "- Se o cliente pedir o link do catálogo, envie: " + catalogLink + "\n" +
                           "- Se o cliente demonstrar interesse em um produto específico, você pode enviar o cartão do produto.\n" +
                           "- Para enviar o cartão, use a tag [SEND_PRODUCT: ID_DO_PRODUTO] no final da sua resposta.\n" +
                           "- Exemplo: 'Aqui está o nosso hambúrguer especial! [SEND_PRODUCT: 12345]'\n" + 
@@ -475,10 +661,18 @@ export const handleOpenAi = async (
   CAPACIDADES DE MÍDIA SOCIAL (SUPERAGENT):
   Você pode publicar conteúdo no Facebook e Instagram (Feed).
   IMPORTANTE: Esta ação só funciona se o usuário tiver a tag "ADMIN".
-  - Para publicar: Use a tag [POST_FEED] { "platform": "facebook", "message": "Texto do post", "image": "URL_da_imagem" } [/POST_FEED]
+  - Para publicar FOTO/TEXTO: Use a tag [POST_FEED] { "platform": "facebook", "message": "Texto do post", "image": "URL_da_imagem" } [/POST_FEED]
+  - Para publicar VÍDEO: Use a tag [POST_VIDEO] { "platform": "facebook", "caption": "Legenda do vídeo" } [/POST_VIDEO].
+    - O vídeo será pego automaticamente do anexo atual, da mensagem citada ou do último vídeo enviado.
+    - Gere uma legenda criativa, com emojis e hashtags, baseada no contexto.
   - Plataformas: "facebook" ou "instagram".
   - Se o usuário pedir para postar um produto do catálogo, pegue a URL da imagem do produto e a descrição, e use esta tag.
   - Imagem é OBRIGATÓRIA para Instagram. Opcional para Facebook.
+
+  CAPACIDADES DE UPGRADE (SUPERAGENT):
+  - Se o usuário quiser contratar mais postagens, minutos de voz ou ativar um módulo, use a tag [UPGRADE_PLAN] { "type": "posts" } [/UPGRADE_PLAN].
+  - Types disponíveis: "posts", "voice", "agent".
+  - Use isso quando o usuário reclamar de limites ou pedir para contratar algo.
 
   NÃO invente dados. Se o usuário perguntar sobre campanhas ou desempenho, use essas tags e aguarde a resposta do sistema.
 
@@ -576,6 +770,12 @@ export const handleOpenAi = async (
 
     // Processar ações de social media
     response = await handleSocialMediaAction(response, ticket, contact);
+
+    // Processar ações de postagem de vídeo
+    response = await handleVideoPostAction(response, ticket, contact, wbot, msg);
+
+    // Processar ações de upgrade
+    response = await handleUpgradeAction(response);
   }
 
   // Verifica se a resposta foi processada (schedule ou marketing)

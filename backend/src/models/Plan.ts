@@ -33,28 +33,28 @@ class Plan extends Model<Plan> {
   queues: number;
 
   @Column
-  amount: string;   
+  amount: string;
 
   @Column
-  useWhatsapp: boolean;   
+  useWhatsapp: boolean;
 
   @Column
-  useFacebook: boolean;   
+  useFacebook: boolean;
 
   @Column
-  useInstagram: boolean;   
-  
-  @Column
-  useCampaigns: boolean;   
+  useInstagram: boolean;
 
   @Column
-  useSchedules: boolean;   
+  useCampaigns: boolean;
 
   @Column
-  useInternalChat: boolean;   
-  
+  useSchedules: boolean;
+
   @Column
-  useExternalApi: boolean;   
+  useInternalChat: boolean;
+
+  @Column
+  useExternalApi: boolean;
 
   @CreatedAt
   createdAt: Date;
@@ -83,6 +83,44 @@ class Plan extends Model<Plan> {
   @Default(true)
   @Column
   isPublic: boolean;
+
+  @Column
+  useMarketing: boolean;
+
+  @Column
+  useMetaAds: boolean;
+
+  @Default(false)
+  @Column
+  useAgentAi: boolean;
+
+  @Default(false)
+  @Column
+  useVoiceCommands: boolean;
+
+  @Default(false)
+  @Column
+  useAutoPosts: boolean;
+
+  @Default(false)
+  @Column
+  useDmComments: boolean;
+
+  @Default(false)
+  @Column
+  useProReports: boolean;
+
+  @Default(0)
+  @Column
+  limitVoiceMinutes: number;
+
+  @Default(0)
+  @Column
+  limitPosts: number;
+
+  @Default(500)
+  @Column
+  limitConversations: number;
 }
 
 export default Plan;

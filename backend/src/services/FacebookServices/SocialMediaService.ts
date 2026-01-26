@@ -105,6 +105,91 @@ export const publishToFacebook = async (
   return resp.data;
 };
 
+export const publishVideoToFacebook = async (
+  companyId: number,
+  pageId: string,
+  videoUrl: string,
+  description: string
+): Promise<any> => {
+  const { accessToken } = await getFbConfig(companyId);
+  if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+
+  const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`, {
+    params: { fields: "access_token", access_token: accessToken }
+  });
+  const pageAccessToken = pageResp.data.access_token;
+
+  const endpoint = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/videos`;
+
+  const body = {
+    access_token: pageAccessToken,
+    file_url: videoUrl,
+    description: description
+  };
+
+  const resp = await axios.post(endpoint, body);
+  return resp.data;
+};
+
+const waitForInstagramMedia = async (creationId: string, accessToken: string) => {
+    let attempts = 0;
+    while (attempts < 20) { // Try for 40 seconds
+        const statusResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${creationId}`, {
+            params: { fields: "status_code,status", access_token: accessToken }
+        });
+        const status = statusResp.data.status_code;
+        if (status === "FINISHED") return;
+        if (status === "ERROR") throw new Error("Instagram Video Processing Failed");
+        
+        await new Promise(r => setTimeout(r, 2000)); // Wait 2s
+        attempts++;
+    }
+    throw new Error("Timeout waiting for Instagram video processing");
+};
+
+export const publishVideoToInstagram = async (
+  companyId: number,
+  instagramId: string,
+  videoUrl: string,
+  caption: string
+): Promise<any> => {
+  const { accessToken } = await getFbConfig(companyId);
+  if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+
+  // 1. Create Container
+  const containerParams: any = {
+    access_token: accessToken,
+    video_url: videoUrl,
+    media_type: "VIDEO",
+    caption: caption
+  };
+
+  const createContainer = await axios.post(
+    `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
+    null,
+    { params: containerParams }
+  );
+  
+  const creationId = createContainer.data.id;
+
+  // Wait for processing
+  await waitForInstagramMedia(creationId, accessToken);
+
+  // 2. Publish Container
+  const publishParams: any = {
+    access_token: accessToken,
+    creation_id: creationId
+  };
+
+  const publishResp = await axios.post(
+    `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
+    null,
+    { params: publishParams }
+  );
+  
+  return publishResp.data;
+};
+
 export const publishToInstagram = async (
   companyId: number,
   instagramId: string,

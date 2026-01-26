@@ -20,6 +20,7 @@
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
     "@google-cloud/dialogflow": "^5.9.0",
     "@google/generative-ai": "^0.2.1",
     "@hapi/boom": "^9.1.4",

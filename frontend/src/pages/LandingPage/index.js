@@ -794,7 +794,7 @@ const LandingPage = () => {
         <Container maxWidth="lg">
           <Grid container spacing={4}>
             <Grid item xs={12} md={4}>
-              <img src={logoSrc} alt="AIPENSA" style={{ height: 96, marginBottom: 16, filter: 'brightness(0) invert(1)', objectFit: 'contain', maxWidth: '100%' }} />
+              <img src={logoSrc} alt="AIPENSA" style={{ height: 96, marginBottom: 16, objectFit: 'contain', maxWidth: '100%' }} />
               <Typography variant="body2" style={{ color: '#9ca3af' }}>
                 Transformando a comunicação empresarial com tecnologia de ponta e inteligência artificial.
               </Typography>

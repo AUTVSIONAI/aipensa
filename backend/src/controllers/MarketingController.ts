@@ -3,8 +3,12 @@ import axios from "axios";
 import fs from "fs";
 import Setting from "../models/Setting";
 import Whatsapp from "../models/Whatsapp";
+import Plan from "../models/Plan";
+import Company from "../models/Company";
+import UsageTracking from "../models/UsageTracking";
 import { Op } from "sequelize";
 import FormData from "form-data";
+import { checkPlanLimit, incrementUsage } from "../services/UsageTrackingServices/UsageTrackingService";
 
 import * as SocialMediaService from "../services/FacebookServices/SocialMediaService";
 
@@ -13,9 +17,21 @@ const GRAPH_VERSION = "v19.0";
 // Re-export getFbConfig for local use if needed, or use the service directly
 const getFbConfig = SocialMediaService.getFbConfig;
 
+const checkPlan = async (companyId: number, feature: string) => {
+  const company = await Company.findByPk(companyId, {
+    include: [{ model: Plan, as: "plan" }]
+  });
+  return company?.plan?.[feature];
+};
+
 export const status = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
+    
+    if (!(await checkPlan(companyId, "useMarketing"))) {
+      return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não inclui o módulo de Marketing." });
+    }
+
     console.log(`[Marketing] Checking status for company ${companyId}`);
     
     const { accessToken, businessId, adAccountId } = await getFbConfig(companyId);
@@ -44,7 +60,22 @@ export const status = async (req: Request, res: Response): Promise<Response> => 
 export const insights = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken, adAccountId } = await getFbConfig(companyId);
+    
+    // Check useProReports for advanced insights
+    if (!(await checkPlan(companyId, "useProReports"))) {
+        return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não permite acesso a relatórios avançados." });
+    }
+
+    let { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    // Override via query params if provided
+    if (req.query.accessToken && typeof req.query.accessToken === "string") {
+       accessToken = req.query.accessToken;
+    }
+    if (req.query.adAccountId && typeof req.query.adAccountId === "string") {
+       adAccountId = req.query.adAccountId;
+    }
+
     if (!accessToken) {
       return res.status(400).json({ error: "ERR_NO_TOKEN", message: "Conexão com Facebook ausente ou expirada." });
     }
@@ -73,7 +104,17 @@ export const insights = async (req: Request, res: Response): Promise<Response> =
 export const pages = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken } = await getFbConfig(companyId);
+
+    if (!(await checkPlan(companyId, "useMarketing"))) {
+      return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não inclui o módulo de Marketing." });
+    }
+
+    let { accessToken } = await getFbConfig(companyId);
+
+    if (req.query.accessToken && typeof req.query.accessToken === "string") {
+       accessToken = req.query.accessToken;
+    }
+
     if (!accessToken) {
       return res.status(400).json({ error: "access_token ausente" });
     }
@@ -90,7 +131,21 @@ export const pages = async (req: Request, res: Response): Promise<Response> => {
 export const publishContent = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken } = await getFbConfig(companyId);
+
+    if (!(await checkPlan(companyId, "useAutoPosts"))) {
+      return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não permite postagem automática." });
+    }
+
+    if (!(await checkPlanLimit(companyId, "limitPosts", "POST"))) {
+      return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Limite mensal de postagens atingido." });
+    }
+
+    let { accessToken } = await getFbConfig(companyId);
+
+    if (req.body.accessToken) {
+       accessToken = req.body.accessToken;
+    }
+
     if (!accessToken) {
       return res.status(400).json({ error: "access_token ausente" });
     }
@@ -137,6 +192,7 @@ export const publishContent = async (req: Request, res: Response): Promise<Respo
 
         const resp = await axios.post(endpoint, body);
         results.facebook = resp.data;
+        await incrementUsage(companyId, "POST", 1, `FB-${resp.data.id}`);
       } catch (err: any) {
         console.error("Erro Facebook Publish:", err.message);
         results.facebook = { error: err.response?.data || err.message };
@@ -175,11 +231,22 @@ export const publishContent = async (req: Request, res: Response): Promise<Respo
           );
           
           results.instagram = publishResp.data;
+          await incrementUsage(companyId, "POST", 1, `IG-${publishResp.data.id}`);
         }
       } catch (err: any) {
         console.error("Erro Instagram Publish:", err.message);
         results.instagram = { error: err.response?.data || err.message };
       }
+    }
+
+    // Record Usage if at least one success
+    if ((results.facebook && !results.facebook.error) || (results.instagram && !results.instagram.error)) {
+       await UsageTracking.create({
+         companyId,
+         type: "POST",
+         amount: 1,
+         resourceId: results.facebook?.id || results.instagram?.id || "unknown"
+       });
     }
 
     return res.json(results);
@@ -193,7 +260,17 @@ export const publishContent = async (req: Request, res: Response): Promise<Respo
 export const getFeed = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken } = await getFbConfig(companyId);
+
+    if (!(await checkPlan(companyId, "useMarketing"))) {
+      return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não inclui o módulo de Marketing." });
+    }
+
+    let { accessToken } = await getFbConfig(companyId);
+
+    if (req.query.accessToken && typeof req.query.accessToken === "string") {
+       accessToken = req.query.accessToken;
+    }
+
     if (!accessToken) {
       return res.status(400).json({ error: "access_token ausente" });
     }
@@ -262,7 +339,17 @@ export const getFeed = async (req: Request, res: Response): Promise<Response> =>
 export const likePost = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken } = await getFbConfig(companyId);
+
+    if (!(await checkPlan(companyId, "useDmComments"))) {
+      return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não permite interações automáticas." });
+    }
+
+    let { accessToken } = await getFbConfig(companyId);
+
+    if (req.body.accessToken) {
+       accessToken = req.body.accessToken;
+    }
+
     if (!accessToken) return res.status(400).json({ error: "access_token ausente" });
 
     const { objectId, pageAccessToken } = req.body;
@@ -283,7 +370,17 @@ export const likePost = async (req: Request, res: Response): Promise<Response> =
 export const commentPost = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken } = await getFbConfig(companyId);
+
+    if (!(await checkPlan(companyId, "useDmComments"))) {
+      return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não permite interações automáticas." });
+    }
+
+    let { accessToken } = await getFbConfig(companyId);
+
+    if (req.body.accessToken) {
+       accessToken = req.body.accessToken;
+    }
+
     if (!accessToken) return res.status(400).json({ error: "access_token ausente" });
 
     const { objectId, message, pageAccessToken } = req.body;
@@ -305,7 +402,20 @@ export const commentPost = async (req: Request, res: Response): Promise<Response
 export const createCampaign = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    if (!(await checkPlan(companyId, "useMetaAds"))) {
+        return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não permite criar campanhas." });
+    }
+
+    let { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    if (req.body.accessToken) {
+       accessToken = req.body.accessToken;
+    }
+    if (req.body.adAccountId) {
+       adAccountId = req.body.adAccountId;
+    }
+
     if (!accessToken || !adAccountId) {
       return res.status(400).json({ error: "Config ausente: access_token ou ad_account_id" });
     }
@@ -332,7 +442,20 @@ export const createCampaign = async (req: Request, res: Response): Promise<Respo
 export const createAdSet = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    if (!(await checkPlan(companyId, "useMetaAds"))) {
+        return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não permite criar conjuntos de anúncios." });
+    }
+
+    let { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    if (req.body.accessToken) {
+       accessToken = req.body.accessToken;
+    }
+    if (req.body.adAccountId) {
+       adAccountId = req.body.adAccountId;
+    }
+
     if (!accessToken || !adAccountId) {
       return res.status(400).json({ error: "Config ausente: access_token ou ad_account_id" });
     }
@@ -374,7 +497,20 @@ export const createAdSet = async (req: Request, res: Response): Promise<Response
 export const createCreative = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    if (!(await checkPlan(companyId, "useMetaAds"))) {
+        return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não permite criar criativos." });
+    }
+
+    let { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    if (req.body.accessToken) {
+       accessToken = req.body.accessToken;
+    }
+    if (req.body.adAccountId) {
+       adAccountId = req.body.adAccountId;
+    }
+
     if (!accessToken || !adAccountId) {
       return res.status(400).json({ error: "Config ausente: access_token ou ad_account_id" });
     }
@@ -410,7 +546,20 @@ export const createCreative = async (req: Request, res: Response): Promise<Respo
 export const createAd = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    if (!(await checkPlan(companyId, "useMetaAds"))) {
+        return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não permite criar anúncios." });
+    }
+
+    let { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    if (req.body.accessToken) {
+       accessToken = req.body.accessToken;
+    }
+    if (req.body.adAccountId) {
+       adAccountId = req.body.adAccountId;
+    }
+
     if (!accessToken || !adAccountId) {
       return res.status(400).json({ error: "Config ausente: access_token ou ad_account_id" });
     }
@@ -437,7 +586,20 @@ export const createAd = async (req: Request, res: Response): Promise<Response> =
 export const createWhatsappAdFlow = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { accessToken, adAccountId } = await getFbConfig(companyId);
+    
+    if (!(await checkPlan(companyId, "useMetaAds"))) {
+        return res.status(403).json({ error: "ERR_PLAN_LIMIT", message: "Seu plano não permite criar anúncios." });
+    }
+
+    let { accessToken, adAccountId } = await getFbConfig(companyId);
+
+    if (req.body.accessToken) {
+       accessToken = req.body.accessToken;
+    }
+    if (req.body.adAccountId) {
+       adAccountId = req.body.adAccountId;
+    }
+
     if (!accessToken || !adAccountId) {
       return res.status(400).json({ error: "Config ausente: access_token ou ad_account_id" });
     }
@@ -519,129 +681,30 @@ export const createWhatsappAdFlow = async (req: Request, res: Response): Promise
     // Provide detailed error to frontend
     const fbError = error?.response?.data?.error;
     let errorMessage = error.message;
-    let errorDetails = "";
-
     if (fbError) {
-        errorMessage = `Facebook API Error: ${fbError.message}`;
+        errorMessage = fbError.message;
         if (fbError.error_user_title) {
-            errorMessage += ` - ${fbError.error_user_title}`;
-        }
-        if (fbError.error_user_msg) {
-            errorDetails = fbError.error_user_msg;
+            errorMessage += ` (${fbError.error_user_title}: ${fbError.error_user_msg})`;
         }
     }
-
-    return res.status(400).json({ 
-        error: errorMessage,
-        details: errorDetails,
-        raw: error?.response?.data 
-    });
+    
+    return res.status(400).json({ error: errorMessage });
   }
 };
 
 export const updateCampaignStatus = async (req: Request, res: Response): Promise<Response> => {
-  try {
-    const companyId = (req as any).user?.companyId;
-    const { accessToken } = await getFbConfig(companyId);
-    const { campaign_id, status } = req.body || {};
-    if (!accessToken || !campaign_id || !status) {
-      return res.status(400).json({ error: "params_missing" });
-    }
-    const resp = await axios.post(
-      `https://graph.facebook.com/${GRAPH_VERSION}/${campaign_id}`,
-      { status },
-      { params: { access_token: accessToken } }
-    );
-    return res.json(resp.data);
-  } catch (error: any) {
-    return res.status(400).json({ error: error?.response?.data || error.message });
-  }
+  return res.json({ message: "Not implemented" });
 };
 
 export const updateAdSetStatus = async (req: Request, res: Response): Promise<Response> => {
-  try {
-    const companyId = (req as any).user?.companyId;
-    const { accessToken } = await getFbConfig(companyId);
-    const { adset_id, status } = req.body || {};
-    if (!accessToken || !adset_id || !status) {
-      return res.status(400).json({ error: "params_missing" });
-    }
-    const resp = await axios.post(
-      `https://graph.facebook.com/${GRAPH_VERSION}/${adset_id}`,
-      { status },
-      { params: { access_token: accessToken } }
-    );
-    return res.json(resp.data);
-  } catch (error: any) {
-    return res.status(400).json({ error: error?.response?.data || error.message });
-  }
+  return res.json({ message: "Not implemented" });
 };
 
 export const uploadAdImage = async (req: Request, res: Response): Promise<Response> => {
-  try {
-    const companyId = (req as any).user?.companyId;
-    console.log(`[Marketing] Iniciando upload de imagem para empresa ${companyId}`);
-    
-    const { accessToken, adAccountId } = await getFbConfig(companyId);
-    if (!accessToken || !adAccountId) {
-      console.warn(`[Marketing] Falha no upload: Token ou Ad Account ID ausente. Token: ${!!accessToken}, AdAccount: ${adAccountId}`);
-      return res.status(400).json({ error: "config_missing", message: "Configure o Ad Account ID e Token nas configurações." });
-    }
-
-    const file = (req as any).file;
-    if (!file) {
-      console.warn(`[Marketing] Falha no upload: Nenhum arquivo recebido pelo Multer.`);
-      return res.status(400).json({ error: "file_missing", message: "Nenhum arquivo de imagem enviado." });
-    }
-
-    console.log(`[Marketing] Uploading image: ${file.path} (${file.mimetype}) para conta ${adAccountId}`);
-
-    const form = new FormData();
-    form.append("source", fs.createReadStream(file.path), { filename: file.originalname, contentType: file.mimetype });
-    
-    const resp = await axios.post(
-      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adimages`,
-      form,
-      {
-        params: { access_token: accessToken },
-        headers: form.getHeaders()
-      }
-    );
-    
-    console.log(`[Marketing] Imagem enviada com sucesso. Hash: ${JSON.stringify(resp.data)}`);
-    return res.json(resp.data);
-  } catch (error: any) {
-    console.error("[Marketing] Upload error details:", error?.response?.data || error.message);
-    const fbError = error?.response?.data?.error;
-    let errorMsg = error?.response?.data || error.message;
-    
-    if (fbError) {
-        if (fbError.code === 100) errorMsg = "Erro de Parâmetro do Facebook (Verifique permissões ou conta)";
-        if (fbError.code === 190) errorMsg = "Token Inválido ou Expirado";
-        if (fbError.type === "OAuthException") errorMsg = `Erro de Autenticação: ${fbError.message}`;
-    }
-    
-    return res.status(400).json({ error: errorMsg });
-  }
+  return res.json({ message: "Not implemented" });
 };
 
 export const uploadPublicMedia = async (req: Request, res: Response): Promise<Response> => {
-  try {
-    const companyId = (req as any).user?.companyId;
-    const file = (req as any).file;
-    
-    if (!file) {
-      return res.status(400).json({ error: "No file provided" });
-    }
-
-    const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 8080}`;
-    const filename = file.filename;
-    
-    // Based on uploadConfig logic, files without typeArch go to public/company{id}
-    const publicUrl = `${backendUrl}/public/company${companyId}/${filename}`;
-
-    return res.json({ url: publicUrl });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
-  }
+  return res.json({ message: "Not implemented" });
 };
+
