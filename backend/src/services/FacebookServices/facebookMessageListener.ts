@@ -1066,9 +1066,12 @@ export const handleMessage = async (
         !ticket.userId &&
         getSession.prompt
       ) {
+        const listSettings = await ListSettingsService({ companyId });
+        const userApiToken = listSettings?.find(s => s.key === "userApiToken")?.value;
+
         const promptWithFallback = {
           ...getSession.prompt.toJSON(),
-          apiKey: getSession.prompt.apiKey || settings?.userApiToken
+          apiKey: getSession.prompt.apiKey || userApiToken
         } as IOpenAi;
 
         await handleOpenAiFacebook(
