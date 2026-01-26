@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useHistory } from "react-router-dom";
-import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider, Chip, Stepper, Step, StepLabel, CircularProgress, Avatar, Tooltip, InputAdornment, List, ListItem, ListItemAvatar, ListItemText, IconButton, Paper, Collapse, Dialog, DialogTitle, DialogContent, DialogActions } from "@material-ui/core";
+import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider, Chip, Stepper, Step, StepLabel, CircularProgress, Avatar, Tooltip, InputAdornment, List, ListItem, ListItemAvatar, ListItemText, IconButton, Paper, Collapse, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import api from "../../services/api";
 import { socketConnection } from "../../services/socket";
@@ -33,6 +33,9 @@ const useStyles = makeStyles((theme) => ({
     paddingBottom: theme.spacing(8),
     background: "linear-gradient(135deg, #1e1e2f 0%, #2d2b42 100%)", // Dark futuristic bg
     minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    backgroundAttachment: "fixed",
     color: "#fff"
   },
   header: {
@@ -170,7 +173,7 @@ const Marketing = () => {
   const [pagesError, setPagesError] = useState(false);
   const [pagesLoading, setPagesLoading] = useState(false);
   const [pagesErrorMsg, setPagesErrorMsg] = useState("");
-  const [pubPlatform, setPubPlatform] = useState("facebook");
+  const [selectedPlatforms, setSelectedPlatforms] = useState({ facebook: true, instagram: false });
   const [pubAccountId, setPubAccountId] = useState("");
   const [pubMessage, setPubMessage] = useState("");
   const [pubImageUrl, setPubImageUrl] = useState("");
@@ -189,6 +192,24 @@ const Marketing = () => {
   
   // Feed comments expansion state
   const [expandedComments, setExpandedComments] = useState({});
+
+  useEffect(() => {
+    if (pages.length > 0 && !pubAccountId) {
+        setPubAccountId(pages[0].id);
+    }
+  }, [pages, pubAccountId]);
+
+  useEffect(() => {
+    if (!pubAccountId || pages.length === 0) return;
+    const page = pages.find(p => p.id === pubAccountId);
+    if (page) {
+      const hasInsta = !!page.instagram_business_account;
+      setSelectedPlatforms({
+        facebook: true,
+        instagram: hasInsta
+      });
+    }
+  }, [pubAccountId, pages]);
 
   const toggleComments = (postId) => {
     setExpandedComments(prev => ({ ...prev, [postId]: !prev[postId] }));
@@ -239,16 +260,12 @@ const Marketing = () => {
         }
       } catch (err) {
         const errorType = err.response?.data?.error;
-        if (errorType === "ERR_NO_AD_ACCOUNT") {
-            setAdAccountError(true);
-            setTab(9); // Switch to settings tab (we will add it at index 9)
-            toast.warn("Configure sua conta de anúncios para continuar.");
-        } else if (errorType === "ERR_NO_TOKEN") {
-            setAdAccountError(true);
-            setTab(9);
-            toast.warn("Token de acesso ausente. Configure na aba Configurações.");
-        } else {
-            toastError(err);
+        if (err.response?.status === 400 && (errorType === "ERR_NO_AD_ACCOUNT" || errorType === "ERR_NO_TOKEN")) {
+             setAdAccountError(true);
+             // Don't toast error for missing config, just warn
+             // toast.warn("Configure sua conta de anúncios para continuar.");
+        } else if (err.response?.status !== 400) {
+          toastError(err);
         }
         setStatusError(true);
         setStatusErrorMsg(String(err?.response?.data?.error || err?.message || "Erro ao obter status"));
@@ -256,26 +273,7 @@ const Marketing = () => {
         setStatusLoading(false);
       }
     };
-    const fetchInsights = async () => {
-      try {
-        setInsightsLoading(true);
-        const { data } = await api.get("/marketing/insights", { params: { date_preset: datePreset } });
-        setInsights(data.data || []);
-      } catch (err) {
-        const errorType = err.response?.data?.error;
-        if (err.response?.status === 400 && (errorType === "ERR_NO_AD_ACCOUNT" || errorType === "ERR_NO_TOKEN")) {
-             setAdAccountError(true);
-        } else if (err.response?.status !== 400) {
-          toastError(err);
-        }
-        setInsightsError(true);
-        setInsightsErrorMsg(String(err?.response?.data?.error || err?.message || "Erro ao obter insights"));
-      } finally {
-        setInsightsLoading(false);
-      }
-    };
     fetchStatus();
-    fetchInsights();
     const fetchPages = async () => {
       try {
         setPagesLoading(true);
@@ -294,6 +292,28 @@ const Marketing = () => {
     };
     fetchPages();
   }, []);
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      try {
+        setInsightsLoading(true);
+        const { data } = await api.get("/marketing/insights", { params: { date_preset: datePreset } });
+        setInsights(data.data || []);
+      } catch (err) {
+        const errorType = err.response?.data?.error;
+        if (err.response?.status === 400 && (errorType === "ERR_NO_AD_ACCOUNT" || errorType === "ERR_NO_TOKEN")) {
+             setAdAccountError(true);
+        } else if (err.response?.status !== 400) {
+          toastError(err);
+        }
+        setInsightsError(true);
+        setInsightsErrorMsg(String(err?.response?.data?.error || err?.message || "Erro ao obter insights"));
+      } finally {
+        setInsightsLoading(false);
+      }
+    };
+    fetchInsights();
+  }, [datePreset]);
 
   useEffect(() => {
     const socket = socketConnection({ user });
@@ -499,18 +519,70 @@ const Marketing = () => {
   const handlePublish = async () => {
     setPubLoading(true);
     try {
-      await api.post("/marketing/publish", {
-        platform: pubPlatform,
-        accountId: pubAccountId,
+      const selectedPage = pages.find(p => p.id === pubAccountId);
+      if (!selectedPage) {
+          toast.error("Selecione uma página/conta");
+          setPubLoading(false);
+          return;
+      }
+      
+      const payload = {
         message: pubMessage,
         imageUrl: pubImageUrl,
         scheduledTime: pubScheduledTime || undefined
-      });
-      toast.success("Publicado/Agendado com sucesso!");
-      setLastActionSummary("Publicação realizada com sucesso");
-      setPubMessage("");
-      setPubImageUrl("");
-      setPubScheduledTime("");
+      };
+      
+      if (selectedPlatforms.facebook) {
+          payload.facebookPageId = selectedPage.id;
+      }
+      
+      if (selectedPlatforms.instagram && selectedPage.instagram_business_account) {
+          payload.instagramId = selectedPage.instagram_business_account.id;
+      }
+
+      if (!payload.facebookPageId && !payload.instagramId) {
+          toast.warn("Selecione pelo menos uma plataforma (Facebook ou Instagram)");
+          setPubLoading(false);
+          return;
+      }
+
+      const { data } = await api.post("/marketing/publish", payload);
+      
+      let successCount = 0;
+      let errorCount = 0;
+
+      if (selectedPlatforms.facebook && data.facebook) {
+          if (data.facebook.error) {
+              toast.error(`Erro Facebook: ${data.facebook.error.message || "Falha desconhecida"}`);
+              errorCount++;
+          } else {
+              successCount++;
+          }
+      }
+
+      if (selectedPlatforms.instagram && data.instagram) {
+          if (data.instagram.error) {
+              toast.error(`Erro Instagram: ${data.instagram.error.message || "Falha desconhecida"}`);
+              errorCount++;
+          } else {
+              successCount++;
+          }
+      }
+
+      if (successCount > 0) {
+          toast.success(`${successCount} publicação(ões) realizada(s) com sucesso!`);
+          setLastActionSummary("Publicação realizada com sucesso");
+          setPubMessage("");
+          setPubImageUrl("");
+          setPubScheduledTime("");
+      } else if (errorCount > 0 && successCount === 0) {
+          // All failed
+      } else {
+          // Should not happen if at least one platform selected
+          if (!data.facebook && !data.instagram) {
+               toast.success("Comando enviado.");
+          }
+      }
     } catch (err) {
       toastError(err);
     } finally {
@@ -539,8 +611,8 @@ const Marketing = () => {
   };
 
   return (
-    <div className={classes.root} style={{ background: "linear-gradient(135deg, #1e1e2f 0%, #2d2b42 100%)", minHeight: "100vh" }}>
-      <Container maxWidth="xl">
+    <div className={classes.root}>
+      <Container maxWidth="xl" style={{ flex: 1 }}>
         <Box className={classes.header} display="flex" justifyContent="space-between" alignItems="center">
           <Box display="flex" alignItems="center" gap={2}>
             <Button
@@ -879,7 +951,28 @@ const Marketing = () => {
               <Box mt={3}>
                  <Card className={classes.card}>
                   <Section icon={<SettingsSuggestIcon style={{ color: "white" }} />} title="3.2 Criar Criativo (Creative)">
-                    <TextField fullWidth label="Page ID" value={pageId} onChange={(e) => setPageId(e.target.value)} variant="outlined" margin="normal" helperText="ID da página do Facebook" className={classes.input} />
+                    <TextField
+                      select
+                      fullWidth
+                      label="Selecionar Página"
+                      value={pageId}
+                      onChange={(e) => setPageId(e.target.value)}
+                      variant="outlined"
+                      margin="normal"
+                      className={classes.input}
+                    >
+                      {pagesLoading ? (
+                        <MenuItem disabled>Carregando...</MenuItem>
+                      ) : pagesError ? (
+                        <MenuItem disabled>Erro ao carregar</MenuItem>
+                      ) : (
+                        pages.map((p) => (
+                          <MenuItem key={p.id} value={p.id}>
+                            {p.name} {p.instagram_business_account ? `(IG: ${p.instagram_business_account.username})` : ""}
+                          </MenuItem>
+                        ))
+                      )}
+                    </TextField>
                     <TextField fullWidth label="Link Destino" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
                     <TextField fullWidth label="Image Hash" value={imageHash} onChange={(e) => setImageHash(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
                     <TextField fullWidth label="Texto do Anúncio" value={messageText} onChange={(e) => setMessageText(e.target.value)} variant="outlined" margin="normal" multiline minRows={3} className={classes.input} />
@@ -949,6 +1042,40 @@ const Marketing = () => {
                            Crie toda a estrutura de campanha para WhatsApp em um clique.
                         </Typography>
                         <Grid container spacing={2}>
+                           <Grid item xs={12}>
+                              <Box p={2} border="1px dashed rgba(255, 255, 255, 0.2)" borderRadius={8} textAlign="center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                                <input
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  id="flow-image-upload"
+                                  type="file"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    try {
+                                      const form = new FormData();
+                                      form.append("image", file);
+                                      const { data } = await api.post("/marketing/adimage", form);
+                                      const hash = Object.keys(data?.images || {})[0];
+                                      setImageHash(hash || "");
+                                      toast.success(`Imagem enviada! Hash: ${hash}`);
+                                    } catch (err) {
+                                      toastError(err);
+                                    }
+                                  }}
+                                />
+                                <label htmlFor="flow-image-upload">
+                                  <Button variant="contained" component="span" startIcon={<PublicIcon />} size="small" className={classes.button}>
+                                    Upload de Imagem do Anúncio
+                                  </Button>
+                                </label>
+                                {imageHash && (
+                                    <Typography variant="caption" display="block" style={{ marginTop: 8, color: "#10b981" }}>
+                                        Imagem carregada (Hash: {imageHash})
+                                    </Typography>
+                                )}
+                              </Box>
+                           </Grid>
                            <Grid item xs={12} sm={6}>
                               <TextField
                                  select
@@ -979,7 +1106,7 @@ const Marketing = () => {
                               variant="contained"
                               color="primary"
                               size="large"
-                              disabled={waFlowCreating || !pageId}
+                              disabled={waFlowCreating || !pageId || !imageHash}
                               onClick={async () => {
                                 setWaFlowCreating(true);
                                 try {
@@ -988,7 +1115,8 @@ const Marketing = () => {
                                     phone_number_e164: waPhoneE164,
                                     message_text: messageText,
                                     targeting: { geo_locations: { countries: ["BR"] } },
-                                    daily_budget: dailyBudget || 1000
+                                    daily_budget: dailyBudget || 1000,
+                                    image_hash: imageHash
                                   });
                                   setFlowStep(4);
                                   toast.success("Fluxo criado com sucesso!");
@@ -1141,18 +1269,27 @@ const Marketing = () => {
                        </Typography>
                        <Grid container spacing={3}>
                           <Grid item xs={12} sm={6}>
-                             <TextField select fullWidth label="Plataforma" value={pubPlatform} onChange={(e) => setPubPlatform(e.target.value)} variant="outlined" className={classes.input}>
-                                <MenuItem value="facebook">Facebook</MenuItem>
-                                <MenuItem value="instagram">Instagram</MenuItem>
+                             <TextField select fullWidth label="Selecionar Página / Conta" value={pubAccountId} onChange={(e) => setPubAccountId(e.target.value)} variant="outlined" className={classes.input}>
+                                {pages.map(p => (
+                                  <MenuItem key={p.id} value={p.id}>
+                                    {p.name} {p.instagram_business_account ? `+ Insta (@${p.instagram_business_account.username})` : ""}
+                                  </MenuItem>
+                                ))}
                              </TextField>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <TextField select fullWidth label="Conta/Página" value={pubAccountId} onChange={(e) => setPubAccountId(e.target.value)} variant="outlined" className={classes.input}>
-                                {pubPlatform === "facebook" ? 
-                                   pages.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>) : 
-                                   pages.filter(p => p.instagram_business_account).map(p => <MenuItem key={p.instagram_business_account.id} value={p.instagram_business_account.id}>{p.instagram_business_account.username || p.name}</MenuItem>)
-                                }
-                             </TextField>
+                             <Box display="flex" alignItems="center" height="100%" pl={2}>
+                                <FormControlLabel
+                                  control={<Checkbox checked={selectedPlatforms.facebook} onChange={(e) => setSelectedPlatforms({...selectedPlatforms, facebook: e.target.checked})} name="facebook" style={{color: '#1877F2'}} />}
+                                  label="Facebook"
+                                  style={{color: '#fff'}}
+                                />
+                                <FormControlLabel
+                                  control={<Checkbox checked={selectedPlatforms.instagram} onChange={(e) => setSelectedPlatforms({...selectedPlatforms, instagram: e.target.checked})} name="instagram" style={{color: '#E1306C'}} />}
+                                  label="Instagram"
+                                  style={{color: '#fff'}}
+                                />
+                             </Box>
                           </Grid>
                           <Grid item xs={12}>
                              <TextField fullWidth multiline minRows={4} label="Legenda / Texto" value={pubMessage} onChange={(e) => setPubMessage(e.target.value)} variant="outlined" placeholder="Escreva algo interessante..." className={classes.input} />

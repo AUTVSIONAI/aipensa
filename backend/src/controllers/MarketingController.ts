@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import axios from "axios";
+import fs from "fs";
 import Setting from "../models/Setting";
 import Whatsapp from "../models/Whatsapp";
 import { Op } from "sequelize";
@@ -57,7 +58,23 @@ async function getFbConfig(companyId?: number) {
       if (whatsapp) {
         // Prefer tokenMeta (User Token) over facebookUserToken (Page Token)
         accessToken = whatsapp.tokenMeta || whatsapp.facebookUserToken;
-        console.log(`[Marketing] Usando token da conexão ${whatsapp.name} (ID: ${whatsapp.id})`);
+        console.log(`[Marketing] Usando token da conexão ${whatsapp.name} (ID: ${whatsapp.id}, Channel: ${whatsapp.channel})`);
+      } else {
+        console.log(`[Marketing] Nenhuma conexão com token encontrada para companyId: ${companyId}. Buscando em qualquer canal com token...`);
+        // Fallback agressivo: Tentar qualquer conexão que tenha tokenMeta (pode ser um canal antigo ou mal classificado)
+        const anyWhatsapp = await Whatsapp.findOne({
+           where: {
+             companyId,
+             tokenMeta: { [Op.ne]: null, [Op.ne]: "" }
+           },
+           order: [["updatedAt", "DESC"]]
+        });
+        if (anyWhatsapp) {
+            accessToken = anyWhatsapp.tokenMeta;
+            console.log(`[Marketing] Fallback: Usando token da conexão ${anyWhatsapp.name} (ID: ${anyWhatsapp.id}, Channel: ${anyWhatsapp.channel})`);
+        } else {
+            console.log(`[Marketing] REALMENTE nenhuma conexão com token encontrada.`);
+        }
       }
     }
 
@@ -71,15 +88,20 @@ async function getFbConfig(companyId?: number) {
           // Pega a primeira conta de anúncios encontrada
           adAccountId = resp.data.data[0].account_id;
           console.log(`[Marketing] Ad Account ID recuperado automaticamente: ${adAccountId}`);
-          
-          // Opcional: Salvar no banco para não buscar sempre?
-          // Por enquanto, vamos apenas usar em memória para evitar efeitos colaterais indesejados
         }
       } catch (err) {
         console.error("[Marketing] Erro ao buscar Ad Accounts:", err.message);
       }
     }
+
+    // Ensure adAccountId is clean (without act_ prefix)
+    if (adAccountId) {
+      adAccountId = adAccountId.replace(/^act_/, "");
+    }
   }
+
+  return { accessToken, businessId, adAccountId };
+}
 
   accessToken = accessToken || process.env.FACEBOOK_ACCESS_TOKEN || null;
   businessId = businessId || process.env.FACEBOOK_BUSINESS_ID || null;
@@ -90,16 +112,28 @@ async function getFbConfig(companyId?: number) {
     adAccountId = adAccountId.replace(/^act_/, "");
   }
 
+  console.log(`[Marketing] getFbConfig result for company ${companyId}:`, { 
+    hasAccessToken: !!accessToken, 
+    hasAdAccount: !!adAccountId,
+    adAccountId 
+  });
+
   return { accessToken, businessId, adAccountId };
 }
 
 export const status = async (req: Request, res: Response): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
+    console.log(`[Marketing] Checking status for company ${companyId}`);
+    
     const { accessToken, businessId, adAccountId } = await getFbConfig(companyId);
+    
     if (!accessToken) {
+      console.warn(`[Marketing] Status failed: Token not found for company ${companyId}`);
       return res.status(400).json({ error: "ERR_NO_TOKEN", message: "Token de acesso não encontrado. Conecte o Facebook ou insira o token manualmente." });
     }
+    
+    console.log(`[Marketing] Status: Validating token...`);
     const meResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me`, {
       params: { access_token: accessToken, fields: "id,name" }
     });
@@ -169,96 +203,94 @@ export const publishContent = async (req: Request, res: Response): Promise<Respo
       return res.status(400).json({ error: "access_token ausente" });
     }
 
-    const { accountId, platform, message, imageUrl, scheduledTime } = req.body;
-    // platform: 'facebook' | 'instagram'
+    const { facebookPageId, instagramId, message, imageUrl, scheduledTime } = req.body;
 
-    if (!accountId || !message) {
-      return res.status(400).json({ error: "Dados incompletos: accountId e message são obrigatórios" });
+    if (!message) {
+      return res.status(400).json({ error: "Mensagem é obrigatória" });
     }
 
-    let result;
-
-    if (platform === "facebook") {
-      // Obter Page Access Token (necessário para publicar como a página)
-      // O accessToken atual é do usuário (admin), precisamos pegar o token da página na lista de pages
-      // Para simplificar, vamos buscar o token da página específica
-      const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${accountId}`, {
-        params: { fields: "access_token", access_token: accessToken }
-      });
-      const pageAccessToken = pageResp.data.access_token;
-
-      const endpoint = imageUrl 
-        ? `https://graph.facebook.com/${GRAPH_VERSION}/${accountId}/photos`
-        : `https://graph.facebook.com/${GRAPH_VERSION}/${accountId}/feed`;
-      
-      const body: any = {
-        access_token: pageAccessToken,
-        message: message
-      };
-
-      if (imageUrl) {
-        body.url = imageUrl;
-        body.caption = message; // Photos endpoint uses caption, not message
-        delete body.message;
-      }
-
-      if (scheduledTime) {
-         // Para agendamento, o campo é published=false e scheduled_publish_time (unix timestamp)
-         // Nota: Agendamento só funciona se estiver entre 10 min e 30 dias no futuro
-         body.published = false;
-         body.scheduled_publish_time = Math.floor(new Date(scheduledTime).getTime() / 1000);
-      }
-
-      const resp = await axios.post(endpoint, body);
-      result = resp.data;
-
-    } else if (platform === "instagram") {
-      // Instagram Publishing (Content Publishing API)
-      // 1. Create Media Container
-      // 2. Publish Media Container
-      
-      if (!imageUrl) {
-         return res.status(400).json({ error: "Instagram requer uma imagem (imageUrl)" });
-      }
-
-      const containerParams: any = {
-        access_token: accessToken, // User token is fine if it has permissions, or use Page Token linked to IG
-        image_url: imageUrl,
-        caption: message
-      };
-
-      // Check if we need to use page token (usually safer for business actions)
-      // Getting page token for the connected page? 
-      // Assuming accountId is the IG Business User ID.
-      // We need to act on behalf of the Page that owns the IG account.
-      // Actually, standard practice is to use the User Token with 'instagram_content_publish' permission 
-      // OR Page Token with 'instagram_content_publish'.
-      // Let's use the User Access Token we have (admin).
-      
-      const createContainer = await axios.post(
-        `https://graph.facebook.com/${GRAPH_VERSION}/${accountId}/media`,
-        null, 
-        { params: containerParams }
-      );
-      
-      const creationId = createContainer.data.id;
-
-      // Publish
-      const publishParams: any = {
-        access_token: accessToken,
-        creation_id: creationId
-      };
-
-      const publishResp = await axios.post(
-        `https://graph.facebook.com/${GRAPH_VERSION}/${accountId}/media_publish`,
-        null,
-        { params: publishParams }
-      );
-      
-      result = publishResp.data;
+    if (!facebookPageId && !instagramId) {
+       return res.status(400).json({ error: "Selecione pelo menos uma plataforma (Facebook ou Instagram)" });
     }
 
-    return res.json(result);
+    const results: any = {};
+
+    // 1. Publicar no Facebook
+    if (facebookPageId) {
+      try {
+        const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${facebookPageId}`, {
+          params: { fields: "access_token", access_token: accessToken }
+        });
+        const pageAccessToken = pageResp.data.access_token;
+
+        const endpoint = imageUrl 
+          ? `https://graph.facebook.com/${GRAPH_VERSION}/${facebookPageId}/photos`
+          : `https://graph.facebook.com/${GRAPH_VERSION}/${facebookPageId}/feed`;
+        
+        const body: any = {
+          access_token: pageAccessToken,
+          message: message
+        };
+
+        if (imageUrl) {
+          body.url = imageUrl;
+          body.caption = message;
+          delete body.message;
+        }
+
+        if (scheduledTime) {
+           body.published = false;
+           body.scheduled_publish_time = Math.floor(new Date(scheduledTime).getTime() / 1000);
+        }
+
+        const resp = await axios.post(endpoint, body);
+        results.facebook = resp.data;
+      } catch (err: any) {
+        console.error("Erro Facebook Publish:", err.message);
+        results.facebook = { error: err.response?.data || err.message };
+      }
+    }
+
+    // 2. Publicar no Instagram
+    if (instagramId) {
+      try {
+        if (!imageUrl) {
+           results.instagram = { error: "Instagram requer uma imagem" };
+        } else {
+          const containerParams: any = {
+            access_token: accessToken,
+            image_url: imageUrl,
+            caption: message
+          };
+
+          const createContainer = await axios.post(
+            `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
+            null, 
+            { params: containerParams }
+          );
+          
+          const creationId = createContainer.data.id;
+
+          const publishParams: any = {
+            access_token: accessToken,
+            creation_id: creationId
+          };
+
+          const publishResp = await axios.post(
+            `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
+            null,
+            { params: publishParams }
+          );
+          
+          results.instagram = publishResp.data;
+        }
+      } catch (err: any) {
+        console.error("Erro Instagram Publish:", err.message);
+        results.instagram = { error: err.response?.data || err.message };
+      }
+    }
+
+    return res.json(results);
 
   } catch (error: any) {
     console.error("[Marketing] Erro em publishContent:", error?.response?.data || error.message);
@@ -491,6 +523,8 @@ export const createWhatsappAdFlow = async (req: Request, res: Response): Promise
       adAccountId, page_id, phone_number_e164, image_hash 
     });
 
+    const sanitizedPhone = phone_number_e164.replace(/\D/g, "");
+
     // 1) Campaign (MESSAGES)
     const campResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/campaigns`,
@@ -516,7 +550,7 @@ export const createWhatsappAdFlow = async (req: Request, res: Response): Promise
     const adset_id = adsetResp.data.id;
 
     // 3) Creative (link to wa.me for fallback; páginas com WhatsApp conectado podem exibir CTA WhatsApp)
-    const waLink = `https://wa.me/${phone_number_e164}`;
+    const waLink = `https://wa.me/${sanitizedPhone}`;
     const object_story_spec = {
       page_id,
       link_data: {
@@ -594,14 +628,17 @@ export const uploadAdImage = async (req: Request, res: Response): Promise<Respon
     const companyId = (req as any).user?.companyId;
     const { accessToken, adAccountId } = await getFbConfig(companyId);
     if (!accessToken || !adAccountId) {
-      return res.status(400).json({ error: "config_missing" });
+      return res.status(400).json({ error: "config_missing", message: "Configure o Ad Account ID e Token." });
     }
     const file = (req as any).file;
     if (!file) {
       return res.status(400).json({ error: "file_missing" });
     }
+
+    console.log(`[Marketing] Uploading image: ${file.path} (${file.mimetype})`);
+
     const form = new FormData();
-    form.append("source", file.buffer, { filename: file.originalname, contentType: file.mimetype });
+    form.append("source", fs.createReadStream(file.path), { filename: file.originalname, contentType: file.mimetype });
     const resp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adimages`,
       form,
@@ -612,7 +649,7 @@ export const uploadAdImage = async (req: Request, res: Response): Promise<Respon
     );
     return res.json(resp.data);
   } catch (error: any) {
-    console.error("[Marketing] Erro em uploadAdImage:", JSON.stringify(error?.response?.data || error.message, null, 2));
+    console.error("[Marketing] Upload error:", error?.response?.data || error.message);
     return res.status(400).json({ error: error?.response?.data || error.message });
   }
 };

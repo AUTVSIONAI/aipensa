@@ -235,6 +235,13 @@ export const storeFacebook = async (
     const pages = [];
     for await (const page of data) {
       const { name, access_token, id, instagram_business_account } = page;
+      
+      console.log(`[StoreFacebook] Processing page: ${name} (${id})`);
+      if (instagram_business_account) {
+         console.log(`[StoreFacebook] Found Instagram: ${JSON.stringify(instagram_business_account)}`);
+      } else {
+         console.log(`[StoreFacebook] No Instagram linked to page ${name}`);
+      }
 
       const acessTokenPage = await getAccessTokenFromPage(access_token);
 
@@ -294,6 +301,12 @@ export const storeFacebook = async (
         await exist.update({
           ...pageConection
         });
+        
+        io.of(String(companyId))
+          .emit(`company-${companyId}-whatsapp`, {
+            action: "update",
+            whatsapp: exist
+          });
       }
 
       if (!exist) {

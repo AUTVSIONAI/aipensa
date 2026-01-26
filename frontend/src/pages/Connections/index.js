@@ -236,7 +236,7 @@ const Connections = () => {
         })
         .then((response) => {
           if (response.data.count === 0) {
-            toast.warn("Nenhuma conta do Instagram Business encontrada vinculada a esta conta do Facebook.");
+            toast.warn("Nenhuma conta do Instagram Business encontrada. Verifique se você selecionou a conta do Instagram e concedeu as permissões necessárias no login do Facebook.");
           } else {
             toast.success(i18n.t("connections.facebook.success"));
           }
@@ -855,6 +855,7 @@ const Connections = () => {
                           {IconChannel(whatsApp.channel)}
                         </Typography>
                         <Typography variant="subtitle2" align="center">
+                          {whatsApp.channel === "instagram" && <span style={{fontSize: "0.8em", color: "#e1306c", display: "block", marginBottom: "5px"}}>(Instagram)</span>}
                           {i18n.t("connections.table.name")}: {whatsApp.name}
                         </Typography>
                         <Typography variant="body2" align="center">
