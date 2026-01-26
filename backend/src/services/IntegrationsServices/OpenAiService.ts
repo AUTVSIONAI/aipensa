@@ -93,18 +93,57 @@ const callOpenAI = async (
   messagesOpenAi: any[],
   openAiSettings: IOpenAi
 ) => {
-  const model = openAiSettings.model || "gpt-3.5-turbo";
-  console.log(`[callOpenAI] Calling with model: ${model}`);
+  // Lista de modelos de fallback para OpenRouter (focando em gratuitos/baratos)
+  const FALLBACK_MODELS = [
+    "mistralai/devstral-2512:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "mistralai/mistral-small-3.1-24b-instruct:free",
+    "google/gemini-2.0-flash-exp:free",
+    "openai/gpt-3.5-turbo" // Último recurso (pago)
+  ];
 
+  let model = openAiSettings.model || "gpt-3.5-turbo";
   
-  const chat = await openai.chat.completions.create({
-    model: model,
-    messages: messagesOpenAi,
-    max_tokens: openAiSettings.maxTokens,
-    temperature: openAiSettings.temperature
-  });
+  // Se for OpenRouter, prepara lista de tentativas
+  let modelsToTry = [model];
+  if (openai.baseURL.includes("openrouter")) {
+    // Adiciona fallbacks, evitando duplicatas do modelo principal
+    const additionalModels = FALLBACK_MODELS.filter(m => m !== model);
+    modelsToTry = [...modelsToTry, ...additionalModels];
+  }
 
-  return chat.choices[0].message?.content;
+  console.log(`[callOpenAI] Models to try: ${JSON.stringify(modelsToTry)}`);
+
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const currentModel = modelsToTry[i];
+    try {
+      console.log(`[callOpenAI] Attempting with model: ${currentModel} (Attempt ${i + 1}/${modelsToTry.length})`);
+      
+      const chat = await openai.chat.completions.create({
+        model: currentModel,
+        messages: messagesOpenAi,
+        max_tokens: openAiSettings.maxTokens,
+        temperature: openAiSettings.temperature
+      });
+
+      return chat.choices[0].message?.content;
+    } catch (error) {
+      console.error(`[callOpenAI] Error with model ${currentModel}:`, error.message);
+      
+      // Se for o último modelo, lança o erro
+      if (i === modelsToTry.length - 1) {
+        throw error;
+      }
+      
+      // Se o erro for 402 (Pagamento/Créditos), força busca por modelo free na próxima iteração
+      if (error.status === 402) {
+         console.log("[callOpenAI] 402 detected (Insufficient Credits). Switching to free models.");
+      }
+      
+      // Continua para o próximo modelo
+      console.log(`[callOpenAI] Switching to next fallback model...`);
+    }
+  }
 };
 
 // Função para chamar Gemini
