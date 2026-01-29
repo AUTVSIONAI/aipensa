@@ -27,6 +27,7 @@ import QueueIntegration from "../QueueIntegration"; // Integrations
 import Files from "../Files";
 import Financeiro from "../Financeiro";
 import Annoucements from "../Annoucements";
+import Marketing from "../Marketing";
 
 import { i18n } from "../../translate/i18n.js";
 import { toast } from "react-toastify";
