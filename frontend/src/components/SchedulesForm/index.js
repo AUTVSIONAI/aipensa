@@ -35,10 +35,29 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(1),
   },
   mobileDayHeader: {
-    backgroundColor: theme.palette.grey[200],
     padding: theme.spacing(1),
     marginBottom: theme.spacing(1),
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: 12,
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.45)" : "rgba(255, 255, 255, 0.85)",
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    backdropFilter: "blur(16px)",
+  },
+  dayCard: {
+    padding: theme.spacing(2),
+    borderRadius: 16,
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.45)" : "rgba(255, 255, 255, 0.85)",
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    backdropFilter: "blur(16px)",
+    boxShadow: theme.palette.type === "dark" ? "0 12px 32px rgba(0,0,0,0.35)" : "0 6px 18px rgba(0,0,0,0.06)",
+  },
+  saveButton: {
+    color: "white",
+    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, #bd00ff 90%)`,
+    borderRadius: 12,
+    padding: "10px 18px",
+    fontSize: "13px",
+    fontWeight: 600,
+    boxShadow: `0 0 18px rgba(0, 242, 255, 0.25)`,
   },
 }));
 
@@ -73,6 +92,7 @@ function SchedulesForm(props) {
     if (isMobile) {
       return (
         <Grid key={index} xs={12} item>
+          <div className={classes.dayCard}>
           <div className={classes.mobileDayHeader}>
             <FastField
               as={TextField}
@@ -170,11 +190,13 @@ function SchedulesForm(props) {
               </FastField>
             </Grid>
           </Grid>
+          </div>
         </Grid>
       );
     } else {
       return (
         <Grid key={index} xs={12} md={4} item>
+          <div className={classes.dayCard}>
           <Grid container>
             <Grid className={classes.control} xs={12} item>
               <FastField
@@ -267,6 +289,7 @@ function SchedulesForm(props) {
               </FastField>
             </Grid>
           </Grid>
+          </div>
         </Grid>
       );
     }
@@ -298,13 +321,7 @@ function SchedulesForm(props) {
               startIcon={<SaveIcon />}
               loading={loading}
               type="submit"
-              style={{
-                color: "white",
-                backgroundColor: "#437db5",
-                boxShadow: "none",
-                borderRadius: "5px",
-                fontSize: "12px",
-              }}
+              className={classes.saveButton}
               variant="contained"
             >
               {labelSaveButton ?? i18n.t("whatsappModal.buttons.okEdit")}

@@ -10,9 +10,8 @@ interface Request {
 const createOrUpdateBaileysService = async ({
   whatsappId,
   contacts,
-  chats,
+  chats
 }: Request): Promise<Baileys> => {
-
   try {
     const baileysExists = await Baileys.findOne({
       where: { whatsappId }
@@ -29,23 +28,28 @@ const createOrUpdateBaileysService = async ({
       if (chats) {
         getChats.push(...chats);
         getChats.sort();
-        const newChats = getChats.filter((v: Chat, i: number, a: Chat[]) => a.findIndex(v2 => (v2.id === v.id)) === i)
+        const newChats = getChats.filter(
+          (v: Chat, i: number, a: Chat[]) =>
+            a.findIndex(v2 => v2.id === v.id) === i
+        );
 
         return await baileysExists.update({
-          chats: JSON.stringify(newChats),
+          chats: JSON.stringify(newChats)
         });
       }
 
       if (contacts) {
         getContacts.push(...contacts);
         getContacts.sort();
-        const newContacts = getContacts.filter((v: Contact, i: number, a: Contact[]) => a.findIndex(v2 => (v2.id === v.id)) === i)
+        const newContacts = getContacts.filter(
+          (v: Contact, i: number, a: Contact[]) =>
+            a.findIndex(v2 => v2.id === v.id) === i
+        );
 
         return await baileysExists.update({
-          contacts: JSON.stringify(newContacts),
+          contacts: JSON.stringify(newContacts)
         });
       }
-
     }
 
     const baileys = await Baileys.create({

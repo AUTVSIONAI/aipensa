@@ -97,5 +97,11 @@ class CacheSingleton {
 }
 
 const redisInstance = new Redis(REDIS_URI_CONNECTION);
+let hasLoggedRedisError = false;
+redisInstance.on("error", err => {
+  if (hasLoggedRedisError) return;
+  hasLoggedRedisError = true;
+  console.error("Redis connection error:", err?.message ?? err);
+});
 
 export default CacheSingleton.getInstance(redisInstance);

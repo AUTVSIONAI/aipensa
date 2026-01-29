@@ -14,7 +14,7 @@ const ShowService = async (id: string | number): Promise<Campaign> => {
       { model: ContactList, include: [{ model: ContactListItem }] },
       { model: Whatsapp, attributes: ["id", "name"] },
       { model: User, attributes: ["id", "name"] },
-      { model: Queue, attributes: ["id", "name"] },
+      { model: Queue, attributes: ["id", "name"] }
     ]
   });
 

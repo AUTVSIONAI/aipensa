@@ -7,14 +7,13 @@ const useStyles = makeStyles(theme => ({
 	mainContainer: {
 		flex: 1,
 		padding: theme.spacing(2),
-		height: `calc(100% - 48px)`,
+		minHeight: 0,
 	},
 
 	contentWrapper: {
-		height: "100%",
-		overflowY: "hidden",
 		display: "flex",
 		flexDirection: "column",
+		minHeight: 0,
 	},
 }));
 

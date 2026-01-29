@@ -22,6 +22,7 @@ import ListAltIcon from "@material-ui/icons/ListAlt";
 import { useDate } from "../../hooks/useDate";
 import usePlans from "../../hooks/usePlans";
 import { AuthContext } from "../../context/Auth/AuthContext";
+import toastError from "../../errors/toastError";
 
 // import { SocketContext } from "../../context/Socket/SocketContext";
 import { i18n } from "../../translate/i18n";
@@ -29,17 +30,18 @@ import { i18n } from "../../translate/i18n";
 const useStyles = makeStyles((theme) => ({
   mainPaper: {
     flex: 1,
-    // padding: theme.spacing(2),
     padding: theme.padding,
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
   },
-  textRight: {
-    textAlign: "right",
-  },
-  tabPanelsContainer: {
-    // padding: theme.spacing(2),
-    padding: theme.padding,
+  progress: {
+    height: 15,
+    borderRadius: 12,
+    margin: theme.spacing(2.5, 0),
   },
 }));
 
@@ -104,19 +106,16 @@ const CampaignReport = () => {
         const confirmationRequested = contacts.filter(
           (c) => !isNull(c.confirmationRequestedAt)
         );
-        const confirmed = contacts.filter(
-          (c) => !isNull(c.deliveredAt) && !isNull(c.confirmationRequestedAt)
-        );
+        const confirmed = contacts.filter((c) => !isNull(c.confirmedAt));
         setDelivered(delivered.length);
         setConfirmationRequested(confirmationRequested.length);
         setConfirmed(confirmed.length);
-        setDelivered(delivered.length);
       }
     }
   }, [campaign]);
 
   useEffect(() => {
-    setPercent((delivered / validContacts) * 100);
+    setPercent(validContacts > 0 ? (delivered / validContacts) * 100 : 0);
   }, [delivered, validContacts]);
 
   useEffect(() => {
@@ -144,10 +143,15 @@ const CampaignReport = () => {
   }, [campaignId]);
 
   const findCampaign = async () => {
-    setLoading(true);
-    const { data } = await api.get(`/campaigns/${campaignId}`);
-    setCampaign(data);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const { data } = await api.get(`/campaigns/${campaignId}`);
+      setCampaign(data);
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatStatus = (val) => {
@@ -170,7 +174,7 @@ const CampaignReport = () => {
   return (
     <MainContainer>
       <MainHeader>
-        <Grid style={{ width: "99.6%" }} container>
+        <Grid container>
           <Grid xs={12} item>
             <Title>{i18n.t("campaignReport.title")} {campaign.name || i18n.t("campaignReport.campaign")}</Title>
           </Grid>
@@ -184,7 +188,7 @@ const CampaignReport = () => {
           <Grid xs={12} item>
             <LinearProgress
               variant="determinate"
-              style={{ height: 15, borderRadius: 3, margin: "20px 0" }}
+              className={classes.progress}
               value={percent}
             />
           </Grid>
@@ -229,7 +233,7 @@ const CampaignReport = () => {
               <CardCounter
                 icon={<WhatsAppIcon fontSize="inherit" />}
                 title={i18n.t("campaignReport.connection")}
-                value={campaign.whatsapp.name}
+                value={campaign.whatsapp?.name || "-"}
                 loading={loading}
               />
             </Grid>
@@ -239,7 +243,7 @@ const CampaignReport = () => {
               <CardCounter
                 icon={<ListAltIcon fontSize="inherit" />}
                 title={i18n.t("campaignReport.contactLists")}
-                value={campaign.contactList.name}
+                value={campaign.contactList?.name || "-"}
                 loading={loading}
               />
             </Grid>

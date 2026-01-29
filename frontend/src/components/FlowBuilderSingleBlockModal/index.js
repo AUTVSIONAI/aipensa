@@ -1481,7 +1481,7 @@ const FlowBuilderSingleBlockModal = ({
   };
   return (
     <div>
-      <Dialog open={activeModal} fullWidth="md" scroll="paper">
+      <Dialog open={activeModal} fullWidth={true} maxWidth="md" scroll="paper">
         {!loading && (
           <DialogTitle id="form-dialog-title">
             Adicionar conteúdo ao fluxo

@@ -23,7 +23,6 @@ interface CompanyData {
 const UpdateCompanyService = async (
   companyData: CompanyData
 ): Promise<Company> => {
-
   const company = await Company.findByPk(companyData.id);
   const {
     name,
@@ -99,16 +98,15 @@ const UpdateCompanyService = async (
   });
 
   if (!user) {
-    throw new AppError("ERR_NO_USER_FOUND", 404)
+    throw new AppError("ERR_NO_USER_FOUND", 404);
   }
-  
+
   const userUpdateData: any = {};
   if (email) userUpdateData.email = email;
   if (password) userUpdateData.password = password;
   if (Object.keys(userUpdateData).length > 0) {
     await user.update(userUpdateData);
   }
-
 
   const companyUpdateData: any = {};
   if (name !== undefined) companyUpdateData.name = name;
@@ -119,7 +117,8 @@ const UpdateCompanyService = async (
   if (dueDate !== undefined) companyUpdateData.dueDate = dueDate;
   if (recurrence !== undefined) companyUpdateData.recurrence = recurrence;
   if (document !== undefined) companyUpdateData.document = document;
-  if (paymentMethod !== undefined) companyUpdateData.paymentMethod = paymentMethod;
+  if (paymentMethod !== undefined)
+    companyUpdateData.paymentMethod = paymentMethod;
 
   if (Object.keys(companyUpdateData).length > 0) {
     await company.update(companyUpdateData);

@@ -174,7 +174,8 @@ const QueueIntegration = ({ open, onClose, integrationId }) => {
     };
   }, [integrationId, open]);
 
-  const handleClose = () => {
+  const handleClose = (event, reason) => {
+    if (reason === 'backdropClick') return;
     onClose();
     setIntegration(initialState);
   };
@@ -219,7 +220,6 @@ const QueueIntegration = ({ open, onClose, integrationId }) => {
         fullWidth
         maxWidth="md"
         scroll="paper"
-        disableBackdropClick
         disableEscapeKeyDown
         TransitionComponent={Transition}
         PaperProps={{

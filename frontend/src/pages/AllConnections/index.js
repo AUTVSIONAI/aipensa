@@ -64,10 +64,67 @@ const useStyles = makeStyles(theme => ({
   mainPaper: {
     flex: 1,
     padding: theme.spacing(1),
-    overflowY: "scroll",
-    borderRadius: "0",
+    overflowY: "visible",
+  },
+  content: {
+    padding: theme.spacing(2),
+  },
+  emptyState: {
+    padding: theme.spacing(4),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    textAlign: "center",
+  },
+  entityCard: {
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+    },
+  },
+  totalCard: {
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.75)" : theme.palette.primary.main,
+    color: "white",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 10px 28px rgba(0,0,0,0.12)",
+  },
+  actionsRow: {
+    justifyContent: "flex-end",
+    paddingTop: 0,
+    paddingBottom: theme.spacing(2),
+    paddingRight: theme.spacing(2),
+  },
+  actionButton: {
+    borderRadius: 12,
+    minWidth: 44,
+    width: 44,
+    height: 44,
     boxShadow: "none",
-    ...theme.scrollbarStyles
+    color: "white",
+  },
+  actionEdit: {
+    background: theme.palette.primary.main,
+    "&:hover": {
+      background: theme.palette.primary.dark,
+    },
+  },
+  primaryButton: {
+    color: "white",
+    backgroundColor: theme.palette.primary.main,
+    boxShadow: "none",
+    borderRadius: 12,
+    textTransform: "none",
+    "&:hover": {
+      backgroundColor: theme.palette.primary.dark,
+      boxShadow: "none",
+    },
   },
   customTableCell: {
     display: "flex",
@@ -443,13 +500,11 @@ const AllConnections = () => {
         <ForbiddenPage />
         :
         <>
-          <Paper className={classes.mainPaper} style={{ overflow: "hidden" }} variant="outlined">
+          <Paper className={classes.mainPaper} variant="outlined">
             <MainHeader>
-              <Stack>
-                <Typography variant="h5" color="black" style={{ fontWeight: "bold", marginLeft: "10px", marginTop: "10px" }} gutterBottom>
-                  {i18n.t("connections.title")}
-                </Typography>
-                <Typography style={{ marginTop: "-10px", marginLeft: "10px" }} variant="caption" color="textSecondary">
+              <Stack spacing={0.5}>
+                <Title>{i18n.t("connections.title")}</Title>
+                <Typography variant="caption" color="textSecondary">
                   Conecte seus canais de atendimento para receber mensagens e iniciar conversas com seus clientes.
                 </Typography>
               </Stack>
@@ -460,12 +515,7 @@ const AllConnections = () => {
                     <React.Fragment>
                       <Button
                         variant="contained"
-                        style={{
-                          color: "white",
-                          backgroundColor: "#FFA500",
-                          boxShadow: "none",
-                          borderRadius: "5px",
-                        }}
+                        className={classes.primaryButton}
                         {...bindTrigger(popupState)}
                       >
                         {i18n.t("connections.newConnection")}
@@ -544,131 +594,100 @@ const AllConnections = () => {
                 </PopupState>
               </MainHeaderButtonsWrapper>
             </MainHeader>
-            <Stack
-              style={{
-                overflowY: "auto",
-                padding: "20px",
-                backgroundColor: "rgb(244 244 244 / 53%)",
-                borderRadius: "5px",
-                height: "93%"
-              }}
-            >
-              <Paper >
-<Grid container spacing={2}>
-  {loadingWhatsapp ? (
-    <Grid item xs={12}>
-      <Card
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-       >
-        <CardContent>
-          <Typography variant="body2" color="textSecondary">
-            {i18n.t("loading")}
-          </Typography>
-        </CardContent>
-      </Card>
-    </Grid>
-  ) : (
-    companies?.length > 0 &&
-    companies.map((company) => (
-      <Grid item xs={12} sm={6} md={4} key={company.id}>
-        <Card
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-       >
-          <CardContent>
-            <Typography variant="h6" color="textPrimary" align="center">
-              {company?.name}
-            </Typography>
-            <Typography variant="body2" align="center">
-              {i18n.t("Conexões conectadas")}:{" "}
-              {whats?.length &&
-                whats.filter((item) => item?.companyId === company?.id && item?.status === "CONNECTED").length}
-            </Typography>
-            <Typography variant="body2" align="center">
-              {i18n.t("Conexões desconectadas")}:{" "}
-              {whats?.length &&
-                whats.filter((item) => item?.companyId === company?.id && item?.status !== "CONNECTED").length}
-            </Typography>
-            <Typography variant="body2" align="center">
-              {i18n.t("Total de Conexões")}:{" "}
-              {whats?.length && whats.filter((item) => item?.companyId === company?.id).length}
-            </Typography>
-          </CardContent>
-          {user.profile === "admin" && (
-<CardActions style={{ justifyContent: "flex-end", gap: "10px" }}>
-    <div
-      onClick={() =>
-        handleOpenWhatsAppModal(
-          whats.filter((item) => item?.companyId === company?.id),
-          company
-        )
-      }
-      style={{
-        backgroundColor: "#3DB8FF",
-        borderRadius: "10px",
-        width: "40px",
-        height: "40px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        transition: "0.3s",
-      }}
-    >
-      <Edit style={{ color: "#fff" }} />
-    </div>
-  </CardActions>
-          )}
-        </Card>
-      </Grid>
-    ))
-  )}
-  {!loadingWhatsapp && (
-    <Grid item xs={12}>
-      <Card variant="outlined" style={{ padding: "10px", backgroundColor: "#333", color: "#fff" }}>
-        <CardContent>
-          <Typography variant="h6" align="center">
-            {i18n.t("Total")}
-          </Typography>
-          <Typography variant="body2" align="center">
-            {i18n.t("Conexões conectadas")}:{" "}
-            {whats?.length && whats.filter((item) => item?.status === "CONNECTED").length}
-          </Typography>
-          <Typography variant="body2" align="center">
-            {i18n.t("Conexões desconectadas")}:{" "}
-            {whats?.length && whats.filter((item) => item?.status !== "CONNECTED").length}
-          </Typography>
-          <Typography variant="body2" align="center">
-            {i18n.t("Total de Conexões")}: {whats?.length && whats.length}
-          </Typography>
-        </CardContent>
-      </Card>
-    </Grid>
-  )}
-</Grid>
-              </Paper>
-            </Stack>
+            <div className={classes.content}>
+              <Grid container spacing={2}>
+                {loadingWhatsapp ? (
+                  <Grid item xs={12}>
+                    <Card variant="outlined" className={classes.entityCard}>
+                      <CardContent>
+                        <Typography variant="body2" color="textSecondary">
+                          {i18n.t("loading")}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ) : (
+                  <>
+                    {(!companies || companies.length === 0) && (
+                      <Grid item xs={12}>
+                        <div className={classes.emptyState}>
+                          <Typography variant="subtitle1" color="textPrimary">
+                            Nenhuma empresa encontrada
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            Verifique permissões ou cadastre empresas.
+                          </Typography>
+                        </div>
+                      </Grid>
+                    )}
+                    {companies?.length > 0 &&
+                      companies.map((company) => (
+                        <Grid item xs={12} sm={6} md={4} key={company.id}>
+                          <Card variant="outlined" className={classes.entityCard}>
+                            <CardContent>
+                              <Typography variant="h6" color="textPrimary" align="center">
+                                {company?.name}
+                              </Typography>
+                              <Typography variant="body2" align="center">
+                                {i18n.t("Conexões conectadas")}:{" "}
+                                {whats?.length
+                                  ? whats.filter((item) => item?.companyId === company?.id && item?.status === "CONNECTED").length
+                                  : 0}
+                              </Typography>
+                              <Typography variant="body2" align="center">
+                                {i18n.t("Conexões desconectadas")}:{" "}
+                                {whats?.length
+                                  ? whats.filter((item) => item?.companyId === company?.id && item?.status !== "CONNECTED").length
+                                  : 0}
+                              </Typography>
+                              <Typography variant="body2" align="center">
+                                {i18n.t("Total de Conexões")}:{" "}
+                                {whats?.length ? whats.filter((item) => item?.companyId === company?.id).length : 0}
+                              </Typography>
+                            </CardContent>
+                            {user.profile === "admin" && (
+                              <CardActions className={classes.actionsRow}>
+                                <Button
+                                  variant="contained"
+                                  className={`${classes.actionButton} ${classes.actionEdit}`}
+                                  onClick={() =>
+                                    handleOpenWhatsAppModal(
+                                      whats.filter((item) => item?.companyId === company?.id),
+                                      company
+                                    )
+                                  }
+                                >
+                                  <Edit fontSize="small" />
+                                </Button>
+                              </CardActions>
+                            )}
+                          </Card>
+                        </Grid>
+                      ))}
+                    <Grid item xs={12}>
+                      <Card variant="outlined" className={classes.totalCard}>
+                        <CardContent>
+                          <Typography variant="h6" align="center">
+                            {i18n.t("Total")}
+                          </Typography>
+                          <Typography variant="body2" align="center">
+                            {i18n.t("Conexões conectadas")}:{" "}
+                            {whats?.length ? whats.filter((item) => item?.status === "CONNECTED").length : 0}
+                          </Typography>
+                          <Typography variant="body2" align="center">
+                            {i18n.t("Conexões desconectadas")}:{" "}
+                            {whats?.length ? whats.filter((item) => item?.status !== "CONNECTED").length : 0}
+                          </Typography>
+                          <Typography variant="body2" align="center">
+                            {i18n.t("Total de Conexões")}: {whats?.length ? whats.length : 0}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </>
+                )}
+              </Grid>
+            </div>
           </Paper>
         </>}
     </MainContainer>

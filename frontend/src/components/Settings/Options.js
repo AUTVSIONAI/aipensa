@@ -13,9 +13,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import { makeStyles } from "@material-ui/core/styles";
 import { grey, blue } from "@material-ui/core/colors";
 
-import Divider from "@mui/material/Divider";
 import Switch from "@material-ui/core/Switch";
-import { Tab, Tabs, TextField } from "@material-ui/core";
+import { TextField, Typography, Box } from "@material-ui/core";
 import { i18n } from "../../translate/i18n";
 import useCompanySettings from "../../hooks/useSettings/companySettings";
 
@@ -52,14 +51,16 @@ const useStyles = makeStyles((theme) => ({
   },
   switchContainer: {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    gap: theme.spacing(1),
+    width: "100%",
   },
-  switchLabel: {
-    marginTop: theme.spacing(1),
-    fontSize: "0.875rem",
+  switchLabel: (props) => ({
+    fontSize: props?.density === "compact" ? "0.875rem" : "0.95rem",
     color: theme.palette.text.secondary,
-  },
+  }),
   fixedHeightPaper: {
     padding: theme.spacing(2),
     display: "flex",
@@ -88,9 +89,120 @@ const useStyles = makeStyles((theme) => ({
   fullWidth: {
     width: "100%",
   },
-  selectContainer: {
+  selectContainer: (props) => ({
     width: "100%",
     textAlign: "left",
+    padding: theme.spacing(props?.density === "compact" ? 1.5 : 1.75),
+    borderRadius: 14,
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.45)" : "rgba(255, 255, 255, 0.85)",
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    backdropFilter: "blur(16px)",
+    boxShadow: theme.palette.type === "dark"
+      ? "0 12px 32px rgba(0,0,0,0.35)"
+      : "0 6px 18px rgba(0,0,0,0.06)",
+    minHeight: 104,
+    boxSizing: "border-box",
+    position: "relative",
+    overflow: "hidden",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    "&:before": {
+      content: '""',
+      position: "absolute",
+      inset: 0,
+      opacity: theme.palette.type === "dark" ? 0.55 : 0.25,
+      background: "radial-gradient(600px 140px at 20% 0%, rgba(0, 242, 255, 0.22) 0%, rgba(0,0,0,0) 55%), radial-gradient(520px 140px at 85% 40%, rgba(189, 0, 255, 0.18) 0%, rgba(0,0,0,0) 60%)",
+      pointerEvents: "none",
+    },
+    "&:after": {
+      content: '""',
+      position: "absolute",
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 3,
+      background: "linear-gradient(180deg, #00f2ff 0%, #bd00ff 100%)",
+      opacity: 0.75,
+      pointerEvents: "none",
+    },
+    "& > *": {
+      position: "relative",
+      zIndex: 1,
+    },
+    "&:hover": {
+      transform: "translateY(-1px)",
+      borderColor: theme.palette.type === "dark" ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.10)",
+      boxShadow: theme.palette.type === "dark"
+        ? "0 18px 44px rgba(0,0,0,0.45)"
+        : "0 12px 32px rgba(0,0,0,0.10)",
+    },
+    "& .MuiInputBase-root": {
+      background: "transparent",
+    },
+    "& .MuiOutlinedInput-root": {
+      borderRadius: 12,
+    },
+    "& .MuiInputAdornment-root": {
+      flexShrink: 0,
+    },
+    "& .MuiInputAdornment-positionStart": {
+      minWidth: 34,
+      marginRight: theme.spacing(1),
+    },
+    "& .MuiInputAdornment-positionStart > *": {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    "& .MuiInputAdornment-root .MuiSvgIcon-root": {
+      fontSize: props?.density === "compact" ? 23 : 24,
+      flexShrink: 0,
+    },
+    "& .MuiInputLabel-root": {
+      fontWeight: 700,
+    },
+  }),
+  sectionTitle: {
+    fontWeight: 800,
+    letterSpacing: 0.2,
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+  },
+  sectionHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1.5),
+    marginBottom: theme.spacing(2),
+  },
+  sectionHeaderIcon: (props) => ({
+    width: props?.density === "compact" ? 46 : 48,
+    height: props?.density === "compact" ? 46 : 48,
+    borderRadius: 14,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#fff",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 12px 32px rgba(0,0,0,0.10)",
+    flexShrink: 0,
+  }),
+  sectionSubtitle: {
+    opacity: 0.85,
+  },
+  sectionBlock: (props) => ({
+    padding: theme.spacing(props?.density === "compact" ? 2.25 : 2.5),
+    marginBottom: theme.spacing(2),
+    borderRadius: 18,
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.25)" : "rgba(255, 255, 255, 0.6)",
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    backdropFilter: "blur(18px)",
+  }),
+  sectionGuide: {
+    margin: theme.spacing(1, 0, 2, 0),
+    padding: theme.spacing(1.5),
+    borderRadius: 12,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.25)" : "rgba(255, 255, 255, 0.6)",
+    backdropFilter: "blur(10px)",
   },
   tab: {
     backgroundColor: theme.mode === 'light' ? "#f2f2f2" : "#7f7f7f",
@@ -103,9 +215,9 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function Options(props) {
-  const { oldSettings, settings, scheduleTypeChanged, user } = props;
+  const { oldSettings, settings, scheduleTypeChanged, user, density = "comfortable", activeSection } = props;
 
-  const classes = useStyles();
+  const classes = useStyles({ density });
   const [userRating, setUserRating] = useState("disabled");
   const [scheduleType, setScheduleType] = useState("disabled");
   const [chatBotType, setChatBotType] = useState("text");
@@ -219,6 +331,9 @@ export default function Options(props) {
 
   const [notificameHubToken, setNotificameHubToken] = useState("");
   const [loadingNotificameHubToken, setLoadingNotificameHubToken] = useState(false);
+  
+  const [enableAutoStatus, setEnableAutoStatus] = useState("disabled");
+  const [loadingEnableAutoStatus, setLoadingEnableAutoStatus] = useState(false);
 
   const { update: updateUserCreation, getAll } = useSettings();
   const { update: updatedownloadLimit } = useSettings();
@@ -234,6 +349,7 @@ export default function Options(props) {
   const isSuper = () => {
     return user.super;
   };
+  const show = (id) => !activeSection || activeSection === id;
 
   useEffect(() => {
     if (Array.isArray(oldSettings) && oldSettings.length) {
@@ -295,6 +411,7 @@ export default function Options(props) {
       if (key === "sendQueuePositionMessage") setSendQueuePositionMessage(value);
       if (key === "showNotificationPending") setShowNotificationPending(value);
       if (key === "notificameHub") setNotificameHubToken(value);
+      if (key === "enableAutoStatus") setEnableAutoStatus(value);
     }
   }, [settings]);
 
@@ -585,360 +702,440 @@ export default function Options(props) {
     });
     setLoadingNotificameHubToken(false);
   }
+  
+  async function handleEnableAutoStatus(value) {
+    setEnableAutoStatus(value);
+    setLoadingEnableAutoStatus(true);
+    await update({ column: "enableAutoStatus", data: value });
+    setLoadingEnableAutoStatus(false);
+  }
 
   return (
     <>
-      <Grid spacing={3} container>
-        {/* TIPO DO BOT */}
-        <Grid item xs={12}>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <InputLabel id="chatBotType-label">{i18n.t("settings.settings.options.chatBotType")}</InputLabel>
-            <Select
-              labelId="chatBotType-label"
-              value={chatBotType}
-              onChange={(e) => handleChatBotType(e.target.value)}
-              style={{ backgroundColor: "white" }}
-              startAdornment={
-                <InputAdornment position="start">
-                  <ChatIcon style={{ color: grey[500] }} />
-                </InputAdornment>
-              }
-            >
-              <MenuItem value={"text"}>Texto</MenuItem>
-              <MenuItem value={"list"}>Lista</MenuItem>
-              <MenuItem value={"button"}>{i18n.t("settings.settings.options.buttons")}</MenuItem>
-            </Select>
-            <FormHelperText>{loadingScheduleType && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-        </Grid>
-
-        {/* LIMITAR DOWNLOAD */}
-        {isSuper() ? (
-          <Grid item xs={12}>
-            <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-              <InputLabel id="downloadLimit-label">Limite de Download de Arquivos (MB)</InputLabel>
+      {show("settings-section-atendimento") && (
+      <div id="settings-section-atendimento" className={classes.sectionBlock}>
+        <div className={classes.sectionHeader}>
+          <div
+            className={classes.sectionHeaderIcon}
+            style={{ background: "linear-gradient(90deg, #00f2ff 0%, #bd00ff 100%)" }}
+          >
+            <ChatIcon />
+          </div>
+          <div>
+            <Typography variant="subtitle1" className={classes.sectionTitle}>
+              Atendimento
+            </Typography>
+            <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+              Bot, horários e limites para manter tudo rápido e consistente.
+            </Typography>
+          </div>
+        </div>
+        <Box className={classes.sectionGuide}>
+          <Typography variant="subtitle2">Passos sugeridos</Typography>
+          <Typography variant="body2" color="textSecondary">1. Defina o tipo de chatbot. 2. Configure o agendamento. 3. Ajuste limite de downloads.</Typography>
+          <Typography variant="subtitle2" style={{ marginTop: 6 }}>Por que configurar</Typography>
+          <Typography variant="body2" color="textSecondary">Acelera o atendimento e mantém consistência evitando sobrecarga.</Typography>
+        </Box>
+        <Grid spacing={2} container>
+          <Grid item xs={12} md={6} lg={4}>
+            <FormControl className={classes.selectContainer} id="settings-option-chatbot-type">
+              <InputLabel id="chatBotType-label">{i18n.t("settings.settings.options.chatBotType")}</InputLabel>
               <Select
-                labelId="downloadLimit-label"
-                value={downloadLimit}
-                size="small"
-                onChange={(e) => handleDownloadLimit(e.target.value)}
-                style={{ backgroundColor: "white" }}
+                labelId="chatBotType-label"
+                value={chatBotType}
+                onChange={(e) => handleChatBotType(e.target.value)}
                 startAdornment={
                   <InputAdornment position="start">
-                    <DownloadIcon style={{ color: grey[500] }} />
+                    <ChatIcon style={{ color: grey[500] }} />
                   </InputAdornment>
                 }
               >
-                <MenuItem value={"32"}>32</MenuItem>
-                <MenuItem value={"64"}>64</MenuItem>
-                <MenuItem value={"128"}>128</MenuItem>
-                <MenuItem value={"256"}>256</MenuItem>
-                <MenuItem value={"512"}>512</MenuItem>
-                <MenuItem value={"1024"}>1024</MenuItem>
-                <MenuItem value={"2048"}>2048</MenuItem>
+                <MenuItem value={"text"}>Texto</MenuItem>
+                <MenuItem value={"list"}>Lista</MenuItem>
+                <MenuItem value={"button"}>{i18n.t("settings.settings.options.buttons")}</MenuItem>
               </Select>
-              <FormHelperText>{loadingDownloadLimit && "Atualizando..."}</FormHelperText>
+              <FormHelperText>{loadingScheduleType && i18n.t("settings.settings.options.updating")}</FormHelperText>
             </FormControl>
           </Grid>
-        ) : null}
 
-        {/* AGENDAMENTO DE EXPEDIENTE */}
-        <Grid item xs={12}>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <InputLabel id="schedule-type-label">{i18n.t("settings.settings.options.officeScheduling")}</InputLabel>
-            <Select
-              labelId="schedule-type-label"
-              value={scheduleType}
-              onChange={(e) => handleScheduleType(e.target.value)}
-              style={{ backgroundColor: "white" }}
-              startAdornment={
-                <InputAdornment position="start">
-                  <ScheduleIcon style={{ color: grey[500] }} />
-                </InputAdornment>
-              }
-            >
-              <MenuItem value={"disabled"}>{i18n.t("settings.settings.options.disabled")}</MenuItem>
-              <MenuItem value={"queue"}>{i18n.t("settings.settings.options.queueManagement")}</MenuItem>
-              <MenuItem value={"company"}>{i18n.t("settings.settings.options.companyManagement")}</MenuItem>
-              <MenuItem value={"connection"}>{i18n.t("settings.settings.options.connectionManagement")}</MenuItem>
-            </Select>
-            <FormHelperText>{loadingScheduleType && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
+          {isSuper() ? (
+            <Grid item xs={12} md={6} lg={4}>
+              <FormControl className={classes.selectContainer} id="settings-option-download-limit">
+                <InputLabel id="downloadLimit-label">Limite de Download de Arquivos (MB)</InputLabel>
+                <Select
+                  labelId="downloadLimit-label"
+                  value={downloadLimit}
+                  size="small"
+                  onChange={(e) => handleDownloadLimit(e.target.value)}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <DownloadIcon style={{ color: grey[500] }} />
+                    </InputAdornment>
+                  }
+                >
+                  <MenuItem value={"32"}>32</MenuItem>
+                  <MenuItem value={"64"}>64</MenuItem>
+                  <MenuItem value={"128"}>128</MenuItem>
+                  <MenuItem value={"256"}>256</MenuItem>
+                  <MenuItem value={"512"}>512</MenuItem>
+                  <MenuItem value={"1024"}>1024</MenuItem>
+                  <MenuItem value={"2048"}>2048</MenuItem>
+                </Select>
+                <FormHelperText>{loadingDownloadLimit && "Atualizando..."}</FormHelperText>
+              </FormControl>
+            </Grid>
+          ) : null}
+
+          <Grid item xs={12} md={6} lg={4}>
+            <FormControl className={classes.selectContainer} id="settings-option-schedule-type">
+              <InputLabel id="schedule-type-label">{i18n.t("settings.settings.options.officeScheduling")}</InputLabel>
+              <Select
+                labelId="schedule-type-label"
+                value={scheduleType}
+                onChange={(e) => handleScheduleType(e.target.value)}
+                startAdornment={
+                  <InputAdornment position="start">
+                    <ScheduleIcon style={{ color: grey[500] }} />
+                  </InputAdornment>
+                }
+              >
+                <MenuItem value={"disabled"}>{i18n.t("settings.settings.options.disabled")}</MenuItem>
+                <MenuItem value={"queue"}>{i18n.t("settings.settings.options.queueManagement")}</MenuItem>
+                <MenuItem value={"company"}>{i18n.t("settings.settings.options.companyManagement")}</MenuItem>
+                <MenuItem value={"connection"}>{i18n.t("settings.settings.options.connectionManagement")}</MenuItem>
+              </Select>
+              <FormHelperText>{loadingScheduleType && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
         </Grid>
+      </div>
+      )}
 
-        {/* CRIAÇÃO DE COMPANY/USERS */}
-        {isSuper() ? (
-          <Grid xs={12} sm={6} md={4} item>
-            <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+      {show("settings-section-comportamento") && (
+      <div id="settings-section-comportamento" className={classes.sectionBlock}>
+        <div className={classes.sectionHeader}>
+          <div
+            className={classes.sectionHeaderIcon}
+            style={{ background: "linear-gradient(90deg, #2575fc 0%, #6a11cb 100%)" }}
+          >
+            <SendIcon />
+          </div>
+          <div>
+            <Typography variant="subtitle1" className={classes.sectionTitle}>
+              Comportamento & Mensagens
+            </Typography>
+            <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+              Automatize boas práticas e padronize respostas do time.
+            </Typography>
+          </div>
+        </div>
+        <Box className={classes.sectionGuide}>
+          <Typography variant="subtitle2">Passos sugeridos</Typography>
+          <Typography variant="body2" color="textSecondary">1. Ative mensagens padrão. 2. Habilite avaliações e assinatura. 3. Configure saudação e posição na fila.</Typography>
+          <Typography variant="subtitle2" style={{ marginTop: 6 }}>Por que configurar</Typography>
+          <Typography variant="body2" color="textSecondary">Padroniza comunicação e melhora a experiência do usuário.</Typography>
+        </Box>
+        <Grid spacing={2} container>
+          {isSuper() ? (
+            <Grid xs={12} sm={6} md={6} lg={4} item>
+              <FormControl className={classes.selectContainer} id="settings-option-user-creation">
+                <div className={classes.switchContainer}>
+                  <Switch
+                    checked={userCreation === "enabled"}
+                    onChange={(e) => handleChangeUserCreation(e.target.checked ? "enabled" : "disabled")}
+                    color="primary"
+                  />
+                  <span className={classes.switchLabel}>{i18n.t("settings.settings.options.creationCompanyUser")}</span>
+                </div>
+                <FormHelperText>{loadingUserCreation && i18n.t("settings.settings.options.updating")}</FormHelperText>
+              </FormControl>
+            </Grid>
+          ) : null}
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-user-rating">
               <div className={classes.switchContainer}>
                 <Switch
-                  checked={userCreation === "enabled"}
-                  onChange={(e) => handleChangeUserCreation(e.target.checked ? "enabled" : "disabled")}
+                  id="userRating-switch"
+                  checked={userRating === "enabled"}
+                  onChange={(e) => handleChangeUserRating(e.target.checked ? "enabled" : "disabled")}
                   color="primary"
                 />
-                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.creationCompanyUser")}</span>
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.evaluations")}</span>
               </div>
-              <FormHelperText>{loadingUserCreation && i18n.t("settings.settings.options.updating")}</FormHelperText>
+              <FormHelperText>{loadingUserRating && i18n.t("settings.settings.options.updating")}</FormHelperText>
             </FormControl>
-            <Divider />
           </Grid>
-        ) : null}
 
-        {/* AVALIAÇÕES */}
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="userRating-switch"
-                checked={userRating === "enabled"}
-                onChange={(e) => handleChangeUserRating(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.evaluations")}</span>
-            </div>
-            <FormHelperText>{loadingUserRating && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-send-greeting-accepted">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="sendGreetingAccepted-switch"
+                  checked={SendGreetingAccepted === "enabled"}
+                  onChange={(e) => handleSendGreetingAccepted(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>
+                  {i18n.t("settings.settings.options.sendGreetingAccepted")}
+                </span>
+              </div>
+              <FormHelperText>
+                {loadingSendGreetingAccepted && i18n.t("settings.settings.options.updating")}
+              </FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-user-random">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="userRandom-switch"
+                  checked={UserRandom === "enabled"}
+                  onChange={(e) => handleUserRandom(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.userRandom")}</span>
+              </div>
+              <FormHelperText>{loadingUserRandom && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-transfer-message">
+              <div className={classes.switchContainer}>
+                <Switch
+                  checked={SettingsTransfTicket === "enabled"}
+                  onChange={(e) => handleSettingsTransfTicket(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendMsgTransfTicket")}</span>
+              </div>
+              <FormHelperText>{loadingSettingsTransfTicket && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-accept-call-whatsapp">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="acceptCallWhatsapp-switch"
+                  checked={AcceptCallWhatsapp === "enabled"}
+                  onChange={(e) => handleAcceptCallWhatsapp(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.acceptCallWhatsapp")}</span>
+              </div>
+              <FormHelperText>{loadingAcceptCallWhatsapp && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-send-sign-message">
+              <div className={classes.switchContainer}>
+                <Switch
+                  checked={sendSignMessage === "enabled"}
+                  onChange={(e) => handleSendSignMessage(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendSignMessage")}</span>
+              </div>
+              <FormHelperText>{loadingSendSignMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-send-greeting-one-queue">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="sendGreetingMessageOneQueues-switch"
+                  checked={sendGreetingMessageOneQueues === "enabled"}
+                  onChange={(e) => handleSendGreetingMessageOneQueues(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendGreetingMessageOneQueues")}</span>
+              </div>
+              <FormHelperText>{loadingSendGreetingMessageOneQueues && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+          
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-enable-auto-status">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="enableAutoStatus-switch"
+                  checked={enableAutoStatus === "enabled"}
+                  onChange={(e) => handleEnableAutoStatus(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>Status do WhatsApp (IA)</span>
+              </div>
+              <FormHelperText>{loadingEnableAutoStatus && "Atualizando..."}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-send-queue-position">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="sendQueuePosition-switch"
+                  checked={sendQueuePosition === "enabled"}
+                  onChange={(e) => handleSendQueuePosition(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendQueuePosition")}</span>
+              </div>
+              <FormHelperText>{loadingSendQueuePosition && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-send-farewell-waiting">
+              <div className={classes.switchContainer}>
+                <Switch
+                  checked={sendFarewellWaitingTicket === "enabled"}
+                  onChange={(e) => handleSendFarewellWaitingTicket(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendFarewellWaitingTicket")}</span>
+              </div>
+              <FormHelperText>{loadingSendFarewellWaitingTicket && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-accept-audio-message-contact">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="acceptAudioMessageContact-switch"
+                  checked={acceptAudioMessageContact === "enabled"}
+                  onChange={(e) => handleAcceptAudioMessageContact(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.acceptAudioMessageContact")}</span>
+              </div>
+              <FormHelperText>{loadingAcceptAudioMessageContact && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
         </Grid>
+      </div>
+      )}
 
-        {/* ENVIAR SAUDAÇÃO AO ACEITAR O TICKET */}
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <Grid container direction="column" alignItems="center">
-              <Switch
-                id="sendGreetingAccepted-switch"
-                checked={SendGreetingAccepted === "enabled"}
-                onChange={(e) => handleSendGreetingAccepted(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <label htmlFor="sendGreetingAccepted-switch" style={{ marginTop: 8, color: "#757575" }}>
-                {i18n.t("settings.settings.options.sendGreetingAccepted")}
-              </label>
-            </Grid>
-            <FormHelperText style={{ textAlign: "center" }}>
-              {loadingSendGreetingAccepted && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
-          <Divider />
+      {show("settings-section-privacidade") && (
+      <div id="settings-section-privacidade" className={classes.sectionBlock}>
+        <div className={classes.sectionHeader}>
+          <div
+            className={classes.sectionHeaderIcon}
+            style={{ background: "linear-gradient(90deg, #111827 0%, #334155 100%)" }}
+          >
+            <SecurityIcon />
+          </div>
+          <div>
+            <Typography variant="subtitle1" className={classes.sectionTitle}>
+              Privacidade & Regras
+            </Typography>
+            <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+              Controle de LGPD, regras do atendimento e notificações.
+            </Typography>
+          </div>
+        </div>
+        <Box className={classes.sectionGuide}>
+          <Typography variant="subtitle2">Passos sugeridos</Typography>
+          <Typography variant="body2" color="textSecondary">1. Exija tags obrigatórias. 2. Defina regras de fechamento. 3. Ative notificações pendentes.</Typography>
+          <Typography variant="subtitle2" style={{ marginTop: 6 }}>Por que configurar</Typography>
+          <Typography variant="body2" color="textSecondary">Garante conformidade e disciplina operacional.</Typography>
+        </Box>
+        <Grid spacing={2} container>
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-enable-lgpd">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="enableLGPD-switch"
+                  checked={enableLGPD === "enabled"}
+                  onChange={(e) => handleEnableLGPD(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.enableLGPD")}</span>
+              </div>
+              <FormHelperText>{loadingEnableLGPD && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-required-tag">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="requiredTag-switch"
+                  checked={requiredTag === "enabled"}
+                  onChange={(e) => handleRequiredTag(e.target.checked ? "enabled" : "disabled")}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.requiredTag")}</span>
+              </div>
+              <FormHelperText>{loadingRequiredTag && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-close-ticket-on-transfer">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="closeTicketOnTransfer-switch"
+                  checked={closeTicketOnTransfer}
+                  onChange={(e) => handleCloseTicketOnTransfer(e.target.checked)}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.closeTicketOnTransfer")}</span>
+              </div>
+              <FormHelperText>{loadingCloseTicketOnTransfer && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} lg={4} item>
+            <FormControl className={classes.selectContainer} id="settings-option-show-notification-pending">
+              <div className={classes.switchContainer}>
+                <Switch
+                  id="showNotificationPending-switch"
+                  checked={showNotificationPending}
+                  onChange={(e) => handleShowNotificationPending(e.target.checked)}
+                  color="primary"
+                />
+                <span className={classes.switchLabel}>{i18n.t("settings.settings.options.showNotificationPending")}</span>
+              </div>
+              <FormHelperText>{loadingShowNotificationPending && i18n.t("settings.settings.options.updating")}</FormHelperText>
+            </FormControl>
+          </Grid>
         </Grid>
+      </div>
+      )}
 
-        {/* ESCOLHER OPERADOR ALEATORIO */}
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="userRandom-switch"
-                checked={UserRandom === "enabled"}
-                onChange={(e) => handleUserRandom(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.userRandom")}</span>
-            </div>
-            <FormHelperText>{loadingUserRandom && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        {/* ENVIAR MENSAGEM DE TRANSFERENCIA DE SETOR/ATENDENTE */}
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                checked={SettingsTransfTicket === "enabled"}
-                onChange={(e) => handleSettingsTransfTicket(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendMsgTransfTicket")}</span>
-            </div>
-            <FormHelperText>{loadingSettingsTransfTicket && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        {/* AVISO SOBRE LIGAÇÃO DO WHATSAPP */}
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="acceptCallWhatsapp-switch"
-                checked={AcceptCallWhatsapp === "enabled"}
-                onChange={(e) => handleAcceptCallWhatsapp(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.acceptCallWhatsapp")}</span>
-            </div>
-            <FormHelperText>{loadingAcceptCallWhatsapp && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        {/* HABILITAR PARA O ATENDENTE RETIRAR O ASSINATURA */}
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                checked={sendSignMessage === "enabled"}
-                onChange={(e) => handleSendSignMessage(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendSignMessage")}</span>
-            </div>
-            <FormHelperText>{loadingSendSignMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        {/* ENVIAR SAUDAÇÃO QUANDO HOUVER SOMENTE 1 FILA */}
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="sendGreetingMessageOneQueues-switch"
-                checked={sendGreetingMessageOneQueues === "enabled"}
-                onChange={(e) => handleSendGreetingMessageOneQueues(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendGreetingMessageOneQueues")}</span>
-            </div>
-            <FormHelperText>{loadingSendGreetingMessageOneQueues && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        {/* ENVIAR MENSAGEM COM A POSIÇÃO DA FILA */}
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="sendQueuePosition-switch"
-                checked={sendQueuePosition === "enabled"}
-                onChange={(e) => handleSendQueuePosition(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendQueuePosition")}</span>
-            </div>
-            <FormHelperText>{loadingSendQueuePosition && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        {/* ENVIAR MENSAGEM DE DESPEDIDA NO AGUARDANDO */}
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                checked={sendFarewellWaitingTicket === "enabled"}
-                onChange={(e) => handleSendFarewellWaitingTicket(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.sendFarewellWaitingTicket")}</span>
-            </div>
-            <FormHelperText>{loadingSendFarewellWaitingTicket && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider /> 
-        </Grid>
-
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="acceptAudioMessageContact-switch"
-                checked={acceptAudioMessageContact === "enabled"}
-                onChange={(e) => handleAcceptAudioMessageContact(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.acceptAudioMessageContact")}</span>
-            </div>
-            <FormHelperText>{loadingAcceptAudioMessageContact && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="enableLGPD-switch"
-                checked={enableLGPD === "enabled"}
-                onChange={(e) => handleEnableLGPD(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.enableLGPD")}</span>
-            </div>
-            <FormHelperText>{loadingEnableLGPD && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="requiredTag-switch"
-                checked={requiredTag === "enabled"}
-                onChange={(e) => handleRequiredTag(e.target.checked ? "enabled" : "disabled")}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.requiredTag")}</span>
-            </div>
-            <FormHelperText>{loadingRequiredTag && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="closeTicketOnTransfer-switch"
-                checked={closeTicketOnTransfer}
-                onChange={(e) => handleCloseTicketOnTransfer(e.target.checked)}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.closeTicketOnTransfer")}</span>
-            </div>
-            <FormHelperText>{loadingCloseTicketOnTransfer && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <div className={classes.switchContainer}>
-              <Switch
-                id="showNotificationPending-switch"
-                checked={showNotificationPending}
-                onChange={(e) => handleShowNotificationPending(e.target.checked)}
-                color="primary"
-              />
-              <span className={classes.switchLabel}>{i18n.t("settings.settings.options.showNotificationPending")}</span>
-            </div>
-            <FormHelperText>{loadingShowNotificationPending && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-          <Divider />
-        </Grid>
-      </Grid>
-
-      <br />
-
-      {/*-----------------LGPD-----------------*/}
-      {enableLGPD === "enabled" && (
-        <>
-          <Grid spacing={3} container style={{ marginBottom: 10 }}>
-            <Tabs
-              value={0}
-              indicatorColor="primary"
-              textColor="primary"
-              scrollButtons="on"
-              variant="scrollable"
-              className={classes.tab}
+      {enableLGPD === "enabled" && show("settings-lgpd") && (
+        <div id="settings-lgpd" className={classes.sectionBlock}>
+          <div className={classes.sectionHeader}>
+            <div
+              className={classes.sectionHeaderIcon}
+              style={{ background: "linear-gradient(90deg, #ef4444 0%, #b91c1c 100%)" }}
             >
-              <Tab label={i18n.t("settings.settings.LGPD.title")} />
-            </Tabs>
-          </Grid>
+              <LockIcon />
+            </div>
+            <div>
+              <Typography variant="subtitle1" className={classes.sectionTitle}>
+                {i18n.t("settings.settings.LGPD.title")}
+              </Typography>
+              <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+                Ajustes finos de privacidade e consentimento.
+              </Typography>
+            </div>
+          </div>
+          <Box className={classes.sectionGuide}>
+            <Typography variant="subtitle2">Passos sugeridos</Typography>
+            <Typography variant="body2" color="textSecondary">1. Redija mensagem de consentimento. 2. Informe link de política. 3. Ajuste preferências.</Typography>
+            <Typography variant="subtitle2" style={{ marginTop: 6 }}>Por que configurar</Typography>
+            <Typography variant="body2" color="textSecondary">Garante transparência e conformidade com LGPD.</Typography>
+          </Box>
           <Grid spacing={1} container>
             <Grid xs={12} sm={6} md={12} item>
-              <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+              <FormControl className={classes.selectContainer}>
                 <TextField
                   id="lgpdMessage"
                   name="lgpdMessage"
@@ -949,7 +1146,6 @@ export default function Options(props) {
                   variant="outlined"
                   value={lgpdMessage}
                   onChange={(e) => handleLGPDMessage(e.target.value)}
-                  style={{ backgroundColor: "white" }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -962,7 +1158,7 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             <Grid xs={12} sm={6} md={12} item>
-              <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+              <FormControl className={classes.selectContainer}>
                 <TextField
                   id="lgpdLink"
                   name="lgpdLink"
@@ -971,7 +1167,6 @@ export default function Options(props) {
                   variant="outlined"
                   value={lgpdLink}
                   onChange={(e) => handleLGPDLink(e.target.value)}
-                  style={{ backgroundColor: "white" }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -984,14 +1179,13 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             {/* LGPD Manter ou não mensagem deletada pelo contato */}
-            <Grid xs={12} sm={6} md={4} item>
-              <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+            <Grid xs={12} sm={6} md={6} lg={4} item>
+              <FormControl className={classes.selectContainer}>
                 <InputLabel id="lgpdDeleteMessage-label">{i18n.t("settings.settings.LGPD.obfuscateMessageDelete")}</InputLabel>
                 <Select
                   labelId="lgpdDeleteMessage-label"
                   value={lgpdDeleteMessage}
                   onChange={(e) => handleLGPDDeleteMessage(e.target.value)}
-                  style={{ backgroundColor: "white" }}
                   startAdornment={
                     <InputAdornment position="start">
                       <DeleteIcon style={{ color: grey[500] }} />
@@ -1005,14 +1199,13 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             {/* LGPD Sempre solicitar confirmação / consentimento dos dados */}
-            <Grid xs={12} sm={6} md={4} item>
-              <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+            <Grid xs={12} sm={6} md={6} lg={4} item>
+              <FormControl className={classes.selectContainer}>
                 <InputLabel id="lgpdConsent-label">{i18n.t("settings.settings.LGPD.alwaysConsent")}</InputLabel>
                 <Select
                   labelId="lgpdConsent-label"
                   value={lgpdConsent}
                   onChange={(e) => handleLGPDConsent(e.target.value)}
-                  style={{ backgroundColor: "white" }}
                   startAdornment={
                     <InputAdornment position="start">
                       <CheckCircleIcon style={{ color: grey[500] }} />
@@ -1026,14 +1219,13 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             {/* LGPD Ofuscar número telefone para usuários */}
-            <Grid xs={12} sm={6} md={4} item>
-              <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+            <Grid xs={12} sm={6} md={6} lg={4} item>
+              <FormControl className={classes.selectContainer}>
                 <InputLabel id="lgpdHideNumber-label">{i18n.t("settings.settings.LGPD.obfuscatePhoneUser")}</InputLabel>
                 <Select
                   labelId="lgpdHideNumber-label"
                   value={lgpdHideNumber}
                   onChange={(e) => handleLGPDHideNumber(e.target.value)}
-                  style={{ backgroundColor: "white" }}
                   startAdornment={
                     <InputAdornment position="start">
                       <PhoneIcon style={{ color: grey[500] }} />
@@ -1047,376 +1239,394 @@ export default function Options(props) {
               </FormControl>
             </Grid>
           </Grid>
-        </>
+        </div>
       )}
 
-      <Grid spacing={3} container>
-        {isSuper() ? (
-          <Tabs
-            indicatorColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            value={0}
-            className={classes.tab}
-            style={{ marginBottom: 20, marginTop: 20, backgroundColor: "#444394", color: "white" }}
+      {isSuper() ? (
+        <>
+          <div id="settings-payment-efi" className={classes.sectionBlock}>
+            <div className={classes.sectionHeader}>
+              <div
+                className={classes.sectionHeaderIcon}
+                style={{ background: "linear-gradient(90deg, #00f2ff 0%, #bd00ff 100%)" }}
+              >
+                <PaymentIcon />
+              </div>
+              <div>
+                <Typography variant="subtitle1" className={classes.sectionTitle}>
+                  Configuração Pix Efí (GerenciaNet)
+                </Typography>
+                <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+                  Credenciais e chave PIX para cobrança automatizada.
+                </Typography>
+              </div>
+            </div>
+            <Grid spacing={2} container>
+              <Grid xs={12} sm={6} md={6} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='eficlientid'
+                    name='eficlientid'
+                    margin='dense'
+                    label='Client ID'
+                    variant='outlined'
+                    value={eficlientidType}
+                    onChange={(e) => handleChangeEfiClientid(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <VpnKeyIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingEfiClientidType && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+              <Grid xs={12} sm={6} md={6} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='eficlientsecret'
+                    name='eficlientsecret'
+                    margin='dense'
+                    label='Client Secret'
+                    variant='outlined'
+                    value={eficlientsecretType}
+                    onChange={(e) => handleChangeEfiClientsecret(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingEfiClientsecretType && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+              <Grid xs={12} sm={12} md={12} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='efichavepix'
+                    name='efichavepix'
+                    margin='dense'
+                    label='Chave PIX'
+                    variant='outlined'
+                    value={efichavepixType}
+                    onChange={(e) => handleChangeEfiChavepix(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PaymentIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingEfiChavepixType && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </div>
+
+          <div id="settings-payment-mercadopago" className={classes.sectionBlock}>
+            <div className={classes.sectionHeader}>
+              <div
+                className={classes.sectionHeaderIcon}
+                style={{ background: "linear-gradient(90deg, #22c55e 0%, #16a34a 100%)" }}
+              >
+                <PaymentIcon />
+              </div>
+              <div>
+                <Typography variant="subtitle1" className={classes.sectionTitle}>
+                  Mercado Pago
+                </Typography>
+                <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+                  Token de acesso para pagamentos e webhooks.
+                </Typography>
+              </div>
+            </div>
+            <Grid spacing={2} container>
+              <Grid xs={12} sm={12} md={12} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='mpaccesstoken'
+                    name='mpaccesstoken'
+                    margin='dense'
+                    label='Access Token'
+                    variant='outlined'
+                    value={mpaccesstokenType}
+                    onChange={(e) => handleChangempaccesstoken(e.target.value)}
+                    onBlur={handleBlurmpaccesstoken}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <VpnKeyIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingmpaccesstokenType && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </div>
+
+          <div id="settings-payment-stripe" className={classes.sectionBlock}>
+            <div className={classes.sectionHeader}>
+              <div
+                className={classes.sectionHeaderIcon}
+                style={{ background: "linear-gradient(90deg, #6366f1 0%, #4338ca 100%)" }}
+              >
+                <PaymentIcon />
+              </div>
+              <div>
+                <Typography variant="subtitle1" className={classes.sectionTitle}>
+                  Stripe
+                </Typography>
+                <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+                  Chave privada para processar pagamentos.
+                </Typography>
+              </div>
+            </div>
+            <Grid spacing={2} container>
+              <Grid xs={12} sm={12} md={12} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='stripeprivatekey'
+                    name='stripeprivatekey'
+                    margin='dense'
+                    label='Stripe Private Key'
+                    variant='outlined'
+                    value={stripeprivatekeyType}
+                    onChange={(e) => handleChangestripeprivatekey(e.target.value)}
+                    onBlur={handleBlurstripeprivatekey}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingstripeprivatekeyType && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </div>
+
+          <div id="settings-payment-asaas" className={classes.sectionBlock}>
+            <div className={classes.sectionHeader}>
+              <div
+                className={classes.sectionHeaderIcon}
+                style={{ background: "linear-gradient(90deg, #f59e0b 0%, #d97706 100%)" }}
+              >
+                <PaymentIcon />
+              </div>
+              <div>
+                <Typography variant="subtitle1" className={classes.sectionTitle}>
+                  ASAAS
+                </Typography>
+                <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+                  Token para cobranças e integração financeira.
+                </Typography>
+              </div>
+            </div>
+            <Grid spacing={2} container>
+              <Grid xs={12} sm={12} md={12} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='asaastoken'
+                    name='asaastoken'
+                    margin='dense'
+                    label='Token Asaas'
+                    variant='outlined'
+                    value={asaastokenType}
+                    onChange={(e) => handleChangeasaastoken(e.target.value)}
+                    onBlur={handleBlurasaastoken}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <VpnKeyIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingasaastokenType && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </div>
+
+          <div id="settings-openai-audio" className={classes.sectionBlock}>
+            <div className={classes.sectionHeader}>
+              <div
+                className={classes.sectionHeaderIcon}
+                style={{ background: "linear-gradient(90deg, #111827 0%, #0f172a 100%)" }}
+              >
+                <VpnKeyIcon />
+              </div>
+              <div>
+                <Typography variant="subtitle1" className={classes.sectionTitle}>
+                  OpenAI API Key (Transcrição de áudio)
+                </Typography>
+                <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+                  Chave global para transcrever áudios (todas as empresas).
+                </Typography>
+              </div>
+            </div>
+            <Grid spacing={2} container>
+              <Grid xs={12} sm={12} md={12} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='openaikeyaudio'
+                    name='openaikeyaudio'
+                    margin='dense'
+                    label='OpenAI API Key'
+                    variant='outlined'
+                    value={openaitokenType}
+                    onChange={(e) => handleChangeopenaitoken(e.target.value)}
+                    onBlur={handleBluropenaitoken}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <VpnKeyIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingopenaitokenType && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </div>
+        </>
+      ) : null}
+
+      {show("settings-custom-messages") && (
+      <div id="settings-custom-messages" className={classes.sectionBlock}>
+        <div className={classes.sectionHeader}>
+          <div
+            className={classes.sectionHeaderIcon}
+            style={{ background: "linear-gradient(90deg, #2575fc 0%, #6a11cb 100%)" }}
           >
-            <Tab label='Configuração Pix Efí (GerenciaNet)' />
-          </Tabs>
-        ) : null}
-      </Grid>
-
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-        <Grid xs={12} sm={6} md={6} item>
-          {isSuper() ? (
-            <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+            <ChatIcon />
+          </div>
+          <div>
+            <Typography variant="subtitle1" className={classes.sectionTitle}>
+              Mensagens Personalizadas
+            </Typography>
+            <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+              Textos padrões usados em transferências, avisos e automações.
+            </Typography>
+          </div>
+        </div>
+        <Box className={classes.sectionGuide}>
+          <Typography variant="subtitle2">Passos sugeridos</Typography>
+          <Typography variant="body2" color="textSecondary">1. Escreva mensagem de transferência. 2. Ajuste saudação aceita. 3. Defina texto de ligação e posição na fila.</Typography>
+          <Typography variant="subtitle2" style={{ marginTop: 6 }}>Por que configurar</Typography>
+          <Typography variant="body2" color="textSecondary">Oferece contexto e previsibilidade ao usuário.</Typography>
+        </Box>
+        <Grid spacing={2} container>
+          <Grid xs={12} sm={6} md={6} item>
+            <FormControl className={classes.selectContainer}>
               <TextField
-                id='eficlientid'
-                name='eficlientid'
-                margin='dense'
-                label='Client ID'
-                variant='outlined'
-                value={eficlientidType}
-                onChange={(e) => handleChangeEfiClientid(e.target.value)}
-                style={{ backgroundColor: "white" }}
+                id="transferMessage"
+                name="transferMessage"
+                margin="dense"
+                multiline
+                minRows={3}
+                label={i18n.t("settings.settings.customMessages.transferMessage")}
+                variant="outlined"
+                value={transferMessage || ""}
+                required={SettingsTransfTicket === "enabled"}
+                onChange={(e) => handletransferMessage(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <VpnKeyIcon style={{ color: grey[500] }} />
+                      <TransferWithinAStationIcon style={{ color: grey[500] }} />
                     </InputAdornment>
                   ),
                 }}
               />
-              <FormHelperText>{loadingEfiClientidType && 'Atualizando...'}</FormHelperText>
+              <FormHelperText>{loadingTransferMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
             </FormControl>
-          ) : null}
-        </Grid>
-        <Grid xs={12} sm={6} md={6} item>
-          {isSuper() ? (
-            <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} item>
+            <FormControl className={classes.selectContainer}>
               <TextField
-                id='eficlientsecret'
-                name='eficlientsecret'
-                margin='dense'
-                label='Client Secret'
-                variant='outlined'
-                value={eficlientsecretType}
-                onChange={(e) => handleChangeEfiClientsecret(e.target.value)}
-                style={{ backgroundColor: "white" }}
+                id="greetingAcceptedMessage"
+                name="greetingAcceptedMessage"
+                margin="dense"
+                multiline
+                minRows={3}
+                label={i18n.t("settings.settings.customMessages.greetingAcceptedMessage")}
+                variant="outlined"
+                value={greetingAcceptedMessage || ""}
+                required={SendGreetingAccepted === "enabled"}
+                onChange={(e) => handleGreetingAcceptedMessage(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockIcon style={{ color: grey[500] }} />
+                      <SendIcon style={{ color: grey[500] }} />
                     </InputAdornment>
                   ),
                 }}
               />
-              <FormHelperText>{loadingEfiClientsecretType && 'Atualizando...'}</FormHelperText>
+              <FormHelperText>{loadingGreetingAcceptedMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
             </FormControl>
-          ) : null}
-        </Grid>
-        <Grid xs={12} sm={12} md={12} item>
-          {isSuper() ? (
-            <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+          </Grid>
+
+          <Grid xs={12} sm={6} md={6} item>
+            <FormControl className={classes.selectContainer}>
               <TextField
-                id='efichavepix'
-                name='efichavepix'
-                margin='dense'
-                label='Chave PIX'
-                variant='outlined'
-                value={efichavepixType}
-                onChange={(e) => handleChangeEfiChavepix(e.target.value)}
-                style={{ backgroundColor: "white" }}
+                id="AcceptCallWhatsappMessage"
+                name="AcceptCallWhatsappMessage"
+                margin="dense"
+                multiline
+                minRows={3}
+                label={i18n.t("settings.settings.customMessages.AcceptCallWhatsappMessage")}
+                variant="outlined"
+                required={AcceptCallWhatsapp === "disabled"}
+                value={AcceptCallWhatsappMessage}
+                onChange={(e) => handleAcceptCallWhatsappMessage(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <PaymentIcon style={{ color: grey[500] }} />
+                      <CallIcon style={{ color: grey[500] }} />
                     </InputAdornment>
                   ),
                 }}
               />
-              <FormHelperText>{loadingEfiChavepixType && 'Atualizando...'}</FormHelperText>
+              <FormHelperText>{loadingAcceptCallWhatsappMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
             </FormControl>
-          ) : null}
-        </Grid>
-      </Grid>
+          </Grid>
 
-      <Grid spacing={3} container>
-        {isSuper() ? (
-          <Tabs
-            indicatorColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            value={0}
-            className={classes.tab}
-            style={{ marginBottom: 20, marginTop: 20, backgroundColor: "#444394", color: "white" }}
-          >
-            <Tab label='Mercado Pago' />
-          </Tabs>
-        ) : null}
-      </Grid>
-
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-        <Grid xs={12} sm={12} md={12} item>
-          {isSuper() ? (
-            <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
+          <Grid xs={12} sm={6} md={6} item>
+            <FormControl className={classes.selectContainer}>
               <TextField
-                id='mpaccesstoken'
-                name='mpaccesstoken'
-                margin='dense'
-                label='Access Token'
-                variant='outlined'
-                value={mpaccesstokenType}
-                onChange={(e) => handleChangempaccesstoken(e.target.value)}
-                onBlur={handleBlurmpaccesstoken}
-                style={{ backgroundColor: "white" }}
+                id="sendQueuePositionMessage"
+                name="sendQueuePositionMessage"
+                margin="dense"
+                multiline
+                required={sendQueuePosition === "enabled"}
+                minRows={3}
+                label={i18n.t("settings.settings.customMessages.sendQueuePositionMessage")}
+                variant="outlined"
+                value={sendQueuePositionMessage}
+                onChange={(e) => handlesendQueuePositionMessage(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <VpnKeyIcon style={{ color: grey[500] }} />
+                      <QueueIcon style={{ color: grey[500] }} />
                     </InputAdornment>
                   ),
                 }}
               />
-              <FormHelperText>{loadingmpaccesstokenType && 'Atualizando...'}</FormHelperText>
+              <FormHelperText>{loadingSendQueuePositionMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
             </FormControl>
-          ) : null}
-        </Grid>
-      </Grid>
+          </Grid>
 
-      <Grid spacing={3} container>
-        {isSuper() ? (
-          <Tabs
-            indicatorColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            value={0}
-            className={classes.tab}
-            style={{ marginBottom: 20, marginTop: 20, backgroundColor: "#444394", color: "white" }}
-          >
-            <Tab label='Stripe' />
-          </Tabs>
-        ) : null}
-      </Grid>
-
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-        <Grid xs={12} sm={12} md={12} item>
-          {isSuper() ? (
-            <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-              <TextField
-                id='stripeprivatekey'
-                name='stripeprivatekey'
-                margin='dense'
-                label='Stripe Private Key'
-                variant='outlined'
-                value={stripeprivatekeyType}
-                onChange={(e) => handleChangestripeprivatekey(e.target.value)}
-                onBlur={handleBlurstripeprivatekey}
-                style={{ backgroundColor: "white" }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon style={{ color: grey[500] }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <FormHelperText>{loadingstripeprivatekeyType && 'Atualizando...'}</FormHelperText>
-            </FormControl>
-          ) : null}
-        </Grid>
-      </Grid>
-
-      <Grid spacing={3} container>
-        {isSuper() ? (
-          <Tabs
-            indicatorColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            value={0}
-            className={classes.tab}
-            style={{ marginBottom: 20, marginTop: 20, backgroundColor: "#444394", color: "white" }}
-          >
-            <Tab label='ASAAS' />
-          </Tabs>
-        ) : null}
-      </Grid>
-
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-        <Grid xs={12} sm={12} md={12} item>
-          {isSuper() ? (
-            <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-              <TextField
-                id='asaastoken'
-                name='asaastoken'
-                margin='dense'
-                label='Token Asaas'
-                variant='outlined'
-                value={asaastokenType}
-                onChange={(e) => handleChangeasaastoken(e.target.value)}
-                onBlur={handleBlurasaastoken}
-                style={{ backgroundColor: "white" }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <VpnKeyIcon style={{ color: grey[500] }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <FormHelperText>{loadingasaastokenType && 'Atualizando...'}</FormHelperText>
-            </FormControl>
-          ) : null}
-        </Grid>
-      </Grid>
-
-      <Grid spacing={3} container>
-        {isSuper() ? (
-          <Tabs
-            indicatorColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            value={0}
-            className={classes.tab}
-            style={{ marginBottom: 20, marginTop: 20, backgroundColor: "#444394", color: "white" }}
-          >
-            <Tab label='OpenAI API KEY Transcrição de áudio (Para todas empresas)' />
-          </Tabs>
-        ) : null}
-      </Grid>
-
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-        <Grid xs={12} sm={12} md={12} item>
-          {isSuper() ? (
-            <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-              <TextField
-                id='openaikeyaudio'
-                name='openaikeyaudio'
-                margin='dense'
-                label='OpenAI API Key'
-                variant='outlined'
-                value={openaitokenType}
-                onChange={(e) => handleChangeopenaitoken(e.target.value)}
-                onBlur={handleBluropenaitoken}
-                style={{ backgroundColor: "white" }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <VpnKeyIcon style={{ color: grey[500] }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <FormHelperText>{loadingopenaitokenType && 'Atualizando...'}</FormHelperText>
-            </FormControl>
-          ) : null}
-        </Grid>
-      </Grid>
-
-      <Grid spacing={1} container>
-        <Grid xs={12} sm={6} md={6} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <TextField
-              id="transferMessage"
-              name="transferMessage"
-              margin="dense"
-              multiline
-              minRows={3}
-              label={i18n.t("settings.settings.customMessages.transferMessage")}
-              variant="outlined"
-              value={transferMessage || ""}
-              required={SettingsTransfTicket === "enabled"}
-              onChange={(e) => handletransferMessage(e.target.value)}
-              style={{ backgroundColor: "white" }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <TransferWithinAStationIcon style={{ color: grey[500] }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <FormHelperText>{loadingTransferMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-        </Grid>
-
-        <Grid xs={12} sm={6} md={6} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <TextField
-              id="greetingAcceptedMessage"
-              name="greetingAcceptedMessage"
-              margin="dense"
-              multiline
-              minRows={3}
-              label={i18n.t("settings.settings.customMessages.greetingAcceptedMessage")}
-              variant="outlined"
-              value={greetingAcceptedMessage || ""}
-              required={SendGreetingAccepted === "enabled"}
-              onChange={(e) => handleGreetingAcceptedMessage(e.target.value)}
-              style={{ backgroundColor: "white" }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SendIcon style={{ color: grey[500] }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <FormHelperText>{loadingGreetingAcceptedMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-        </Grid>
-
-        <Grid xs={12} sm={6} md={6} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <TextField
-              id="AcceptCallWhatsappMessage"
-              name="AcceptCallWhatsappMessage"
-              margin="dense"
-              multiline
-              minRows={3}
-              label={i18n.t("settings.settings.customMessages.AcceptCallWhatsappMessage")}
-              variant="outlined"
-              required={AcceptCallWhatsapp === "disabled"}
-              value={AcceptCallWhatsappMessage}
-              onChange={(e) => handleAcceptCallWhatsappMessage(e.target.value)}
-              style={{ backgroundColor: "white" }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <CallIcon style={{ color: grey[500] }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <FormHelperText>{loadingAcceptCallWhatsappMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-        </Grid>
-
-        <Grid xs={12} sm={6} md={6} item>
-          <FormControl className={classes.selectContainer} style={{ backgroundColor: "white" }}>
-            <TextField
-              id="sendQueuePositionMessage"
-              name="sendQueuePositionMessage"
-              margin="dense"
-              multiline
-              required={sendQueuePosition === "enabled"}
-              minRows={3}
-              label={i18n.t("settings.settings.customMessages.sendQueuePositionMessage")}
-              variant="outlined"
-              value={sendQueuePositionMessage}
-              onChange={(e) => handlesendQueuePositionMessage(e.target.value)}
-              style={{ backgroundColor: "white" }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <QueueIcon style={{ color: grey[500] }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <FormHelperText>{loadingSendQueuePositionMessage && i18n.t("settings.settings.options.updating")}</FormHelperText>
-          </FormControl>
-        </Grid>
-        <Grid spacing={3} container>
           <Grid xs={12} sm={12} md={12} item>
             <FormControl className={`${classes.selectFocus} ${classes.labelFocus} ${classes.selectContainer}`}>
               <TextField
@@ -1431,16 +1641,15 @@ export default function Options(props) {
                 onChange={async (e) => {
                   handleChangeNotificameHub(e.target.value);
                 }}
-              >
-              </TextField>
+              />
               <FormHelperText>
                 {loadingNotificameHubToken && i18n.t("settings.settings.options.updating")}
               </FormHelperText>
             </FormControl>
           </Grid>
         </Grid>
-
-      </Grid>
+      </div>
+      )}
     </>
   );
 }

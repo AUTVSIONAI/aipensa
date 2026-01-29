@@ -10,7 +10,7 @@ export default {
       const { msg, chat } = data;
       await handleMsgAck(msg, chat);
     } catch (error) {
-      console.log("error", error)
+      console.log("error", error);
     }
-  },
+  }
 };

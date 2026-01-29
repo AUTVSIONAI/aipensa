@@ -18,7 +18,6 @@ const store = async (req: Request, res: Response): Promise<Response> => {
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId);
   await StartWhatsAppSession(whatsapp, companyId);
 
-
   return res.status(200).json({ message: "Starting session." });
 };
 
@@ -31,10 +30,12 @@ const update = async (req: Request, res: Response): Promise<Response> => {
   //   companyId,
   //   whatsappData: { session: "", requestQR: true }
   // });
-  const whatsapp = await Whatsapp.findOne({ where: { id: whatsappId, companyId } });
+  const whatsapp = await Whatsapp.findOne({
+    where: { id: whatsappId, companyId }
+  });
 
   await whatsapp.update({ session: "" });
-  
+
   if (whatsapp.channel === "whatsapp") {
     await StartWhatsAppSession(whatsapp, companyId);
   }
@@ -45,9 +46,8 @@ const update = async (req: Request, res: Response): Promise<Response> => {
 const remove = async (req: Request, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
   const { companyId } = req.user;
-  console.log("DISCONNECTING SESSION", whatsappId)
+  console.log("DISCONNECTING SESSION", whatsappId);
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId);
-
 
   if (whatsapp.channel === "whatsapp") {
     await DeleteBaileysService(whatsappId);
@@ -65,11 +65,11 @@ const removeadmin = async (req: Request, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
   const { companyId } = req.user;
   const userId = req.user.id;
-    const requestUser = await Userverify.findByPk(userId);
-    if (requestUser.super === false) {
+  const requestUser = await Userverify.findByPk(userId);
+  if (requestUser.super === false) {
     throw new AppError("Você nao tem permissão para esta ação!");
   }
-  console.log("DISCONNECTING SESSION", whatsappId)
+  console.log("DISCONNECTING SESSION", whatsappId);
   const whatsapp = await ShowWhatsAppServiceAdmin(whatsappId);
   if (whatsapp.channel === "whatsapp") {
     await DeleteBaileysService(whatsappId);

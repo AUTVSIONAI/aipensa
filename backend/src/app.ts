@@ -8,7 +8,7 @@ import helmet from "helmet";
 import compression from "compression";
 import * as Sentry from "@sentry/node";
 import { config as dotenvConfig } from "dotenv";
-import bodyParser from 'body-parser';
+import bodyParser from "body-parser";
 
 import "./database";
 import uploadConfig from "./config/upload";
@@ -16,17 +16,21 @@ import AppError from "./errors/AppError";
 import routes from "./routes";
 import logger from "./utils/logger";
 import { messageQueue, sendScheduledMessages } from "./queues";
-import BullQueue from "./libs/queue"
-import BullBoard from 'bull-board';
-import basicAuth from 'basic-auth';
+import BullQueue from "./libs/queue";
+import BullBoard from "bull-board";
+import basicAuth from "basic-auth";
 
 // Função de middleware para autenticação básica
 export const isBullAuth = (req, res, next) => {
   const user = basicAuth(req);
 
-  if (!user || user.name !== process.env.BULL_USER || user.pass !== process.env.BULL_PASS) {
-    res.set('WWW-Authenticate', 'Basic realm="example"');
-    return res.status(401).send('Authentication required.');
+  if (
+    !user ||
+    user.name !== process.env.BULL_USER ||
+    user.pass !== process.env.BULL_PASS
+  ) {
+    res.set("WWW-Authenticate", 'Basic realm="example"');
+    return res.status(401).send("Authentication required.");
   }
   next();
 };
@@ -45,13 +49,19 @@ app.set("queues", {
   sendScheduledMessages
 });
 
-const normalizeOrigin = (value?: string) => (value ? value.replace(/\/$/, "") : value);
-const allowedOrigins = [normalizeOrigin(process.env.FRONTEND_URL)].filter(Boolean);
+const normalizeOrigin = (value?: string) =>
+  value ? value.replace(/\/$/, "") : value;
+const allowedOrigins = [normalizeOrigin(process.env.FRONTEND_URL)].filter(
+  Boolean
+);
 
 // Configuração do BullBoard
-if (String(process.env.BULL_BOARD).toLocaleLowerCase() === 'true' && process.env.REDIS_URI_ACK !== '') {
+if (
+  String(process.env.BULL_BOARD).toLocaleLowerCase() === "true" &&
+  process.env.REDIS_URI_ACK !== ""
+) {
   BullBoard.setQueues(BullQueue.queues.map(queue => queue && queue.bull));
-  app.use('/admin/queues', isBullAuth, BullBoard.UI);
+  app.use("/admin/queues", isBullAuth, BullBoard.UI);
 }
 
 // Middlewares
@@ -74,8 +84,8 @@ if (String(process.env.BULL_BOARD).toLocaleLowerCase() === 'true' && process.env
 // }));
 
 app.use(compression()); // Compressão HTTP
-app.use(bodyParser.json({ limit: '5mb' })); // Aumentar o limite de carga para 5 MB
-app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
+app.use(bodyParser.json({ limit: "5mb" })); // Aumentar o limite de carga para 5 MB
+app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
 // app.use(
 //   cors({
 //     credentials: true,

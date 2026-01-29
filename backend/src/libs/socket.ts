@@ -9,15 +9,13 @@ let io: SocketIO;
 
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
+    cors: {
+      origin: process.env.FRONTEND_URL,
+      credentials: true
+    },
     allowRequest: (req, callback) => {
       callback(null, true);
-    },
-    // CORS configuration removed to avoid conflict with Nginx
-    // cors: {
-    //   origin: process.env.FRONTEND_URL || "https://aipensa.com",
-    //   credentials: true,
-    //   methods: ["GET", "POST"]
-    // }
+    }
   });
 
   // if (process.env.SOCKET_ADMIN && JSON.parse(process.env.SOCKET_ADMIN)) {
@@ -58,16 +56,18 @@ export const initIO = (httpServer: Server): SocketIO => {
           try {
             // Atualiza o status do usuário para offline instant
             await User.update({ online: false }, { where: { id: userId } });
-            console.log(`User ${userId} marcado como off-line após fechar o navegador`);
+            console.log(
+              `User ${userId} marcado como off-line após fechar o navegador`
+            );
           } catch (error) {
             console.error("Erro ao marcar o usuário como offline:", error);
           }
-        }, 0);  // instant para marcar como offline
+        }, 0); // instant para marcar como offline
       }
     });
 
     // Quando o cliente reconectar
-    socket.on('reconnect', async () => {
+    socket.on("reconnect", async () => {
       const userId = socket.data.userId;
       console.log(`Client reconnected: ${socket.id}`);
 
@@ -112,9 +112,8 @@ export const initIO = (httpServer: Server): SocketIO => {
     socket.on("joinChatBoxLeave", (ticketId: string) => {
       socket.leave(ticketId);
     });
-
   });
-  
+
   return io;
 };
 

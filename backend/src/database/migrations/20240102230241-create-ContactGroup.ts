@@ -2,7 +2,7 @@ import { QueryInterface, DataTypes } from "sequelize";
 
 module.exports = {
   async up(queryInterface: QueryInterface) {
-    await queryInterface.createTable('ContactGroups', {
+    await queryInterface.createTable("ContactGroups", {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -25,11 +25,11 @@ module.exports = {
       },
       userId: {
         type: DataTypes.INTEGER
-      },
+      }
     });
   },
 
   async down(queryInterface: QueryInterface) {
-    await queryInterface.dropTable('ContactGroups');
+    await queryInterface.dropTable("ContactGroups");
   }
 };

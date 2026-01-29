@@ -58,7 +58,6 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(invoice);
 };
 
-
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const newPlan: StoreInvoiceData = req.body;
 
@@ -94,8 +93,7 @@ export const update = async (
 
   const plan = await UpdateInvoiceService({
     id,
-    status,
-
+    status
   });
 
   // const io = getIO();
@@ -116,4 +114,4 @@ export const remove = async (
   const invoice = await DeleteInvoiceService(id);
 
   return res.status(200).json(invoice);
-}; 
+};

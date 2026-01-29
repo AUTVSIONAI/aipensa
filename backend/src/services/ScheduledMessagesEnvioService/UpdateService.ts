@@ -10,7 +10,7 @@ interface ScheduleData {
   mediaPath: string;
   mediaName: string;
   mensagem: string;
-  companyId: number
+  companyId: number;
   data_envio: Date;
   scheduledmessages: number;
   key: string;
@@ -38,17 +38,11 @@ const UpdateUserService = async ({
     companyId: Yup.number().required(),
     data_envio: Yup.date().required(),
     scheduledmessages: Yup.number().required(),
-    key: Yup.string().required(),
+    key: Yup.string().required()
   });
 
-  const {
-    mediaPath,
-    mediaName,
-    mensagem,
-    data_envio,
-    scheduledmessages,
-    key
-  } = scheduleData;
+  const { mediaPath, mediaName, mensagem, data_envio, scheduledmessages, key } =
+    scheduleData;
 
   try {
     await schema.validate({

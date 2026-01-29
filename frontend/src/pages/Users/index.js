@@ -1,13 +1,7 @@
-import React, { useState, useEffect, useReducer, useContext } from "react";
+import React, { useState, useEffect, useReducer, useContext, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { makeStyles } from "@material-ui/core/styles";
-import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
 import IconButton from "@material-ui/core/IconButton";
 import SearchIcon from "@material-ui/icons/Search";
 import TextField from "@material-ui/core/TextField";
@@ -20,10 +14,11 @@ import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
 import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper";
 import Title from "../../components/Title";
+import GlassCard from "../../components/UI/GlassCard";
+import PrimaryButton from "../../components/UI/PrimaryButton";
 import whatsappIcon from '../../assets/nopicture.png'
 import api from "../../services/api";
 import { i18n } from "../../translate/i18n";
-import TableRowSkeleton from "../../components/TableRowSkeleton";
 import UserModal from "../../components/UserModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import toastError from "../../errors/toastError";
@@ -93,8 +88,10 @@ const useStyles = makeStyles((theme) => ({
   mainPaper: {
     flex: 1,
     padding: theme.spacing(2),
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
+  },
+  searchIcon: {
+    color: theme.palette.primary.main,
   },
   userAvatar: {
     width: theme.spacing(6),
@@ -125,6 +122,56 @@ const useStyles = makeStyles((theme) => ({
     minWidth: '36px',
     padding: '6px',
     margin: '0 4px',
+  },
+  entityCard: {
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    cursor: "default",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+    },
+  },
+  entityCardContent: {
+    paddingBottom: theme.spacing(1),
+  },
+  actionsRow: {
+    justifyContent: "center",
+    gap: theme.spacing(1.25),
+    paddingBottom: theme.spacing(2),
+    paddingTop: theme.spacing(1),
+  },
+  actionButton: {
+    borderRadius: 12,
+    minWidth: 44,
+    width: 44,
+    height: 44,
+    boxShadow: "none",
+  },
+  actionEdit: {
+    background: theme.palette.primary.main,
+    color: "white",
+    "&:hover": {
+      background: theme.palette.primary.dark,
+    },
+  },
+  actionDelete: {
+    background: theme.palette.error.main,
+    color: "white",
+    "&:hover": {
+      background: theme.palette.error.dark,
+    },
+  },
+  emptyState: {
+    padding: theme.spacing(4),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    textAlign: "center",
   },
 }));
 
@@ -224,13 +271,28 @@ const Users = () => {
     setPageNumber((prevPage) => prevPage + 1);
   };
 
-  const handleScroll = (e) => {
-    if (!hasMore || loading) return;
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - (scrollTop + 100) < clientHeight) {
-      loadMore();
-    }
-  };
+  const loadMoreIfNeeded = useCallback(() => {
+    if (!hasMore || loading || loadingMore) return;
+    loadMore();
+  }, [hasMore, loading, loadingMore]);
+
+  const loadMoreSentinelRef = useRef(null);
+
+  useEffect(() => {
+    const root = document.querySelector("main");
+    const target = loadMoreSentinelRef.current;
+    if (!root || !target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMoreIfNeeded();
+      },
+      { root, rootMargin: "400px 0px 400px 0px", threshold: 0 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMoreIfNeeded]);
 
   const renderProfileImage = (user) => {
     if (user.id === loggedInUser.id) {
@@ -257,73 +319,27 @@ const Users = () => {
   };
 
   const renderCardActions = (user) => {
-    if (isMobile) {
-      return (
-        <CardActions style={{ justifyContent: "center", padding: '8px 0' }}>
-          <Button
-            variant="contained"
-            size="small"
-            onClick={() => handleEditUser(user)}
-            className={classes.mobileActionButton}
-            style={{ backgroundColor: "#3DB8FF", color: "white" }}
-          >
-            <EditIcon fontSize="small" />
-          </Button>
-          <Button
-            variant="contained"
-            size="small"
-            onClick={() => {
-              setConfirmModalOpen(true);
-              setDeletingUser(user);
-            }}
-            className={classes.mobileActionButton}
-            style={{ backgroundColor: "#FF6B6B", color: "white" }}
-          >
-            <DeleteOutlineIcon fontSize="small" />
-          </Button>
-        </CardActions>
-      );
-    } else {
-      return (
-        <CardActions style={{ justifyContent: "center", gap: "10px" }}>
-          <div
-            onClick={() => handleEditUser(user)}
-            style={{
-              backgroundColor: "#3DB8FF",
-              borderRadius: "10px",
-              width: "40px",
-              height: "40px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              transition: "0.3s",
-            }}
-          >
-            <EditIcon style={{ color: "#fff" }} />
-          </div>
-          <div
-            onClick={() => {
-              setConfirmModalOpen(true);
-              setDeletingUser(user);
-            }}
-            style={{
-              backgroundColor: "#FF6B6B",
-              borderRadius: "10px",
-              width: "40px",
-              height: "40px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              transition: "0.3s",
-            }}
-          >
-            <DeleteOutlineIcon style={{ color: "#fff" }} />
-          </div>
-        </CardActions>
-      );
-    }
+    return (
+      <CardActions className={classes.actionsRow}>
+        <Button
+          variant="contained"
+          onClick={() => handleEditUser(user)}
+          className={`${classes.actionButton} ${classes.actionEdit}`}
+        >
+          <EditIcon fontSize="small" />
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => {
+            setConfirmModalOpen(true);
+            setDeletingUser(user);
+          }}
+          className={`${classes.actionButton} ${classes.actionDelete}`}
+        >
+          <DeleteOutlineIcon fontSize="small" />
+        </Button>
+      </CardActions>
+    );
   };
 
   return (
@@ -361,50 +377,41 @@ const Users = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon style={{ color: "#FFA500" }} />
+                      <SearchIcon className={classes.searchIcon} />
                     </InputAdornment>
                   ),
                 }}
                 style={{ width: isMobile ? "100%" : "auto" }}
               />
-              <Button
+              <PrimaryButton
                 startIcon={<AddIcon />}
-                variant="contained"
-                style={{
-                  color: "white",
-                  backgroundColor: "#FFA500",
-                  boxShadow: "none",
-                  borderRadius: "5px",
-                  margin: isMobile ? "8px 0" : "0 8px"
-                }}
                 onClick={handleOpenUserModal}
               >
                 {i18n.t("users.buttons.add")}
-              </Button>
+              </PrimaryButton>
             </MainHeaderButtonsWrapper>
           </MainHeader>
-          <Paper
+          <GlassCard
             className={classes.mainPaper}
-            variant="outlined"
-            onScroll={handleScroll}
           >
+            {users.length === 0 && !loading && !loadingMore && (
+              <div className={classes.emptyState}>
+                <Typography variant="subtitle1" color="textPrimary">
+                  Nenhum usuário encontrado
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Ajuste a busca ou adicione um novo usuário.
+                </Typography>
+              </div>
+            )}
             <Grid container spacing={isMobile ? 1 : 2}>
               {users.map((user) => (
                 <Grid item xs={12} sm={6} md={4} key={user.id}>
                   <Card
                     variant="outlined"
-                    className={isMobile ? classes.mobileCard : null}
-                    style={{
-                      backgroundColor: "#d7e0e4",
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                      borderRadius: "10px",
-                      transition: "transform 0.2s ease-in-out",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    className={`${classes.entityCard} ${isMobile ? classes.mobileCard : ""}`}
                   >
-                    <CardContent className={isMobile ? classes.mobileCardContent : null}>
+                    <CardContent className={`${classes.entityCardContent} ${isMobile ? classes.mobileCardContent : ""}`}>
                       <Typography variant={isMobile ? "subtitle1" : "h6"} color="textPrimary" align="center">
                         {user.name}
                       </Typography>
@@ -450,7 +457,8 @@ const Users = () => {
                 <span className={classes.loadingText}>{i18n.t("loading")}</span>
               </div>
             )}
-          </Paper>
+            <div ref={loadMoreSentinelRef} />
+          </GlassCard>
         </>
       }
     </MainContainer>

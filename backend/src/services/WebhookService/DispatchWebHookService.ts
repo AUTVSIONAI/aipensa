@@ -1,13 +1,7 @@
-import { sendMessageFlow } from "../../controllers/MessageController";
 import { WebhookModel } from "../../models/Webhook";
 import { FlowBuilderModel } from "../../models/FlowBuilder";
-import { randomString } from "../../utils/randomCode";
-import CreateMessageService, {
-  MessageData
-} from "../MessageServices/CreateMessageService";
-import { Request, Response } from "express";
+import type { Request } from "express";
 import { ActionsWebhookService } from "./ActionsWebhookService";
-import Whatsapp from "../../models/Whatsapp";
 import QueueIntegrations from "../../models/QueueIntegrations";
 
 interface RequestLocal {
@@ -26,19 +20,19 @@ export interface IConnections {
 }
 
 interface IArrayOption {
-  number: number
-  value: string
+  number: number;
+  value: string;
 }
 
 export interface INodes {
   id: string;
   position: { x: number; y: number };
-  data: { 
-    label: string; 
-    sec?: string
-    message?: string
-    arrayOption?: IArrayOption[]
-    typebotIntegration?: QueueIntegrations
+  data: {
+    label: string;
+    sec?: string;
+    message?: string;
+    arrayOption?: IArrayOption[];
+    typebotIntegration?: QueueIntegrations;
   };
   type: string;
   style: { backgroundColor: string; color: string };
@@ -49,18 +43,11 @@ export interface INodes {
   dragging: boolean;
 }
 
-interface webhookCustom {
-  config: null | {
-    lastRequest: {};
-    keys: {};
-  };
-}
-
 const DispatchWebHookService = async ({
   companyId,
   hashId,
   data,
-  req
+  req: _req
 }: RequestLocal): Promise<WebhookModel> => {
   try {
     const webhook = await WebhookModel.findOne({
@@ -69,6 +56,10 @@ const DispatchWebHookService = async ({
         hash_id: hashId
       }
     });
+
+    if (!webhook) {
+      throw new Error("Webhook não encontrado");
+    }
 
     const config = {
       ...webhook.config,
@@ -79,7 +70,7 @@ const DispatchWebHookService = async ({
 
     const requestAll = webhook.requestAll + 1;
 
-    const webhookUpdate = await WebhookModel.update(
+    await WebhookModel.update(
       { config, requestAll },
       {
         where: { hash_id: hashId, company_id: companyId }
@@ -96,17 +87,6 @@ const DispatchWebHookService = async ({
       const connections: IConnections[] = flow.flow["connections"];
 
       const nextStage = connections[0].source;
-
-      const { count, rows } = await Whatsapp.findAndCountAll({
-        where: {
-          companyId: companyId
-        }
-      });
-
-      const whatsappIds = [];
-      rows.forEach(usuario => {
-        whatsappIds.push(usuario.toJSON());
-      });
       ActionsWebhookService(
         0,
         webhook.config["details"].idFlow,
@@ -121,10 +101,9 @@ const DispatchWebHookService = async ({
     }
 
     return webhook;
-  } catch (error) {
-    console.error("Erro ao inserir o usuário:", error);
-
-    return error;
+  } catch (error: any) {
+    console.error("Erro ao processar webhook:", error);
+    throw error;
   }
 };
 

@@ -29,7 +29,11 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const [, token] = authHeader.split(" ");
   const decoded = verify(token, authConfig.secret);
   const { companyId } = decoded as TokenPayload;
-  const { prompts, count, hasMore } = await ListPromptsService({ searchParam, pageNumber, companyId });
+  const { prompts, count, hasMore } = await ListPromptsService({
+    searchParam,
+    pageNumber,
+    companyId
+  });
 
   return res.status(200).json({ prompts, count, hasMore });
 };
@@ -39,12 +43,44 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const [, token] = authHeader.split(" ");
   const decoded = verify(token, authConfig.secret);
   const { companyId } = decoded as TokenPayload;
-  const { name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages, voice, voiceKey, voiceRegion, provider, model } = req.body;
-  const promptTable = await CreatePromptService({ name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages, companyId, voice, voiceKey, voiceRegion, provider, model });
+  const {
+    name,
+    apiKey,
+    prompt,
+    maxTokens,
+    temperature,
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    queueId,
+    maxMessages,
+    voice,
+    voiceKey,
+    voiceRegion,
+    provider,
+    model
+  } = req.body;
+  const promptTable = await CreatePromptService({
+    name,
+    apiKey,
+    prompt,
+    maxTokens,
+    temperature,
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    queueId,
+    maxMessages,
+    companyId,
+    voice,
+    voiceKey,
+    voiceRegion,
+    provider,
+    model
+  });
 
   const io = getIO();
-  io.of(String(companyId))
-  .emit(`company-${companyId}-prompt`, {
+  io.of(String(companyId)).emit(`company-${companyId}-prompt`, {
     action: "update",
     prompt: promptTable
   });
@@ -74,11 +110,14 @@ export const update = async (
   const decoded = verify(token, authConfig.secret);
   const { companyId } = decoded as TokenPayload;
 
-  const prompt = await UpdatePromptService({ promptData, promptId: promptId, companyId });
+  const prompt = await UpdatePromptService({
+    promptData,
+    promptId: promptId,
+    companyId
+  });
 
   const io = getIO();
-  io.of(String(companyId))
-  .emit(`company-${companyId}-prompt`, {
+  io.of(String(companyId)).emit(`company-${companyId}-prompt`, {
     action: "update",
     prompt
   });
@@ -96,21 +135,29 @@ export const remove = async (
   const decoded = verify(token, authConfig.secret);
   const { companyId } = decoded as TokenPayload;
   try {
-    const { count } = await Whatsapp.findAndCountAll({ where: { promptId: +promptId, companyId } });
+    const { count } = await Whatsapp.findAndCountAll({
+      where: { promptId: +promptId, companyId }
+    });
 
-    if (count > 0) return res.status(200).json({ message: "Não foi possível excluir! Verifique se este prompt está sendo usado nas conexões Whatsapp!" });
+    if (count > 0)
+      return res.status(200).json({
+        message:
+          "Não foi possível excluir! Verifique se este prompt está sendo usado nas conexões Whatsapp!"
+      });
 
     await DeletePromptService(promptId, companyId);
 
     const io = getIO();
-    io.of(String(companyId))
-  .emit(`company-${companyId}-prompt`, {
+    io.of(String(companyId)).emit(`company-${companyId}-prompt`, {
       action: "delete",
       intelligenceId: +promptId
     });
 
     return res.status(200).json({ message: "Prompt deleted" });
   } catch (err) {
-    return res.status(500).json({ message: "Não foi possível excluir! Verifique se este prompt está sendo usado!" });
+    return res.status(500).json({
+      message:
+        "Não foi possível excluir! Verifique se este prompt está sendo usado!"
+    });
   }
 };

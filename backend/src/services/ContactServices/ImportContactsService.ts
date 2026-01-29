@@ -46,7 +46,6 @@ export async function ImportContactsService(
     return { name, number, email, companyId };
   });
 
-
   const contactList: Contact[] = [];
 
   for (const contact of contacts) {

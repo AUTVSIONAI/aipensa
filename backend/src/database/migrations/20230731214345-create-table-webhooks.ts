@@ -11,7 +11,7 @@ module.exports = {
       },
       user_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: false
       },
       name: {
         type: DataTypes.STRING,
@@ -24,7 +24,7 @@ module.exports = {
       config: {
         type: DataTypes.JSON,
         allowNull: true
-      },      
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false

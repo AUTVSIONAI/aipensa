@@ -22,7 +22,11 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       name: "Admin",
       email: email || "admin@admin",
       companyId: 1,
-      company: { id: 1, name: "Empresa Admin - Não Deletar!", dueDate: "2099-12-31T00:00:00.000Z" },
+      company: {
+        id: 1,
+        name: "Empresa Admin - Não Deletar!",
+        dueDate: "2099-12-31T00:00:00.000Z"
+      },
       profile: "admin",
       super: true,
       queues: [],
@@ -32,10 +36,18 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     const refreshToken = createRefreshToken(serializedUser);
     SendRefreshToken(res, refreshToken);
     const io = getIO();
-    io.of(serializedUser.companyId.toString()).emit(`company-${serializedUser.companyId}-auth`, {
-      action: "update",
-      user: { id: serializedUser.id, email: serializedUser.email, companyId: serializedUser.companyId, token: serializedUser.token }
-    });
+    io.of(serializedUser.companyId.toString()).emit(
+      `company-${serializedUser.companyId}-auth`,
+      {
+        action: "update",
+        user: {
+          id: serializedUser.id,
+          email: serializedUser.email,
+          companyId: serializedUser.companyId,
+          token: serializedUser.token
+        }
+      }
+    );
     return res.status(200).json({ token, user: serializedUser });
   }
 
@@ -43,22 +55,23 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     email,
     password
   });
- 
+
   SendRefreshToken(res, refreshToken);
 
   const io = getIO();
 
-  io.of(serializedUser.companyId.toString())
-  .emit(`company-${serializedUser.companyId}-auth`, {
-    action: "update",
-    user: {
-      id: serializedUser.id,
-      email: serializedUser.email,
-      companyId: serializedUser.companyId,
-      token: serializedUser.token
+  io.of(serializedUser.companyId.toString()).emit(
+    `company-${serializedUser.companyId}-auth`,
+    {
+      action: "update",
+      user: {
+        id: serializedUser.id,
+        email: serializedUser.email,
+        companyId: serializedUser.companyId,
+        token: serializedUser.token
+      }
     }
-  });
-  
+  );
 
   return res.status(200).json({
     token,
@@ -116,11 +129,21 @@ export const remove = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { id } = req.user;
-  if (id) {
-    const user = await User.findByPk(id);
-    await user.update({ online: false });
+  // Try to get user from request, but don't fail if it's not present
+  // The goal is just to clear the cookie
+  try {
+    if (req.user && req.user.id) {
+      const { id } = req.user;
+      const user = await User.findByPk(id);
+      if (user) {
+        await user.update({ online: false });
+      }
+    }
+  } catch (err) {
+    // If we can't update the user status, we still want to log them out
+    console.error("Error updating user status on logout:", err);
   }
+
   res.clearCookie("jrt");
 
   return res.send();

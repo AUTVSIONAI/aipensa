@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import Paper from "@material-ui/core/Paper";
 import Typography from "@material-ui/core/Typography";
 import { makeStyles } from "@material-ui/core/styles";
@@ -42,11 +42,12 @@ import { ArrowDownward, ArrowUpward } from "@material-ui/icons";
 
 const useStyles = makeStyles((theme) => ({
   container: {
-    padding: theme.spacing(3),
+    flex: 1,
+    padding: theme.spacing(2),
     width: "100%",
     margin: 0,
-    background: "#f0f2f5",
-    minHeight: "100vh",
+    background: "transparent",
+    minHeight: 0,
   },
   mainHeader: {
     marginBottom: theme.spacing(3),
@@ -55,20 +56,23 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: 16,
     boxShadow: "0 10px 35px rgba(102, 126, 234, 0.2)",
     color: "white",
+    position: "sticky",
+    top: 0,
+    zIndex: 5,
   },
   statsCard: {
-    background: "white",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "white",
     borderRadius: 12,
     padding: theme.spacing(2.5),
     height: "100%",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-    border: "1px solid rgba(0,0,0,0.05)",
+    boxShadow: theme.palette.type === "dark" ? "0 12px 32px rgba(0,0,0,0.35)" : "0 2px 10px rgba(0,0,0,0.08)",
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.05)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     position: "relative",
     overflow: "hidden",
     "&:hover": {
       transform: "translateY(-4px)",
-      boxShadow: "0 8px 25px rgba(0,0,0,0.15)",
+      boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 25px rgba(0,0,0,0.15)",
     },
     "&::before": {
       content: '""',
@@ -96,13 +100,13 @@ const useStyles = makeStyles((theme) => ({
   statsValue: {
     fontSize: 32,
     fontWeight: 700,
-    color: "#1a202c",
+    color: theme.palette.type === "dark" ? "#f8fafc" : "#1a202c",
     lineHeight: 1.2,
   },
   statsLabel: {
     fontSize: 12,
     fontWeight: 600,
-    color: "#718096",
+    color: theme.palette.type === "dark" ? "rgba(226, 232, 240, 0.7)" : "#718096",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: theme.spacing(0.5),
@@ -119,15 +123,15 @@ const useStyles = makeStyles((theme) => ({
   chartPaper: {
     padding: theme.spacing(3),
     borderRadius: 12,
-    background: "white",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "white",
+    boxShadow: theme.palette.type === "dark" ? "0 12px 32px rgba(0,0,0,0.35)" : "0 2px 10px rgba(0,0,0,0.08)",
     height: "100%",
-    border: "1px solid rgba(0,0,0,0.05)",
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.05)",
   },
   chartTitle: {
     fontSize: 16,
     fontWeight: 600,
-    color: "#2d3748",
+    color: theme.palette.type === "dark" ? "#e2e8f0" : "#2d3748",
     marginBottom: theme.spacing(2),
     display: "flex",
     alignItems: "center",
@@ -252,6 +256,14 @@ const PerformanceCard = ({ title, value, max, color }) => {
 };
 
 const Dashboard = () => {
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const [barChartData, setBarChartData] = useState({
     series: [
       {
@@ -324,14 +336,14 @@ const Dashboard = () => {
           },
         },
       },
-      colors: ["#667eea", "#10b981", "#06b6d4"],
+      colors: ["#00f2ff", "#bd00ff", "#22c55e"],
       fill: {
         type: "gradient",
         gradient: {
           shade: "light",
           type: "vertical",
           shadeIntensity: 0.25,
-          gradientToColors: ["#764ba2", "#34d399", "#22d3ee"],
+          gradientToColors: ["#3b82f6", "#7c3aed", "#10b981"],
           inverseColors: false,
           opacityFrom: 0.85,
           opacityTo: 0.85,
@@ -344,14 +356,14 @@ const Dashboard = () => {
         fontSize: '12px',
         fontWeight: 500,
         labels: {
-          colors: "#64748b",
+          colors: "#94a3b8",
         },
         markers: {
           radius: 4,
         },
       },
       grid: {
-        borderColor: '#e2e8f0',
+        borderColor: 'rgba(148, 163, 184, 0.18)',
         strokeDashArray: 4,
       },
     },
@@ -369,12 +381,12 @@ const Dashboard = () => {
         },
       },
       labels: ['Em Atendimento', 'Aguardando', 'Finalizados'],
-      colors: ['#667eea', '#10b981', '#06b6d4'],
+      colors: ['#00f2ff', '#bd00ff', '#22c55e'],
       legend: {
         position: 'bottom',
         fontSize: '12px',
         labels: {
-          colors: "#64748b",
+          colors: "#94a3b8",
         },
       },
       dataLabels: {
@@ -394,7 +406,7 @@ const Dashboard = () => {
                 label: 'Total',
                 fontSize: '14px',
                 fontWeight: 600,
-                color: '#2d3748',
+                color: '#e5e7eb',
               },
             },
           },
@@ -456,9 +468,14 @@ const Dashboard = () => {
     async function firstLoad() {
       await fetchData();
     }
-    setTimeout(() => {
-      firstLoad();
+    const t = setTimeout(() => {
+      if (isMountedRef.current) {
+        firstLoad();
+      }
     }, 1000);
+    return () => {
+      clearTimeout(t);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchDataFilter]);
 
@@ -493,6 +510,7 @@ const Dashboard = () => {
   }, [counters]);
 
   async function fetchData() {
+    if (!isMountedRef.current) return;
     setLoading(true);
 
     let params = {};
@@ -519,20 +537,22 @@ const Dashboard = () => {
 
     if (Object.keys(params).length === 0) {
       toast.error("Parametrize o filtro");
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
       return;
     }
 
-    const data = await find(params);
-
-    setCounters(data.counters);
-    if (isArray(data.attendants)) {
-      setAttendants(data.attendants);
-    } else {
-      setAttendants([]);
+    try {
+      const data = await find(params);
+      if (!isMountedRef.current) return;
+      setCounters(data.counters);
+      if (isArray(data.attendants)) {
+        setAttendants(data.attendants);
+      } else {
+        setAttendants([]);
+      }
+    } finally {
+      if (isMountedRef.current) setLoading(false);
     }
-
-    setLoading(false);
   }
 
   const handleSelectedUsers = (selecteds) => {
@@ -677,7 +697,7 @@ const Dashboard = () => {
           :
           <>
             <div>
-              <Container maxWidth={false} className={classes.container} disableGutters>
+              <Box className={classes.container}>
                 {/* Header Section */}
                 <Box className={classes.mainHeader}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -1246,7 +1266,7 @@ const Dashboard = () => {
                     </Grid2>
                   </Container>
                 </TabPanel>
-              </Container>
+              </Box>
             </div>
           </>
       }

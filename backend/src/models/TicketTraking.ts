@@ -91,7 +91,7 @@ class TicketTraking extends Model<TicketTraking> {
   queue: Queue;
 
   @HasMany(() => Message)
-  message: Message[];  
+  message: Message[];
 }
 
 export default TicketTraking;

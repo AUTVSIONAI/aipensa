@@ -26,7 +26,9 @@ const SendWhatsAppMessage = async ({
 }: Request): Promise<WAMessage> => {
   let options = {};
   const wbot = await getWbot(whatsappId);
-  const number = `${contact.number}@${contact.isGroup ? "g.us" : "s.whatsapp.net"}`;
+  const number = `${contact.number}@${
+    contact.isGroup ? "g.us" : "s.whatsapp.net"
+  }`;
 
   if (quotedMsg) {
     const chatMessages = await Message.findOne({
@@ -50,7 +52,7 @@ const SendWhatsAppMessage = async ({
   }
 
   try {
-    await delay(msdelay)
+    await delay(msdelay);
     const sentMessage = await wbot.sendMessage(
       number,
       {

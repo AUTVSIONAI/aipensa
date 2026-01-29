@@ -21,7 +21,9 @@ import Setting from "../models/Setting";
 async function getSettingValue(key: string): Promise<string | undefined> {
   try {
     const buscacompanyId = 1;
-    const setting = await Setting.findOne({ where: { companyId: buscacompanyId, key } });
+    const setting = await Setting.findOne({
+      where: { companyId: buscacompanyId, key }
+    });
     return setting?.value;
   } catch (error) {
     console.error("Error retrieving setting:", error);
@@ -39,12 +41,11 @@ const config = {
 };
 
 (async () => {
-  config.client_id = await getSettingValue("eficlientid") as string;
-  config.client_secret = await getSettingValue("eficlientsecret") as string;
+  config.client_id = (await getSettingValue("eficlientid")) as string;
+  config.client_secret = (await getSettingValue("eficlientsecret")) as string;
 
   // Use the 'config' object as needed
   console.log(config);
 })();
 
 export = config;
-

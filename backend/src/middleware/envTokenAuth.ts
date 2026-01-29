@@ -15,9 +15,8 @@ const envTokenAuth = (
     const { token: bodyToken } = req.body as TokenPayload;
     const { token: queryToken } = req.query as TokenPayload;
 
-    console.log("|========= | middleware | ========|", req.query)
+    console.log("|========= | middleware | ========|", req.query);
 
-    
     if (queryToken === process.env.ENV_TOKEN) {
       return next();
     }
@@ -25,8 +24,6 @@ const envTokenAuth = (
     if (bodyToken === process.env.ENV_TOKEN) {
       return next();
     }
-  
-
   } catch (e) {
     console.log(e);
   }

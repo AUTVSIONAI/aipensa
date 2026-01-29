@@ -10,21 +10,27 @@ import Ticket from "../../components/Ticket";
 import { i18n } from "../../translate/i18n";
 
 const useStyles = makeStyles(theme => ({
+	root: {
+		padding: theme.spacing(3),
+		width: "100%",
+		margin: 0,
+		background: "#f0f2f5",
+		minHeight: "100vh",
+		display: "flex",
+	},
 	chatContainer: {
 		flex: 1,
-		// backgroundColor: "#eee",
-		// padding: theme.spacing(4),
-		padding: theme.padding,
-		height: `calc(100% - 48px)`,
-		overflowY: "hidden",
+		display: "flex",
+		borderRadius: 16,
+		boxShadow: "0 10px 35px rgba(15, 23, 42, 0.12)",
+		overflow: "hidden",
+		backgroundColor: theme.palette.background.paper,
 	},
-
 	chatPapper: {
-		// backgroundColor: "red",
 		display: "flex",
 		height: "100%",
+		width: "100%",
 	},
-
 	contactsWrapper: {
 		display: "flex",
 		height: "100%",
@@ -37,7 +43,6 @@ const useStyles = makeStyles(theme => ({
 		flexDirection: "column",
 	},
 	welcomeMsg: {
-		// backgroundColor: "#eee",
 		background: theme.palette.tabHeaderBackground,
 		display: "flex",
 		justifyContent: "space-evenly",
@@ -56,29 +61,31 @@ const Chat = () => {
 	const { ticketId } = useParams();
 
 	return (
-		<div className={classes.chatContainer}>
-			<div className={classes.chatPapper}>
-				<Grid container spacing={0}>
-					<Grid item xs={4} className={classes.contactsWrapper}>
-						<TicketsManager />
+		<div className={classes.root}>
+			<div className={classes.chatContainer}>
+				<div className={classes.chatPapper}>
+					<Grid container spacing={0}>
+						<Grid item xs={12} md={4} className={classes.contactsWrapper}>
+							<TicketsManager />
+						</Grid>
+						<Grid item xs={12} md={8} className={classes.messagessWrapper}>
+							{ticketId ? (
+								<>
+									<Ticket />
+								</>
+							) : (
+								<Paper square variant="outlined" className={classes.welcomeMsg}>
+									<span>
+										<center>
+											<img className={classes.logo} width="50%" alt="" />
+										</center>
+										{i18n.t("chat.noTicketMessage")}
+									</span>
+								</Paper>
+							)}
+						</Grid>
 					</Grid>
-					<Grid item xs={8} className={classes.messagessWrapper}>
-						{ticketId ? (
-							<>
-								<Ticket />
-							</>
-						) : (
-							<Paper square variant="outlined" className={classes.welcomeMsg}>
-								<span>
-									<center>
-										<img className={classes.logo} width="50%" alt="" />
-									</center>
-									{i18n.t("chat.noTicketMessage")}
-								</span>
-							</Paper>
-						)}
-					</Grid>
-				</Grid>
+				</div>
 			</div>
 		</div>
 	);

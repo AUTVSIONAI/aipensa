@@ -113,7 +113,7 @@ const models = [
   FlowCampaignModel,
   FlowImgModel,
   WebhookModel,
-  UsageTracking,
+  UsageTracking
 ];
 
 sequelize.addModels(models);

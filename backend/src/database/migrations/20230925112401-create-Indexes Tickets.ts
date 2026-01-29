@@ -11,7 +11,7 @@ module.exports = {
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.removeIndex("Tickets", "tickets_uuid_idx"),
-     ]);
+      queryInterface.removeIndex("Tickets", "tickets_uuid_idx")
+    ]);
   }
 };

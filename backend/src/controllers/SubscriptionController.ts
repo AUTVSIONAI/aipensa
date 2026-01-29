@@ -9,8 +9,8 @@ import Invoices from "../models/Invoices";
 import { getIO } from "../libs/socket";
 import Setting from "../models/Setting";
 import UpdateUserService from "../services/UserServices/UpdateUserService";
-import Stripe from 'stripe';
-var axios = require('axios');
+import Stripe from "stripe";
+var axios = require("axios");
 import Plan from "../models/Plan";
 import ListWhatsAppsService from "../services/WhatsappService/ListWhatsAppsService";
 import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
@@ -27,8 +27,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 export const createSubscription = async (
   req: Request,
   res: Response
-  ): Promise<Response> => {
-
+): Promise<Response> => {
   //let mercadopagoURL;
   let stripeURL;
   let pix;
@@ -46,29 +45,25 @@ export const createSubscription = async (
 
   const buscacompanyId = req.user?.companyId ?? 1;
   try {
-  
     const getasaastoken = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "asaastoken" },
+      where: { companyId: buscacompanyId, key: "asaastoken" }
     });
     key_ASAAS_TOKEN = getasaastoken?.value;
-  
+
     const getmptoken = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "mpaccesstoken" },
+      where: { companyId: buscacompanyId, key: "mpaccesstoken" }
     });
     key_MP_ACCESS_TOKEN = getmptoken?.value;
-  
+
     const getstripetoken = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "stripeprivatekey" },
+      where: { companyId: buscacompanyId, key: "stripeprivatekey" }
     });
     key_STRIPE_PRIVATE = getstripetoken?.value;
-  
+
     const getpixchave = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "efichavepix" },
+      where: { companyId: buscacompanyId, key: "efichavepix" }
     });
     key_GERENCIANET_PIX_KEY = getpixchave?.value;
-
-
-
   } catch (error) {
     console.error("Error retrieving settings:", error);
   }
@@ -86,9 +81,9 @@ export const createSubscription = async (
   });
 
   if (!(await schema.isValid(req.body))) {
-    console.log("Erro linha 32")
+    console.log("Erro linha 32");
     throw new AppError("Dados Incorretos - Contate o Suporte!", 400);
-  }  
+  }
 
   const {
     firstName,
@@ -104,180 +99,168 @@ export const createSubscription = async (
     invoiceId
   } = req.body;
 
+  const valorNumber = Number(String(price).replace(",", "."));
+  const valor = Number(
+    valorNumber
+      .toLocaleString("pt-br", { minimumFractionDigits: 2 })
+      .replace(",", ".")
+  );
+  const valorext = valorNumber;
 
-const valorNumber = Number(String(price).replace(",", "."));
-const valor = Number(valorNumber.toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", "."));
-const valorext = valorNumber;
+  async function createMercadoPagoPreference() {
+    if (key_MP_ACCESS_TOKEN) {
+      const mercadopago = require("mercadopago");
+      mercadopago.configure({
+        access_token: key_MP_ACCESS_TOKEN
+      });
 
-async function createMercadoPagoPreference() {
-  if (key_MP_ACCESS_TOKEN) {
-    const mercadopago = require("mercadopago");
-    mercadopago.configure({
-      access_token: key_MP_ACCESS_TOKEN
-    });
+      let preference = {
+        external_reference: String(invoiceId),
+        notification_url: String(process.env.MP_NOTIFICATION_URL),
+        items: [
+          {
+            title: `#Fatura:${invoiceId}`,
+            unit_price: valor,
+            quantity: 1
+          }
+        ]
+      };
 
-    let preference = {
-      external_reference: String(invoiceId),
-      notification_url: String(process.env.MP_NOTIFICATION_URL),
-      items: [
-        {
-          title: `#Fatura:${invoiceId}`,
-          unit_price: valor,
-          quantity: 1
-        }
-      ]
+      try {
+        const response = await mercadopago.preferences.create(preference);
+        //console.log("mercres", response);
+        let mercadopagoURLb = response.body.init_point;
+        //console.log("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        //console.log(mercadopagoURLb);
+        return mercadopagoURLb; // Retorna o valor para uso externo
+      } catch (error) {
+        console.log(error);
+        return null; // Em caso de erro, retorna null ou um valor padrão adequado
+      }
+    }
+  }
+
+  const mercadopagoURL = await createMercadoPagoPreference();
+
+  console.log(mercadopagoURL);
+
+  if (key_ASAAS_TOKEN && valor > 10) {
+    var optionsGetAsaas = {
+      method: "POST",
+      url: `https://api.asaas.com/v3/paymentLinks`,
+      headers: {
+        "Content-Type": "application/json",
+        access_token: key_ASAAS_TOKEN
+      },
+      data: {
+        name: `#Fatura:${invoiceId}`,
+        description: `#Fatura:${invoiceId}`,
+        //"endDate": "2021-02-05",
+        value: price
+          .toLocaleString("pt-br", { minimumFractionDigits: 2 })
+          .replace(",", "."),
+        //"value": "50",
+        billingType: "UNDEFINED",
+        chargeType: "DETACHED",
+        dueDateLimitDays: 1,
+        subscriptionCycle: null,
+        maxInstallmentCount: 1,
+        notificationEnabled: true
+      }
     };
 
-    try {
-      const response = await mercadopago.preferences.create(preference);
-      //console.log("mercres", response);
-      let mercadopagoURLb = response.body.init_point;
-      //console.log("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-      //console.log(mercadopagoURLb);
-      return mercadopagoURLb; // Retorna o valor para uso externo
-    } catch (error) {
-      console.log(error);
-      return null; // Em caso de erro, retorna null ou um valor padrão adequado
+    while (asaasURL === undefined) {
+      try {
+        const response = await axios.request(optionsGetAsaas);
+        asaasURL = response.data.url;
+
+        console.log("asaasURL:", asaasURL);
+
+        // Handle the response here
+        // You can proceed with the rest of your code that depends on asaasURL
+      } catch (error) {
+        console.error("Error:", error);
+      }
     }
   }
-}
 
-const mercadopagoURL = await createMercadoPagoPreference();
+  //console.log(asaasURL);
 
-console.log(mercadopagoURL);
+  if (key_STRIPE_PRIVATE) {
+    const stripe = new Stripe(key_STRIPE_PRIVATE, {
+      apiVersion: "2022-11-15"
+    });
 
-if (key_ASAAS_TOKEN && valor > 10) {
-
-var optionsGetAsaas = {
-  method: 'POST',
-  url: `https://api.asaas.com/v3/paymentLinks`,
-  headers: {
-    'Content-Type': 'application/json',
-    'access_token': key_ASAAS_TOKEN
-  },
-  data: {
-    "name": `#Fatura:${invoiceId}`,
-    "description": `#Fatura:${invoiceId}`,
-    //"endDate": "2021-02-05",
-    "value": price.toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", "."),
-    //"value": "50",
-    "billingType": "UNDEFINED",
-    "chargeType": "DETACHED",
-    "dueDateLimitDays": 1,
-    "subscriptionCycle": null,
-    "maxInstallmentCount": 1,
-    "notificationEnabled": true
-  }
-};
-
-
-  while (asaasURL === undefined) {
-    try {
-      const response = await axios.request(optionsGetAsaas);
-      asaasURL = response.data.url;
-
-      console.log('asaasURL:', asaasURL);
-
-      // Handle the response here
-      // You can proceed with the rest of your code that depends on asaasURL
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }
-  
-
-
-
-}
-
-//console.log(asaasURL);
-
-
-
-if(key_STRIPE_PRIVATE){
-
-const stripe = new Stripe(key_STRIPE_PRIVATE, {
-  apiVersion: '2022-11-15',
-});
-
-  const sessionStripe = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+    const sessionStripe = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: 'brl',
+            currency: "brl",
             product_data: {
-              name: `#Fatura:${invoiceId}`,
+              name: `#Fatura:${invoiceId}`
             },
-            unit_amount: Math.round(Number(valorext) * 100),
+            unit_amount: Math.round(Number(valorext) * 100)
           },
-          quantity: 1,
-        },
+          quantity: 1
+        }
       ],
-      mode: 'payment',
+      mode: "payment",
       success_url: process.env.STRIPE_OK_URL,
-      cancel_url: process.env.STRIPE_CANCEL_URL,
+      cancel_url: process.env.STRIPE_CANCEL_URL
     });
 
-
-  const invoicesX = await Invoices.findByPk(invoiceId);
-  const invoiX = await invoicesX.update({
-  	id: invoiceId,
-    stripe_id: sessionStripe.id
-  });
-
-  //console.log(sessionStripe);
-
-  stripeURL = sessionStripe.url;
-  
-}
-
-if(key_GERENCIANET_PIX_KEY){
-
-  const body = {
-    calendario: {
-      expiracao: 3600
-    },
-    valor: {
-      original: price.toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", ".")
-    },
-    chave: key_GERENCIANET_PIX_KEY,
-    solicitacaoPagador: `#Fatura:${invoiceId}`
-    };
-
-  try {
-  
-    pix = await gerencianet.pixCreateImmediateCharge(null, body);
-
-    qrcode = await gerencianet.pixGenerateQRCode({
-      id: pix.loc.id
+    const invoicesX = await Invoices.findByPk(invoiceId);
+    const invoiX = await invoicesX.update({
+      id: invoiceId,
+      stripe_id: sessionStripe.id
     });
 
-    
+    //console.log(sessionStripe);
 
-  } catch (error) {
-    console.log(error);
-    //throw new AppError("Validation fails", 400);
+    stripeURL = sessionStripe.url;
   }
 
-}
+  if (key_GERENCIANET_PIX_KEY) {
+    const body = {
+      calendario: {
+        expiracao: 3600
+      },
+      valor: {
+        original: price
+          .toLocaleString("pt-br", { minimumFractionDigits: 2 })
+          .replace(",", ".")
+      },
+      chave: key_GERENCIANET_PIX_KEY,
+      solicitacaoPagador: `#Fatura:${invoiceId}`
+    };
 
-const updateCompany = await Company.findByPk(buscacompanyId);
+    try {
+      pix = await gerencianet.pixCreateImmediateCharge(null, body);
 
-if (!updateCompany) {
-	throw new AppError("Company not found", 404);
-}
+      qrcode = await gerencianet.pixGenerateQRCode({
+        id: pix.loc.id
+      });
+    } catch (error) {
+      console.log(error);
+      //throw new AppError("Validation fails", 400);
+    }
+  }
 
-	return res.json({
-      ...pix,
-      valorext,
-      qrcode,
-	  stripeURL,
-      mercadopagoURL,
-      asaasURL,
-    });
+  const updateCompany = await Company.findByPk(buscacompanyId);
 
+  if (!updateCompany) {
+    throw new AppError("Company not found", 404);
+  }
 
+  return res.json({
+    ...pix,
+    valorext,
+    qrcode,
+    stripeURL,
+    mercadopagoURL,
+    asaasURL
+  });
 };
 
 export const createWebhook = async (
@@ -295,7 +278,7 @@ export const createWebhook = async (
     await schema.validate(req.body, { abortEarly: false });
   } catch (err) {
     if (err instanceof Yup.ValidationError) {
-      const errors = err.errors.join('\n');
+      const errors = err.errors.join("\n");
       throw new AppError(`Validation error(s):\n${errors}`, 400);
     } else {
       throw err;
@@ -324,7 +307,7 @@ export const createWebhook = async (
 export const webhook = async (
   req: Request,
   res: Response
-  ): Promise<Response> => {
+): Promise<Response> => {
   const { type } = req.params;
   const { evento } = req.body;
 
@@ -345,9 +328,9 @@ export const webhook = async (
         const { solicitacaoPagador } = detahe;
         const invoiceID = solicitacaoPagador.replace("#Fatura:", "");
         const invoices = await Invoices.findByPk(invoiceID);
-        const companyId =invoices.companyId;
+        const companyId = invoices.companyId;
         const company = await Company.findByPk(companyId);
-    
+
         const expiresAt = new Date(company.dueDate);
         expiresAt.setDate(expiresAt.getDate() + 30);
         const date = expiresAt.toISOString().split("T")[0];
@@ -356,10 +339,10 @@ export const webhook = async (
           await company.update({
             dueDate: date
           });
-         const invoi = await invoices.update({
+          const invoi = await invoices.update({
             id: invoiceID,
-         	txid: pix.txid,
-            status: 'paid'
+            txid: pix.txid,
+            status: "paid"
           });
           await company.reload();
           const io = getIO();
@@ -368,41 +351,37 @@ export const webhook = async (
               id: companyId
             }
           });
-        
-          try {
-  
-    	    const companyId = company.id
-    		const whatsapps = await ListWhatsAppsService({ companyId: companyId });
-    		  if (whatsapps.length > 0) {
-      			  whatsapps.forEach(whatsapp => {
-        		  StartWhatsAppSession(whatsapp, companyId);
-      			});
-    		  }
-  		  } catch (e) {
-    	  	Sentry.captureException(e);
-  		  }
 
-         io.emit(`company-${companyId}-payment`, {
+          try {
+            const companyId = company.id;
+            const whatsapps = await ListWhatsAppsService({
+              companyId: companyId
+            });
+            if (whatsapps.length > 0) {
+              whatsapps.forEach(whatsapp => {
+                StartWhatsAppSession(whatsapp, companyId);
+              });
+            }
+          } catch (e) {
+            Sentry.captureException(e);
+          }
+
+          io.emit(`company-${companyId}-payment`, {
             action: detahe.status,
             company: companyUpdate
           });
         }
-
       }
     });
-
   }
 
   return res.json({ ok: true });
 };
 
-
-
-
 export const stripewebhook = async (
   req: Request,
   res: Response
-  ): Promise<Response> => {
+): Promise<Response> => {
   const { type } = req.params;
   const { evento } = req.body;
 
@@ -410,183 +389,168 @@ export const stripewebhook = async (
   //console.log(req.params);
 
   if (req.body.data.object.id) {
-   
-      if (req.body.type === "checkout.session.completed") {
-      
-        const stripe_id = req.body.data.object.id;
-      
-        const invoices = await Invoices.findOne({ where: { stripe_id: stripe_id } });
-		const invoiceID = invoices.id;
-      
-        const companyId = invoices.companyId;
-        const company = await Company.findByPk(companyId);
-    
-        const expiresAt = new Date(company.dueDate);
-        expiresAt.setDate(expiresAt.getDate() + 30);
-        const date = expiresAt.toISOString().split("T")[0];
+    if (req.body.type === "checkout.session.completed") {
+      const stripe_id = req.body.data.object.id;
 
-        if (company) {
-          await company.update({
-            dueDate: date
-          });
-         const invoi = await invoices.update({
-            id: invoiceID,
-            status: 'paid'
-          });
-          await company.reload();
-          const io = getIO();
-          const companyUpdate = await Company.findOne({
-            where: {
-              id: companyId
-            }
-          });
-        
-          try {
-  
-    	    const companyId = company.id
-    		const whatsapps = await ListWhatsAppsService({ companyId: companyId });
-    		  if (whatsapps.length > 0) {
-      			  whatsapps.forEach(whatsapp => {
-        		  StartWhatsAppSession(whatsapp, companyId);
-      			});
-    		  }
-  		  } catch (e) {
-    	  	Sentry.captureException(e);
-  		  }
+      const invoices = await Invoices.findOne({
+        where: { stripe_id: stripe_id }
+      });
+      const invoiceID = invoices.id;
 
-         io.emit(`company-${companyId}-payment`, {
-            action: 'CONCLUIDA',
-            company: companyUpdate
+      const companyId = invoices.companyId;
+      const company = await Company.findByPk(companyId);
+
+      const expiresAt = new Date(company.dueDate);
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      const date = expiresAt.toISOString().split("T")[0];
+
+      if (company) {
+        await company.update({
+          dueDate: date
+        });
+        const invoi = await invoices.update({
+          id: invoiceID,
+          status: "paid"
+        });
+        await company.reload();
+        const io = getIO();
+        const companyUpdate = await Company.findOne({
+          where: {
+            id: companyId
+          }
+        });
+
+        try {
+          const companyId = company.id;
+          const whatsapps = await ListWhatsAppsService({
+            companyId: companyId
           });
+          if (whatsapps.length > 0) {
+            whatsapps.forEach(whatsapp => {
+              StartWhatsAppSession(whatsapp, companyId);
+            });
+          }
+        } catch (e) {
+          Sentry.captureException(e);
         }
-      
+
+        io.emit(`company-${companyId}-payment`, {
+          action: "CONCLUIDA",
+          company: companyUpdate
+        });
+      }
     }
-  
   }
 
-return res.json({ ok: true });
-  
+  return res.json({ ok: true });
 };
-
 
 export const mercadopagowebhook = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-
   //console.log(req.body);
   //console.log(req.params);
 
-
   let key_MP_ACCESS_TOKEN = null;
 
-
   try {
-    
     const buscacompanyId = 1;
-  
-  
+
     const getmptoken = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "mpaccesstoken" },
+      where: { companyId: buscacompanyId, key: "mpaccesstoken" }
     });
     key_MP_ACCESS_TOKEN = getmptoken?.value;
-  
   } catch (error) {
     console.error("Error retrieving settings:", error);
   }
 
   const mercadopago = require("mercadopago");
   mercadopago.configure({
-    access_token: key_MP_ACCESS_TOKEN,
+    access_token: key_MP_ACCESS_TOKEN
   });
-  
+
   //console.log("*********************************");
   //console.log(req.body.id);
   //console.log("*********************************");
 
   if (req.body.action === "payment.updated") {
-  
-  
-  	try {
-    	const payment = await mercadopago.payment.get(req.body.data.id);
-    
-    	console.log('DETALHES DO PAGAMENTO:', payment.body);
-        console.log('ID DA FATURA:', payment.body.external_reference);
-    
-    	if(!payment.body.transaction_details.transaction_id){
-        	console.log('SEM PAGAMENTO:', payment.body.external_reference);
-        	return;
+    try {
+      const payment = await mercadopago.payment.get(req.body.data.id);
+
+      console.log("DETALHES DO PAGAMENTO:", payment.body);
+      console.log("ID DA FATURA:", payment.body.external_reference);
+
+      if (!payment.body.transaction_details.transaction_id) {
+        console.log("SEM PAGAMENTO:", payment.body.external_reference);
+        return;
+      }
+
+      const invoices = await Invoices.findOne({
+        where: { id: payment.body.external_reference }
+      });
+      const invoiceID = invoices.id;
+
+      if (invoices && invoices.status === "paid") {
+        console.log("FATURA JÁ PAGA");
+        return;
+      }
+
+      const companyId = invoices.companyId;
+      const company = await Company.findByPk(companyId);
+
+      const expiresAt = new Date(company.dueDate);
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      const date = expiresAt.toISOString().split("T")[0];
+
+      if (company) {
+        await company.update({
+          dueDate: date
+        });
+        const invoi = await invoices.update({
+          id: invoiceID,
+          txid: payment.body.transaction_details.transaction_id,
+          status: "paid"
+        });
+        await company.reload();
+        const io = getIO();
+        const companyUpdate = await Company.findOne({
+          where: {
+            id: companyId
+          }
+        });
+
+        try {
+          const companyId = company.id;
+          const whatsapps = await ListWhatsAppsService({
+            companyId: companyId
+          });
+          if (whatsapps.length > 0) {
+            whatsapps.forEach(whatsapp => {
+              StartWhatsAppSession(whatsapp, companyId);
+            });
+          }
+        } catch (e) {
+          Sentry.captureException(e);
         }
 
-    	const invoices = await Invoices.findOne({ where: { id: payment.body.external_reference } });
-		const invoiceID = invoices.id;
-    
-    	if (invoices && invoices.status === "paid") {
-        	console.log('FATURA JÁ PAGA');
-            return;
-        }
-      
-        const companyId = invoices.companyId;
-        const company = await Company.findByPk(companyId);
-    
-        const expiresAt = new Date(company.dueDate);
-        expiresAt.setDate(expiresAt.getDate() + 30);
-        const date = expiresAt.toISOString().split("T")[0];
+        io.emit(`company-${companyId}-payment`, {
+          action: "CONCLUIDA",
+          company: companyUpdate
+        });
+      }
 
-        if (company) {
-          await company.update({
-            dueDate: date
-          });
-         const invoi = await invoices.update({
-            id: invoiceID,
-            txid: payment.body.transaction_details.transaction_id,
-            status: 'paid'
-          });
-          await company.reload();
-          const io = getIO();
-          const companyUpdate = await Company.findOne({
-            where: {
-              id: companyId
-            }
-          });
-        
-          try {
-  
-    	    const companyId = company.id
-    		const whatsapps = await ListWhatsAppsService({ companyId: companyId });
-    		  if (whatsapps.length > 0) {
-      			  whatsapps.forEach(whatsapp => {
-        		  StartWhatsAppSession(whatsapp, companyId);
-      			});
-    		  }
-  		  } catch (e) {
-    	  	Sentry.captureException(e);
-  		  }
-
-         io.emit(`company-${companyId}-payment`, {
-            action: 'CONCLUIDA',
-            company: companyUpdate
-          });
-        }
-
-    	res.status(200).json(payment.body);
-  	} catch (error) {
-    	console.error('Erro ao tentar ler o pagamento:', error);
-    	res.status(500).json({ error: 'Erro ao identificar o pagamento' });
-  	}  
-  
-  
+      res.status(200).json(payment.body);
+    } catch (error) {
+      console.error("Erro ao tentar ler o pagamento:", error);
+      res.status(500).json({ error: "Erro ao identificar o pagamento" });
+    }
   }
-
-  
 };
-
 
 export const asaaswebhook = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-
   res.status(200).json(req.body);
-
 };

@@ -50,14 +50,32 @@ const UpdateChatBotServices = async (
       {
         model: Chatbot,
         as: "mainChatbot",
-        attributes: ["id", "name", "greetingMessage", "queueType", "optIntegrationId", "optQueueId", "optUserId","optFileId" ],
+        attributes: [
+          "id",
+          "name",
+          "greetingMessage",
+          "queueType",
+          "optIntegrationId",
+          "optQueueId",
+          "optUserId",
+          "optFileId"
+        ],
         order: [[{ model: Chatbot, as: "mainChatbot" }, "id", "ASC"]]
       },
       {
         model: Chatbot,
         as: "options",
         order: [[{ model: Chatbot, as: "options" }, "id", "ASC"]],
-        attributes: ["id", "name", "greetingMessage", "queueType", "optIntegrationId", "optQueueId", "optUserId", "optFileId"]
+        attributes: [
+          "id",
+          "name",
+          "greetingMessage",
+          "queueType",
+          "optIntegrationId",
+          "optQueueId",
+          "optUserId",
+          "optFileId"
+        ]
       }
     ],
     order: [["id", "asc"]]

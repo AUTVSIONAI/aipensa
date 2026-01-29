@@ -4,8 +4,7 @@ module.exports = {
   up: (queryInterface: QueryInterface) => {
     return queryInterface.addColumn("Whatsapps", "statusImportMessages", {
       type: DataTypes.STRING,
-      allowNull: true,
-
+      allowNull: true
     });
   },
 

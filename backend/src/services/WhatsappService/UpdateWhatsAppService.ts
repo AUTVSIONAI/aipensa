@@ -109,7 +109,7 @@ const UpdateWhatsAppService = async ({
     queueIdImportMessages,
     flowIdNotPhrase,
     flowIdWelcome,
-	wavoip
+    wavoip
   } = whatsappData;
 
   try {
@@ -138,7 +138,6 @@ const UpdateWhatsAppService = async ({
   }
   // console.log("GETTING WHATSAPP SHOW WHATSAPP 1", whatsappId, companyId)
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId);
-
 
   await whatsapp.update({
     name,
@@ -178,7 +177,7 @@ const UpdateWhatsAppService = async ({
     queueIdImportMessages,
     flowIdNotPhrase,
     flowIdWelcome,
-	wavoip
+    wavoip
   });
 
   if (!requestQR) {

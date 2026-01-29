@@ -4,7 +4,7 @@ module.exports = {
   up: (queryInterface: QueryInterface) => {
     return queryInterface.addColumn("Users", "farewellMessage", {
       type: DataTypes.TEXT,
-      allowNull: true,
+      allowNull: true
     });
   },
 

@@ -5,8 +5,7 @@ module.exports = {
     return queryInterface.addColumn("Tickets", "isOutOfHour", {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
-      allowNull: true,
-
+      allowNull: true
     });
   },
 

@@ -63,12 +63,12 @@ export const checkPlanLimit = async (
   if (!company || !company.plan) return false;
 
   const limit = company.plan[featureLimitColumn];
-  
+
   // If limit is -1 or 0 (depending on logic), maybe it means unlimited?
   // User requirement: "Conversas excedentes cobradas à parte" (Enterprise).
   // For now, assume strict limit.
   // Note: limitVoiceMinutes is in minutes, usageType 'VOICE_SECONDS' is in seconds.
-  
+
   let currentUsage = await getUsage(companyId, usageType);
 
   if (usageType === "VOICE_SECONDS") {

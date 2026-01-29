@@ -14,11 +14,33 @@ routes.post("/marketing/campaign", isAuth, MarketingController.createCampaign);
 routes.post("/marketing/adset", isAuth, MarketingController.createAdSet);
 routes.post("/marketing/creative", isAuth, MarketingController.createCreative);
 routes.post("/marketing/ad", isAuth, MarketingController.createAd);
-routes.post("/marketing/whatsapp-adflow", isAuth, MarketingController.createWhatsappAdFlow);
-routes.post("/marketing/campaign/status", isAuth, MarketingController.updateCampaignStatus);
-routes.post("/marketing/adset/status", isAuth, MarketingController.updateAdSetStatus);
-routes.post("/marketing/adimage", isAuth, upload.single("image"), MarketingController.uploadAdImage);
-routes.post("/marketing/upload-media", isAuth, upload.single("file"), MarketingController.uploadPublicMedia);
+routes.post(
+  "/marketing/whatsapp-adflow",
+  isAuth,
+  MarketingController.createWhatsappAdFlow
+);
+routes.post(
+  "/marketing/campaign/status",
+  isAuth,
+  MarketingController.updateCampaignStatus
+);
+routes.post(
+  "/marketing/adset/status",
+  isAuth,
+  MarketingController.updateAdSetStatus
+);
+routes.post(
+  "/marketing/adimage",
+  isAuth,
+  upload.single("image"),
+  MarketingController.uploadAdImage
+);
+routes.post(
+  "/marketing/upload-media",
+  isAuth,
+  upload.single("file"),
+  MarketingController.uploadPublicMedia
+);
 routes.post("/marketing/publish", isAuth, MarketingController.publishContent);
 routes.get("/marketing/feed", isAuth, MarketingController.getFeed);
 routes.post("/marketing/like", isAuth, MarketingController.likePost);

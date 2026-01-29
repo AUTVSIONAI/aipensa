@@ -13,7 +13,10 @@ import CompaniesSettings from "../../models/CompaniesSettings";
 import CreateLogTicketService from "./CreateLogTicketService";
 import AppError from "../../errors/AppError";
 import UpdateTicketService from "./UpdateTicketService";
-import { checkPlanLimit, incrementUsage } from "../UsageTrackingServices/UsageTrackingService";
+import {
+  checkPlanLimit,
+  incrementUsage
+} from "../UsageTrackingServices/UsageTrackingService";
 
 // interface Response {
 //   ticket: Ticket;
@@ -180,8 +183,12 @@ const FindOrCreateTicketService = async (
 
     console.log("Criando ticket", ticketData);
 
-    if (!(await checkPlanLimit(companyId, "limitConversations", "CONVERSATION"))) {
-      throw new AppError("Limite mensal de conversas atingido. Atualize seu plano.");
+    if (
+      !(await checkPlanLimit(companyId, "limitConversations", "CONVERSATION"))
+    ) {
+      throw new AppError(
+        "Limite mensal de conversas atingido. Atualize seu plano."
+      );
     }
 
     ticket = await Ticket.create(ticketData);

@@ -10,7 +10,7 @@ const connection = process.env.REDIS_URI || "";
 
 export const userMonitor = new Queue("UserMonitor", connection);
 
-async function handleLoginStatus(job) {
+async function handleLoginStatus(_job) {
   const users: { id: number }[] = await sequelize.query(
     `select id from "Users" where "updatedAt" < now() - '5 minutes'::interval and online = true`,
     { type: QueryTypes.SELECT }
@@ -55,7 +55,7 @@ export async function initUserMonitorQueues() {
     "VerifyLoginStatus",
     {},
     {
-      repeat: { cron: "* * * * *", key: "verify-login-status"},
+      repeat: { cron: "* * * * *", key: "verify-login-status" },
       removeOnComplete: { age: 60 * 60, count: 10 },
       removeOnFail: { age: 60 * 60, count: 10 }
     }

@@ -3,7 +3,6 @@ import * as Sentry from "@sentry/node";
 import { QueryTypes } from "sequelize";
 import { isNil } from "lodash";
 
-
 import logger from "../utils/logger";
 import sequelize from "../database";
 import User from "../models/User";

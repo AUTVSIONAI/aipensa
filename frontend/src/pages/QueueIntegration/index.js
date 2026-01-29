@@ -12,11 +12,6 @@ import {
   IconButton,
   InputAdornment,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip
 } from "@material-ui/core";
@@ -99,6 +94,46 @@ const useStyles = makeStyles((theme) => ({
     margin: theme.spacing(1),
     overflowY: "scroll",
     ...theme.scrollbarStyles,
+  },
+  searchIcon: {
+    color: theme.palette.primary.main,
+  },
+  card: {
+    borderRadius: 16,
+    background: theme.custom.glass.card.background,
+    border: theme.custom.glass.card.border,
+    backdropFilter: theme.custom.glass.card.backdropFilter,
+    boxShadow: theme.custom.glass.card.boxShadow,
+    transition: "transform 0.2s ease-in-out",
+    cursor: "pointer",
+  },
+  actionIconEdit: {
+    backgroundColor: theme.palette.primary.main,
+    borderRadius: 10,
+    width: 40,
+    height: 40,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    transition: "0.3s",
+    "&:hover": {
+      backgroundColor: theme.palette.primary.dark,
+    },
+  },
+  actionIconDelete: {
+    backgroundColor: theme.palette.error.main,
+    borderRadius: 10,
+    width: 40,
+    height: 40,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    transition: "0.3s",
+    "&:hover": {
+      backgroundColor: theme.palette.error.dark,
+    },
   },
   avatar: {
     width: "140px",
@@ -273,17 +308,7 @@ const QueueIntegration = () => {
         <CardActions style={{ justifyContent: "flex-end", gap: "10px" }}>
           <div
             onClick={() => handleEditIntegration(integration)}
-            style={{
-              backgroundColor: "#3DB8FF",
-              borderRadius: "10px",
-              width: "40px",
-              height: "40px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              transition: "0.3s",
-            }}
+            className={classes.actionIconEdit}
           >
             <Edit style={{ color: "#fff" }} />
           </div>
@@ -292,17 +317,7 @@ const QueueIntegration = () => {
               setConfirmModalOpen(true);
               setDeletingUser(integration);
             }}
-            style={{
-              backgroundColor: "#FF6B6B",
-              borderRadius: "10px",
-              width: "40px",
-              height: "40px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              transition: "0.3s",
-            }}
+            className={classes.actionIconDelete}
           >
             <DeleteOutline style={{ color: "#fff" }} />
           </div>
@@ -346,7 +361,7 @@ const QueueIntegration = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon style={{ color: "#FFA500" }} />
+                      <SearchIcon className={classes.searchIcon} />
                     </InputAdornment>
                   ),
                 }}
@@ -355,13 +370,8 @@ const QueueIntegration = () => {
               <Button
                 startIcon={<AddIcon />}
                 variant="contained"
-                style={{
-                  color: "white",
-                  backgroundColor: "#FFA500",
-                  boxShadow: "none",
-                  borderRadius: "5px",
-                  margin: isMobile ? "8px 0" : "0 8px"
-                }}
+                color="primary"
+                style={{ margin: isMobile ? "8px 0" : "0 8px" }}
                 onClick={handleOpenUserModal}
               >
                 {i18n.t("queueIntegration.buttons.add")}
@@ -378,14 +388,7 @@ const QueueIntegration = () => {
                 <Grid item xs={12} sm={6} md={4} key={integration.id}>
                   <Card
                     variant="outlined"
-                    className={isMobile ? classes.mobileCard : null}
-                    style={{
-                      backgroundColor: "#d7e0e4",
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                      borderRadius: "10px",
-                      transition: "transform 0.2s ease-in-out",
-                      cursor: "pointer",
-                    }}
+                    className={`${isMobile ? classes.mobileCard : ""} ${classes.card}`}
                     onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
                     onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   >

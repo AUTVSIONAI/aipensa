@@ -20,9 +20,11 @@ const CreateService = async (data: Data): Promise<QuickMessage> => {
     shortcode: Yup.string()
       .min(1, "ERR_QUICKMESSAGE_INVALID_NAME")
       .required("ERR_QUICKMESSAGE_REQUIRED"),
-    message: isMedia ? Yup.string().notRequired() : Yup.string()
-      .min(3, "ERR_QUICKMESSAGE_INVALID_NAME")
-      .required("ERR_QUICKMESSAGE_REQUIRED")
+    message: isMedia
+      ? Yup.string().notRequired()
+      : Yup.string()
+          .min(3, "ERR_QUICKMESSAGE_INVALID_NAME")
+          .required("ERR_QUICKMESSAGE_REQUIRED")
   });
 
   try {

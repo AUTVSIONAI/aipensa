@@ -4,15 +4,10 @@ import {
     Paper,
     Grid,
     TextField,
-    Table,
-    TableHead,
-    TableBody,
     Card,
     Typography,
     CardContent,
     CardActions,
-    TableCell,
-    TableRow,
     IconButton,
     FormControl,
     InputLabel,
@@ -826,7 +821,6 @@ export function PlanManagerForm(props) {
 
 export function PlansManagerGrid(props) {
     const { records, onSelect } = props
-    const classes = useStyles()
 
     const renderWhatsapp = (row) => {
         return row.useWhatsapp === false ? `${i18n.t("plans.form.no")}` : `${i18n.t("plans.form.yes")}`;

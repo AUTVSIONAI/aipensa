@@ -32,16 +32,21 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(settings);
 };
 
-export const showOne = async (req: Request, res: Response): Promise<Response> => {
+export const showOne = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { companyId } = req.user;
   const { settingKey: key } = req.params;
 
-  console.log("|======== GetPublicSettingService ========|")
-  console.log("key", key)
-  console.log("|=========================================|")
+  console.log("|======== GetPublicSettingService ========|");
+  console.log("key", key);
+  console.log("|=========================================|");
 
-  
-  const settingsTransfTicket = await ListSettingsServiceOne({ companyId: companyId, key: key });
+  const settingsTransfTicket = await ListSettingsServiceOne({
+    companyId: companyId,
+    key: key
+  });
 
   return res.status(200).json(settingsTransfTicket);
 };
@@ -50,7 +55,6 @@ export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-
   if (req.user.profile !== "admin") {
     throw new AppError("ERR_NO_PERMISSION", 403);
   }
@@ -66,8 +70,7 @@ export const update = async (
   });
 
   const io = getIO();
-  io.of(String(companyId))
-  .emit(`company-${companyId}-settings`, {
+  io.of(String(companyId)).emit(`company-${companyId}-settings`, {
     action: "update",
     setting
   });
@@ -77,21 +80,19 @@ export const update = async (
 
 export const getSetting = async (
   req: Request,
-  res: Response): Promise<Response> => {
-
+  res: Response
+): Promise<Response> => {
   const { settingKey: key } = req.params;
 
   const setting = await GetSettingService({ key });
 
   return res.status(200).json(setting);
-
-}
+};
 
 export const updateOne = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-
   const { settingKey: key } = req.params;
   const { value } = req.body;
 
@@ -100,45 +101,49 @@ export const updateOne = async (
     value
   });
 
-  return res.status(200).json(setting); 
+  return res.status(200).json(setting);
 };
 
-export const publicShow = async (req: Request, res: Response): Promise<Response> => {
-  console.log("|=============== publicShow  ==============|")
-  
-  const { settingKey: key } = req.params;
-  
-  const settingValue = await GetPublicSettingService({ key });
+export const publicShow = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  console.log("|=============== publicShow  ==============|");
 
+  const { settingKey: key } = req.params;
+
+  const settingValue = await GetPublicSettingService({ key });
 
   return res.status(200).json(settingValue);
 };
 
-export const storeLogo = async (req: Request, res: Response): Promise<Response> => {
+export const storeLogo = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const file = req.file as Express.Multer.File;
   const { mode }: LogoRequest = req.body;
   const { companyId } = req.user;
-  const validModes = [ "Light", "Dark", "Favicon" ];
+  const validModes = ["Light", "Dark", "Favicon"];
 
-  console.log("|=============== storeLogo  ==============|", storeLogo)
+  console.log("|=============== storeLogo  ==============|", storeLogo);
 
-  if ( validModes.indexOf(mode) === -1 ) {
+  if (validModes.indexOf(mode) === -1) {
     return res.status(406);
   }
 
   if (file && file.mimetype.startsWith("image/")) {
-    
     const setting = await UpdateSettingService({
       key: `appLogo${mode}`,
       value: file.filename,
       companyId
     });
-    
+
     return res.status(200).json(setting.value);
   }
-  
+
   return res.status(406);
-}
+};
 
 export const certUpload = async (
   req: Request,
@@ -168,19 +173,21 @@ export const certUpload = async (
   return res.send({ mensagem: "Arquivo Anexado" });
 };
 
-export const storePrivateFile = async (req: Request, res: Response): Promise<Response> => {
+export const storePrivateFile = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const file = req.file as Express.Multer.File;
   const { settingKey }: PrivateFileRequest = req.body;
   const { companyId } = req.user;
 
-
-  console.log("|=============== storePrivateFile  ==============|", storeLogo)
+  console.log("|=============== storePrivateFile  ==============|", storeLogo);
 
   const setting = await UpdateSettingService({
     key: `_${settingKey}`,
     value: file.filename,
     companyId
   });
-  
+
   return res.status(200).json(setting.value);
-}
+};

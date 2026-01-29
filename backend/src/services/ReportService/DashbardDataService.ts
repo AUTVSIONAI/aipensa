@@ -1,6 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable camelcase */
-import {QueryTypes} from "sequelize";
+import { QueryTypes } from "sequelize";
 import * as _ from "lodash";
 import sequelize from "../../database";
 
@@ -19,8 +19,6 @@ export default async function DashboardDataService(
   companyId: string | number,
   params: Params
 ): Promise<DashboardData> {
-
-
   const query = `   with traking as
                            (select c.name                                                                    "companyName",
                                    u.name                                                                    "userName",
@@ -140,18 +138,18 @@ export default async function DashboardDataService(
                             from counters c)                                               counters,
                            (select coalesce(json_agg(a.*), '[]') ::jsonb from attedants a) attendants; `;
 
-  let where = "where tt.\"companyId\" = ?";
+  let where = 'where tt."companyId" = ?';
   const replacements = [companyId];
   if (_.has(params, "days")) {
     where += " and tt.\"createdAt\" >= (now() - '? days'::interval)";
     replacements.push(parseInt(("" + params.days).replace(/\D/g, ""), 10));
   }
   if (_.has(params, "date_from")) {
-    where += " and tt.\"createdAt\" >= ?";
+    where += ' and tt."createdAt" >= ?';
     replacements.push(params.date_from + " 00:00:00");
   }
   if (_.has(params, "date_to")) {
-    where += " and tt.\"createdAt\" <= ?";
+    where += ' and tt."createdAt" <= ?';
     replacements.push(params.date_to + " 23:59:59");
   }
   replacements.push(companyId);

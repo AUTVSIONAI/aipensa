@@ -92,6 +92,38 @@ const useStyles = makeStyles((theme) => ({
       transform: "scale(1.1)", // Efeito de escala ao passar o mouse
     },
   },
+  card: {
+    borderRadius: 12,
+    background: theme.custom.glass.card.background,
+    border: theme.custom.glass.card.border,
+    backdropFilter: theme.custom.glass.card.backdropFilter,
+    boxShadow: theme.custom.glass.card.boxShadow,
+    padding: theme.spacing(0.5),
+    margin: theme.spacing(0.5),
+    transition: "transform 0.2s ease-in-out",
+    cursor: "pointer",
+  },
+  loadingCard: {
+    background: theme.custom.glass.card.background,
+    boxShadow: "none",
+    color: "#444394",
+  },
+  actionIconHistory: {
+    backgroundColor: theme.palette.primary.main,
+    padding: 8,
+    borderRadius: 10,
+    "&:hover": {
+      backgroundColor: theme.palette.primary.dark,
+    },
+  },
+  actionIconForward: {
+    backgroundColor: "#4ec24e",
+    padding: 8,
+    borderRadius: 10,
+    "&:hover": {
+      backgroundColor: "#44ad44",
+    },
+  },
 }));
 
 const Reports = () => {
@@ -418,12 +450,6 @@ const Reports = () => {
               <Button
                 variant="contained"
                 color="primary"
-                style={{
-                  color: "white",
-                  backgroundColor: "#FFA500",
-                  boxShadow: "none",
-                  borderRadius: "5px",
-                }}
                 onClick={() => handleFilter(pageNumber)}
                 size="small"
                 startIcon={<FilterListIcon />}
@@ -441,10 +467,7 @@ const Reports = () => {
           {loading ? (
             <Grid item xs={12}>
               <Card variant="outlined"
-                style={{ backgroundColor: "#d7e0e4",
-                boxShadow: "none",
-                color: "#444394",
-                }}>
+                className={classes.loadingCard}>
                 <CardContent>
                   <Typography variant="body2" color="textSecondary">
                     Carregando...
@@ -457,15 +480,7 @@ const Reports = () => {
               <Grid item xs={12} sm={6} md={4} key={ticket.id}>
                 <Card
                   variant="outlined"
-                  style={{
-                    backgroundColor: "#d7e0e4",
-                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                    borderRadius: "8px",
-                    padding: "4px",
-                    margin: "4px",
-                    transition: "transform 0.2s ease-in-out",
-                    cursor: "pointer",
-                  }}
+                  className={classes.card}
                   onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
                   onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 >
@@ -549,11 +564,7 @@ const Reports = () => {
         setOpenTicketMessageDialog(true);
         setTicketOpen(ticket);
       }}
-      style={{
-        backgroundColor: "#40BFFF", // Azul claro
-        padding: "8px",
-        borderRadius: "10px"
-      }}
+      className={classes.actionIconHistory}
     >
       <History style={{ color: "#fff" }} fontSize="small" />
     </IconButton>
@@ -564,11 +575,7 @@ const Reports = () => {
       onClick={() => {
         history.push(`/tickets/${ticket.uuid}`);
       }}
-      style={{
-        backgroundColor: "#4ec24e", // Verde
-        padding: "8px",
-        borderRadius: "10px"
-      }}
+      className={classes.actionIconForward}
     >
       <Forward style={{ color: "#fff" }} fontSize="small" />
     </IconButton>

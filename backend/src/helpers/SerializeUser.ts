@@ -34,7 +34,9 @@ export const SerializeUser = async (user: User): Promise<SerializedUser> => {
   // Gera um token de 32 bytes
   const generateToken = (userId: number | string): string => {
     // Gerar o token com base no userId e sua chave secreta
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "1h" }); // Você pode definir o tempo de expiração conforme necessário
+    const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
+      expiresIn: "1h"
+    }); // Você pode definir o tempo de expiração conforme necessário
     return token;
   };
 

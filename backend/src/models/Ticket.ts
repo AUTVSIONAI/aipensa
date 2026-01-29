@@ -28,7 +28,6 @@ import TicketTag from "./TicketTag";
 import QueueIntegrations from "./QueueIntegrations";
 import { format } from "date-fns";
 
-
 @Table
 class Ticket extends Model<Ticket> {
   @PrimaryKey
@@ -55,7 +54,7 @@ class Ticket extends Model<Ticket> {
   flowStopped: string;
 
   @Column(DataType.JSON)
-  dataWebhook: {} | null;;
+  dataWebhook: {} | null;
 
   @Column
   lastMessage: string;
@@ -181,10 +180,10 @@ class Ticket extends Model<Ticket> {
 
   @Default(false)
   @Column
-  typebotStatus: boolean
+  typebotStatus: boolean;
 
   @Column
-  typebotSessionTime: Date
+  typebotSessionTime: Date;
 }
 
 export default Ticket;

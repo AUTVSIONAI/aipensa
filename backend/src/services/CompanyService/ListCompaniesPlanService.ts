@@ -2,7 +2,9 @@ import Company from "../../models/Company";
 import Plan from "../../models/Plan";
 
 const ListCompaniesPlanService = async (): Promise<Company[]> => {
-  console.log("[ListCompaniesPlanService] Fetching all companies with plans...");
+  console.log(
+    "[ListCompaniesPlanService] Fetching all companies with plans..."
+  );
   const companies = await Company.findAll({
     order: [["id", "ASC"]],
     include: [
@@ -27,7 +29,7 @@ const ListCompaniesPlanService = async (): Promise<Company[]> => {
           "useOpenAi",
           "useIntegrations"
         ]
-      },
+      }
     ]
   });
   return companies;

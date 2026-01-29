@@ -4,11 +4,6 @@ import { toast } from "react-toastify";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
 import IconButton from "@material-ui/core/IconButton";
 import SearchIcon from "@material-ui/icons/Search";
 import TextField from "@material-ui/core/TextField";
@@ -99,6 +94,36 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(1),
     overflowY: "scroll",
     ...theme.scrollbarStyles,
+  },
+  searchIcon: {
+    color: theme.palette.primary.main,
+  },
+  card: {
+    borderRadius: 16,
+    background: theme.custom.glass.card.background,
+    border: theme.custom.glass.card.border,
+    backdropFilter: theme.custom.glass.card.backdropFilter,
+    boxShadow: theme.custom.glass.card.boxShadow,
+    padding: theme.spacing(2),
+    margin: theme.spacing(1.25),
+    transition: "transform 0.2s ease-in-out",
+    cursor: "pointer",
+  },
+  actionIconEdit: {
+    backgroundColor: theme.palette.primary.main,
+    padding: 8,
+    borderRadius: 10,
+    "&:hover": {
+      backgroundColor: theme.palette.primary.dark,
+    },
+  },
+  actionIconDelete: {
+    backgroundColor: theme.palette.error.main,
+    padding: 8,
+    borderRadius: 10,
+    "&:hover": {
+      backgroundColor: theme.palette.error.dark,
+    },
   },
 }));
 
@@ -254,7 +279,7 @@ const Quickemessages = () => {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <SearchIcon style={{ color: "#FFA500"  }} />
+                        <SearchIcon className={classes.searchIcon} />
                       </InputAdornment>
                     ),
                   }}
@@ -264,12 +289,7 @@ const Quickemessages = () => {
                 <Button
                   fullWidth
                   variant="contained"
-                  style={{
-                  color: "white",
-                  backgroundColor: "#FFA500",
-                  boxShadow: "none",
-                  borderRadius: "5px",
-                  }}
+                  color="primary"
                   startIcon={<AddIcon />}
                   onClick={handleOpenQuickMessageDialog}
 
@@ -293,15 +313,7 @@ const Quickemessages = () => {
  item xs={12} sm={6} md={4} lg={3} key={quickemessage.id}>
       <Card
        variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
+       className={classes.card}
        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
        >
@@ -321,11 +333,7 @@ const Quickemessages = () => {
   <IconButton
     size="small"
     onClick={() => handleEditQuickemessage(quickemessage)}
-    style={{
-      backgroundColor: "#40BFFF", // Azul claro
-      padding: "8px",
-      borderRadius: "10px",
-    }}
+    className={classes.actionIconEdit}
     title="Editar"
   >
     <EditIcon style={{ color: "#fff" }} />
@@ -337,11 +345,7 @@ const Quickemessages = () => {
       setConfirmModalOpen(true);
       setDeletingQuickemessage(quickemessage);
     }}
-    style={{
-      backgroundColor: "#FF6B6B", // Vermelho claro
-      padding: "8px",
-      borderRadius: "10px",
-    }}
+    className={classes.actionIconDelete}
     title="Excluir"
   >
     <DeleteOutlineIcon style={{ color: "#fff" }} />

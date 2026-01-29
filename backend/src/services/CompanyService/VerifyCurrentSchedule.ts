@@ -11,8 +11,12 @@ type Result = {
   inActivity: boolean;
 };
 
-const VerifyCurrentSchedule = async (companyId?: number, queueId?: number, whatsappId?: number): Promise<Result> => {
-    // @ts-ignore: Unreachable code error
+const VerifyCurrentSchedule = async (
+  companyId?: number,
+  queueId?: number,
+  whatsappId?: number
+): Promise<Result> => {
+  // @ts-ignore: Unreachable code error
   if (Number(whatsappId) > 0 && Number(queueId === 0)) {
     const sql = `
         select
@@ -63,7 +67,7 @@ const VerifyCurrentSchedule = async (companyId?: number, queueId?: number, whats
 
     return result;
   }
-    // @ts-ignore: Unreachable code error
+  // @ts-ignore: Unreachable code error
   else if (Number(queueId) === 0 && Number(whatsappId) === 0) {
     const sql = `
         select

@@ -8,13 +8,6 @@ import React, {
 import { toast } from "react-toastify";
 
 import { makeStyles } from "@material-ui/core/styles";
-import Paper from "@material-ui/core/Paper";
-import Button from "@material-ui/core/Button";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
 import IconButton from "@material-ui/core/IconButton";
 import SearchIcon from "@material-ui/icons/Search";
 import TextField from "@material-ui/core/TextField";
@@ -34,6 +27,8 @@ import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
 import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper";
 import Title from "../../components/Title";
+import GlassCard from "../../components/UI/GlassCard";
+import PrimaryButton from "../../components/UI/PrimaryButton";
 
 import api from "../../services/api";
 import { i18n } from "../../translate/i18n";
@@ -41,7 +36,7 @@ import TableRowSkeleton from "../../components/TableRowSkeleton";
 import TagModal from "../../components/TagModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import toastError from "../../errors/toastError";
-import { Chip, Tooltip } from "@material-ui/core";
+import { Chip } from "@material-ui/core";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { MoreHoriz } from "@material-ui/icons";
 import ContactTagListModal from "../../components/ContactTagListModal";
@@ -77,6 +72,36 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(1),
     overflowY: "scroll",
     ...theme.scrollbarStyles,
+  },
+  card: {
+    borderRadius: 16,
+    background: theme.custom.glass.card.background,
+    border: theme.custom.glass.card.border,
+    backdropFilter: theme.custom.glass.card.backdropFilter,
+    boxShadow: theme.custom.glass.card.boxShadow,
+    padding: theme.spacing(2),
+    margin: theme.spacing(1.25),
+    transition: "transform 0.2s ease-in-out",
+    cursor: "pointer",
+  },
+  searchIcon: {
+    color: theme.palette.primary.main,
+  },
+  actionIconEdit: {
+    backgroundColor: theme.palette.primary.main,
+    padding: 8,
+    borderRadius: 10,
+    "&:hover": {
+      backgroundColor: theme.palette.primary.dark,
+    },
+  },
+  actionIconDelete: {
+    backgroundColor: theme.palette.error.main,
+    padding: 8,
+    borderRadius: 10,
+    "&:hover": {
+      backgroundColor: theme.palette.error.dark,
+    },
   },
 }));
 
@@ -228,48 +253,32 @@ const Tags = () => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon style={{ color: "#FFA500" }} />
+                  <SearchIcon className={classes.searchIcon} />
                 </InputAdornment>
               ),
             }}
           />
-          <Button
+          <PrimaryButton
             startIcon={<AddIcon />}
-            variant="contained"
-            style={{
-            color: "white",
-            backgroundColor: "#FFA500",
-            boxShadow: "none",
-            borderRadius: "5px",
-            }}
             onClick={handleOpenTagModal}
           >
             {i18n.t("tags.buttons.add")}
-          </Button>
+          </PrimaryButton>
         </MainHeaderButtonsWrapper>
       </MainHeader>
-      <Paper
+      <GlassCard
         className={classes.mainPaper}
-        variant="outlined"
         onScroll={handleScroll}
       >
 <Grid container spacing={2}>
   {tags.map((tag) => (
     <Grid item xs={12} sm={6} md={4} lg={3} key={tag.id}>
       <Card
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-       >
+        variant="outlined"
+        className={classes.card}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      >
         <CardHeader
           title={
             <Chip
@@ -303,11 +312,7 @@ const Tags = () => {
   <IconButton
     size="small"
     onClick={() => handleEditTag(tag)}
-    style={{
-      backgroundColor: "#40BFFF", // Azul claro
-      padding: "8px",
-      borderRadius: "10px",
-    }}
+    className={classes.actionIconEdit}
     title="Editar Tag"
   >
     <EditIcon style={{ color: "#fff" }} />
@@ -319,11 +324,7 @@ const Tags = () => {
       setConfirmModalOpen(true);
       setDeletingTag(tag);
     }}
-    style={{
-      backgroundColor: "#FF6B6B", // Vermelho claro
-      padding: "8px",
-      borderRadius: "10px",
-    }}
+    className={classes.actionIconDelete}
     title="Excluir Tag"
   >
     <DeleteOutlineIcon style={{ color: "#fff" }} />
@@ -338,7 +339,7 @@ const Tags = () => {
     </Grid>
   )}
 </Grid>
-      </Paper>
+      </GlassCard>
     </MainContainer>
   );
 };

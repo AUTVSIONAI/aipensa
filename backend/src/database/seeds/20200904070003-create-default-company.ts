@@ -10,23 +10,29 @@ module.exports = {
       const planExists = plans.length > 0;
 
       if (!planExists) {
-        await queryInterface.bulkInsert("Plans", [{
-          id: 1,
-          name: "Plano 1",
-          users: 10,
-          connections: 10,
-          queues: 10,
-          amount: 100,
-          useWhatsapp: true,
-          useFacebook: true,
-          useInstagram: true,
-          useCampaigns: true,
-          useSchedules: true,
-          useInternalChat: true,
-          useExternalApi: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }], { transaction: t });
+        await queryInterface.bulkInsert(
+          "Plans",
+          [
+            {
+              id: 1,
+              name: "Plano 1",
+              users: 10,
+              connections: 10,
+              queues: 10,
+              amount: 100,
+              useWhatsapp: true,
+              useFacebook: true,
+              useInstagram: true,
+              useCampaigns: true,
+              useSchedules: true,
+              useInternalChat: true,
+              useExternalApi: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          ],
+          { transaction: t }
+        );
       }
 
       const [companies] = await queryInterface.sequelize.query(
@@ -36,20 +42,30 @@ module.exports = {
       const companyExists = companies.length > 0;
 
       if (!companyExists) {
-        await queryInterface.bulkInsert("Companies", [{
-          name: "Empresa Admin - Não Deletar",
-          planId: 1,
-          dueDate: "2099-12-31 04:00:00+01",
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }], { transaction: t });
+        await queryInterface.bulkInsert(
+          "Companies",
+          [
+            {
+              name: "Empresa Admin - Não Deletar",
+              planId: 1,
+              dueDate: "2099-12-31 04:00:00+01",
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          ],
+          { transaction: t }
+        );
       }
     });
   },
 
   down: async (queryInterface: QueryInterface) => {
     return queryInterface.sequelize.transaction(async t => {
-      await queryInterface.bulkDelete("Companies", { id: 1 }, { transaction: t });
+      await queryInterface.bulkDelete(
+        "Companies",
+        { id: 1 },
+        { transaction: t }
+      );
       await queryInterface.bulkDelete("Plans", { id: 1 }, { transaction: t });
     });
   }

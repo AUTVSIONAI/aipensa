@@ -22,12 +22,10 @@ import { head } from "lodash";
 import ToggleChangeWidthService from "../services/UserServices/ToggleChangeWidthService";
 import APIShowEmailUserService from "../services/UserServices/APIShowEmailUserService";
 
-
 type IndexQuery = {
   searchParam: string;
   pageNumber: string;
 };
-
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const { searchParam, pageNumber } = req.query as IndexQuery;
@@ -94,7 +92,6 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const companyUser = bodyCompanyId || userCompanyId;
 
   if (!companyUser) {
-
     const dataNowMoreTwoDays = new Date();
     dataNowMoreTwoDays.setDate(dataNowMoreTwoDays.getDate() + 3);
 
@@ -114,15 +111,15 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       companyUserName: name,
       startWork: startWork,
       endWork: endWork,
-      defaultTheme: 'light',
-      defaultMenu: 'closed',
+      defaultTheme: "light",
+      defaultMenu: "closed",
       allowGroup: false,
       allHistoric: false,
-      userClosePendingTicket: 'enabled',
-      showDashboard: 'disabled',
+      userClosePendingTicket: "enabled",
+      showDashboard: "disabled",
       defaultTicketsManagerWidth: 550,
-      allowRealTime: 'disabled',
-      allowConnections: 'disabled'
+      allowRealTime: "disabled",
+      allowConnections: "disabled"
     };
 
     const user = await CreateCompanyService(companyData);
@@ -132,28 +129,35 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
         to: email,
         subject: `Login e senha da Empresa ${companyName}`,
         text: `Olá ${name}, este é um email sobre o cadastro da ${companyName}!<br><br>
-        Segue os dados da sua empresa:<br><br>Nome: ${companyName}<br>Email: ${email}<br>Senha: ${password}<br>Data Vencimento Trial: ${dateToClient(date)}`
-      }
+        Segue os dados da sua empresa:<br><br>Nome: ${companyName}<br>Email: ${email}<br>Senha: ${password}<br>Data Vencimento Trial: ${dateToClient(
+          date
+        )}`
+      };
 
-      await SendMail(_email)
+      await SendMail(_email);
     } catch (error) {
-      console.log('Não consegui enviar o email')
+      console.log("Não consegui enviar o email");
     }
 
     try {
       const company = await ShowCompanyService(1);
-      const whatsappCompany = await FindCompaniesWhatsappService(company.id)
+      const whatsappCompany = await FindCompaniesWhatsappService(company.id);
 
-      if (whatsappCompany.whatsapps[0].status === "CONNECTED" && (phone !== undefined || !isNil(phone) || !isEmpty(phone))) {
-        const whatsappId = whatsappCompany.whatsapps[0].id
+      if (
+        whatsappCompany.whatsapps[0].status === "CONNECTED" &&
+        (phone !== undefined || !isNil(phone) || !isEmpty(phone))
+      ) {
+        const whatsappId = whatsappCompany.whatsapps[0].id;
         const wbot = getWbot(whatsappId);
 
-        const body = `Olá ${name}, este é uma mensagem sobre o cadastro da ${companyName}!\n\nSegue os dados da sua empresa:\n\nNome: ${companyName}\nEmail: ${email}\nSenha: ${password}\nData Vencimento Trial: ${dateToClient(date)}`
+        const body = `Olá ${name}, este é uma mensagem sobre o cadastro da ${companyName}!\n\nSegue os dados da sua empresa:\n\nNome: ${companyName}\nEmail: ${email}\nSenha: ${password}\nData Vencimento Trial: ${dateToClient(
+          date
+        )}`;
 
         await wbot.sendMessage(`55${phone}@s.whatsapp.net`, { text: body });
       }
     } catch (error) {
-      console.log('Não consegui enviar a mensagem')
+      console.log("Não consegui enviar a mensagem");
     }
 
     return res.status(200).json(user);
@@ -184,11 +188,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     });
 
     const io = getIO();
-    io.of(userCompanyId.toString())
-      .emit(`company-${userCompanyId}-user`, {
-        action: "create",
-        user
-      });
+    io.of(userCompanyId.toString()).emit(`company-${userCompanyId}-user`, {
+      action: "create",
+      user
+    });
 
     return res.status(200).json(user);
   }
@@ -247,7 +250,10 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(user);
 };
 
-export const showEmail = async (req: Request, res: Response): Promise<Response> => {
+export const showEmail = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { email } = req.params;
 
   const user = await APIShowEmailUserService(email);
@@ -259,7 +265,6 @@ export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-
   // if (req.user.profile !== "admin") {
   //   throw new AppError("ERR_NO_PERMISSION", 403);
   // }
@@ -279,13 +284,11 @@ export const update = async (
     requestUserId: +requestUserId
   });
 
-
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company-${companyId}-user`, {
-      action: "update",
-      user
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-user`, {
+    action: "update",
+    user
+  });
 
   return res.status(200).json(user);
 };
@@ -310,20 +313,20 @@ export const remove = async (
   });
 
   if (companyId !== user.companyId) {
-    return res.status(400).json({ error: "Você não possui permissão para acessar este recurso!" });
+    return res
+      .status(400)
+      .json({ error: "Você não possui permissão para acessar este recurso!" });
   } else {
     await DeleteUserService(userId, companyId);
 
     const io = getIO();
-    io.of(String(companyId))
-      .emit(`company-${companyId}-user`, {
-        action: "delete",
-        userId
-      });
+    io.of(String(companyId)).emit(`company-${companyId}-user`, {
+      action: "delete",
+      userId
+    });
 
     return res.status(200).json({ message: "User deleted" });
   }
-
 };
 
 export const list = async (req: Request, res: Response): Promise<Response> => {
@@ -348,19 +351,17 @@ export const mediaUpload = async (
 
   try {
     let user = await User.findByPk(userId);
-    user.profileImage = file.filename.replace('/', '-');
+    user.profileImage = file.filename.replace("/", "-");
 
     await user.save();
 
     user = await ShowUserService(userId, companyId);
-    
-    const io = getIO();
-    io.of(String(companyId))
-      .emit(`company-${companyId}-user`, {
-        action: "update",
-        user
-      });
 
+    const io = getIO();
+    io.of(String(companyId)).emit(`company-${companyId}-user`, {
+      action: "update",
+      user
+    });
 
     return res.status(200).json({ user, message: "Imagem atualizada" });
   } catch (err: any) {
@@ -368,19 +369,24 @@ export const mediaUpload = async (
   }
 };
 
-export const toggleChangeWidht = async (req: Request, res: Response): Promise<Response> => {
+export const toggleChangeWidht = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   var { userId } = req.params;
   const { defaultTicketsManagerWidth } = req.body;
 
   const { companyId } = req.user;
-  const user = await ToggleChangeWidthService({ userId, defaultTicketsManagerWidth });
+  const user = await ToggleChangeWidthService({
+    userId,
+    defaultTicketsManagerWidth
+  });
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company-${companyId}-user`, {
-      action: "update",
-      user
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-user`, {
+    action: "update",
+    user
+  });
 
   return res.status(200).json(user);
 };

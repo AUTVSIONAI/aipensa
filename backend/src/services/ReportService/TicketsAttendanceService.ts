@@ -21,11 +21,16 @@ interface dataUser {
   name: string;
 }
 
-export const TicketsAttendance = async ({ initialDate, finalDate, companyId }: Request): Promise<Return> => { 
+export const TicketsAttendance = async ({
+  initialDate,
+  finalDate,
+  companyId
+}: Request): Promise<Return> => {
+  const sqlUsers = `select u.name from "Users" u where u."companyId" = ${companyId}`;
 
-  const sqlUsers = `select u.name from "Users" u where u."companyId" = ${companyId}`
-
-  const users: dataUser[] = await sequelize.query(sqlUsers, { type: QueryTypes.SELECT });
+  const users: dataUser[] = await sequelize.query(sqlUsers, {
+    type: QueryTypes.SELECT
+  });
 
   const sql = `
   select
@@ -42,18 +47,19 @@ export const TicketsAttendance = async ({ initialDate, finalDate, companyId }: R
   group by
     nome
   ORDER BY
-    nome asc`
+    nome asc`;
 
-  const data: DataReturn[] = await sequelize.query(sql, { type: QueryTypes.SELECT });
+  const data: DataReturn[] = await sequelize.query(sql, {
+    type: QueryTypes.SELECT
+  });
 
   users.map(user => {
-    let indexCreated = data.findIndex((item) => item.nome === user.name);
+    let indexCreated = data.findIndex(item => item.nome === user.name);
 
     if (indexCreated === -1) {
-      data.push({ quantidade: 0, nome: user.name })
+      data.push({ quantidade: 0, nome: user.name });
     }
-
-  })
+  });
 
   return { data };
-}
+};

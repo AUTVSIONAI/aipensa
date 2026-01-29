@@ -51,27 +51,25 @@ const CreateService = async ({
     throw new AppError(err.message);
   }
 
-  const schedule = await Schedule.create(
-    {
-      body,
-      sendAt,
-      contactId,
-      companyId,
-      userId,
-      status: 'PENDENTE',
-      ticketUserId,
-      queueId,
-      openTicket,
-      statusTicket,
-      whatsappId,
-      intervalo,
-      valorIntervalo,
-      enviarQuantasVezes,
-      tipoDias,
-      assinar,
-      contadorEnvio
-    }
-  );
+  const schedule = await Schedule.create({
+    body,
+    sendAt,
+    contactId,
+    companyId,
+    userId,
+    status: "PENDENTE",
+    ticketUserId,
+    queueId,
+    openTicket,
+    statusTicket,
+    whatsappId,
+    intervalo,
+    valorIntervalo,
+    enviarQuantasVezes,
+    tipoDias,
+    assinar,
+    contadorEnvio
+  });
 
   await schedule.reload();
 

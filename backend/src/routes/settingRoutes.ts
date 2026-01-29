@@ -26,9 +26,18 @@ settingRoutes.get("/setting/:settingKey", isAuth, SettingController.getSetting);
 
 settingRoutes.put("/setting/:settingKey", isAuth, SettingController.updateOne);
 
-settingRoutes.get("/public-settings/:settingKey", envTokenAuth, SettingController.publicShow);
+settingRoutes.get(
+  "/public-settings/:settingKey",
+  envTokenAuth,
+  SettingController.publicShow
+);
 
-settingRoutes.post("/settings-whitelabel/logo", isAuth, upload.single("file"), SettingController.storeLogo);
+settingRoutes.post(
+  "/settings-whitelabel/logo",
+  isAuth,
+  upload.single("file"),
+  SettingController.storeLogo
+);
 
 settingRoutes.post(
   "/settings/cert-upload",
@@ -42,5 +51,5 @@ settingRoutes.post(
   isAuth,
   uploadPrivate.single("file"),
   SettingController.storePrivateFile
-)
+);
 export default settingRoutes;

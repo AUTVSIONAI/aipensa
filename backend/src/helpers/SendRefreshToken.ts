@@ -17,7 +17,8 @@ export const SendRefreshToken = (res: Response, token: string): void => {
       secure = backend.protocol === "https:";
 
       const isCrossSite =
-        frontend.protocol !== backend.protocol || frontend.hostname !== backend.hostname;
+        frontend.protocol !== backend.protocol ||
+        frontend.hostname !== backend.hostname;
 
       if (isCrossSite) {
         sameSite = "none";

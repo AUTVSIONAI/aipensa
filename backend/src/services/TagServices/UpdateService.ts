@@ -30,11 +30,15 @@ const UpdateUserService = async ({
     name: Yup.string().min(3)
   });
 
-  const { name, color, kanban,
+  const {
+    name,
+    color,
+    kanban,
     timeLane,
     nextLaneId = null,
     greetingMessageLane,
-    rollbackLaneId = null} = tagData;
+    rollbackLaneId = null
+  } = tagData;
 
   try {
     await schema.validate({ name });
@@ -49,7 +53,7 @@ const UpdateUserService = async ({
     timeLane,
     nextLaneId: String(nextLaneId) === "" ? null : nextLaneId,
     greetingMessageLane,
-    rollbackLaneId: String(rollbackLaneId) === "" ? null : rollbackLaneId,
+    rollbackLaneId: String(rollbackLaneId) === "" ? null : rollbackLaneId
   });
 
   await tag.reload();

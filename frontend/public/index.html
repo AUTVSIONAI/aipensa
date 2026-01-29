@@ -2,6 +2,9 @@
 <html lang="pt">
   <head>
     <script>
+      window.process = window.process || { env: { NODE_ENV: 'development' } };
+    </script>
+    <script>
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           for(let registration of registrations) {

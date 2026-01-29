@@ -1,5 +1,4 @@
 import { WebhookModel } from "../../models/Webhook";
-import { randomString } from "../../utils/randomCode";
 
 interface Request {
   status: boolean;
@@ -9,19 +8,15 @@ interface Request {
 const UpdateActiveWebHookService = async ({
   status,
   webhookId
-}: Request): Promise<String> => {
-  try {
+}: Request): Promise<string> => {
+  await WebhookModel.update(
+    { active: status },
+    {
+      where: { id: webhookId }
+    }
+  );
 
-    const webhook = await WebhookModel.update({ active: status }, {
-      where: {id: webhookId}
-    });
-
-    return 'ok';
-  } catch (error) {
-    console.error("Erro ao inserir o usuário:", error);
-
-    return error
-  }
+  return "ok";
 };
 
 export default UpdateActiveWebHookService;

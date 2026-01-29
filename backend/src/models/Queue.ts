@@ -58,7 +58,7 @@ class Queue extends Model<Queue> {
   @AllowNull(false)
   @Column
   tempoRoteador: number;
-  
+
   @Default("")
   @Column
   outOfHoursMessage: string;
@@ -107,7 +107,7 @@ class Queue extends Model<Queue> {
 
   @BelongsTo(() => Files)
   files: Files;
-  
+
   @Default(false)
   @Column
   closeTicket: boolean;
@@ -120,9 +120,9 @@ class Queue extends Model<Queue> {
   prompt: Prompt[];
 
   @HasMany(() => Chatbot, {
-    foreignKey: 'optQueueId', // Chave estrangeira que referencia o ID da fila
-    onDelete: 'SET NULL', // Ao excluir uma fila, define optQueueId como null nos chatbots associados
-    onUpdate: 'CASCADE', // Ao atualizar o ID da fila, atualiza optQueueId nos chatbots associados
+    foreignKey: "optQueueId", // Chave estrangeira que referencia o ID da fila
+    onDelete: "SET NULL", // Ao excluir uma fila, define optQueueId como null nos chatbots associados
+    onUpdate: "CASCADE", // Ao atualizar o ID da fila, atualiza optQueueId nos chatbots associados
     hooks: true // Ativa hooks para esta associação
   })
   optQueue: Chatbot[];
@@ -130,11 +130,16 @@ class Queue extends Model<Queue> {
   @BeforeDestroy
   static async updateChatbotsQueueReferences(queue: Queue) {
     // Atualizar os registros na tabela Chatbots onde optQueueId é igual ao ID da fila que será excluída
-    await Chatbot.update({ optQueueId: null }, { where: { optQueueId: queue.id } });
-    await Whatsapp.update({ sendIdQueue: null, timeSendQueue: 0 }, { where: { sendIdQueue: queue.id, companyId: queue.companyId } });
+    await Chatbot.update(
+      { optQueueId: null },
+      { where: { optQueueId: queue.id } }
+    );
+    await Whatsapp.update(
+      { sendIdQueue: null, timeSendQueue: 0 },
+      { where: { sendIdQueue: queue.id, companyId: queue.companyId } }
+    );
     await Prompt.update({ queueId: null }, { where: { queueId: queue.id } });
   }
-
 }
 
 export default Queue;

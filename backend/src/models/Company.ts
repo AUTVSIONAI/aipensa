@@ -135,7 +135,7 @@ class Company extends Model<Company> {
   })
   settings: Setting[];
 
-  @HasMany (() => CompaniesSettings, {
+  @HasMany(() => CompaniesSettings, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
     hooks: true

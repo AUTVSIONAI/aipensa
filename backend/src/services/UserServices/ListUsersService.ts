@@ -63,7 +63,7 @@ const ListUsersService = async ({
       {
         model: Company,
         as: "company",
-        attributes: ["id", "name", "dueDate", "document"],
+        attributes: ["id", "name", "dueDate", "document"]
         // include: [
         //   {
         //     model: Plan, as: "plan",
@@ -88,7 +88,7 @@ const ListUsersService = async ({
   });
 
   const hasMore = count > offset + users.length;
-  console.log(hasMore, count)
+  console.log(hasMore, count);
   return {
     users,
     count,

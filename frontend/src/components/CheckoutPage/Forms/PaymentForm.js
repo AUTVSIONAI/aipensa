@@ -77,8 +77,7 @@ export default function Pricing(props) {
   const [usersPlans, setUsersPlans] = React.useState(3);
   const [connectionsPlans, setConnectionsPlans] = React.useState(3);
   const [storagePlans, setStoragePlans] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const { user, socket } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   const { getPlanCompany } = usePlans();
 
@@ -91,7 +90,6 @@ export default function Pricing(props) {
   }, []);
 
   const loadPlans = async () => {
-    setLoading(true);
     try {
       const companyId = user.companyId;
       const _planList = await getPlanCompany(undefined, companyId);
@@ -122,7 +120,6 @@ export default function Pricing(props) {
     } catch (e) {
       // toast.error("Não foi possível carregar a lista de registros");
     }
-    setLoading(false);
   };
 
   const [customValuePlans, setCustomValuePlans] = React.useState(49.00);

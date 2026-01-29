@@ -5,12 +5,6 @@ import { useHistory } from "react-router-dom";
 
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
-import Button from "@material-ui/core/Button";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
 
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -29,14 +23,12 @@ import Title from "../../components/Title";
 
 import api from "../../services/api";
 import { i18n } from "../../translate/i18n";
-import TableRowSkeleton from "../../components/TableRowSkeleton";
 import CompanyModal from "../../components/CompaniesModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { useDate } from "../../hooks/useDate";
-import usePlans from "../../hooks/usePlans";
-import moment from "moment";
+
 
 const reducer = (state, action) => {
     if (action.type === "LOAD_COMPANIES") {
@@ -106,9 +98,8 @@ const Companies = () => {
     const [companies, dispatch] = useReducer(reducer, []);
     const { dateToClient, datetimeToClient } = useDate();
 
-    // const { getPlanCompany } = usePlans();
   //   const socketManager = useContext(SocketContext);
-    const { user, socket } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
 
 
     useEffect(() => {
@@ -202,59 +193,15 @@ const Companies = () => {
         }
     };
 
-    const renderStatus = (row) => {
-        return row.status === false ? "Não" : "Sim";
+    const renderStatus = (status) => {
+        return status === false ? "Não" : "Sim";
     };
 
     const renderPlanValue = (row) => {
         return row.planId !== null ? row.plan.amount ? row.plan.amount.toLocaleString('pt-br', { minimumFractionDigits: 2 }) : '00.00' : "-";
     };
 
-    const renderWhatsapp = (row) => {
-        return row.useWhatsapp === false ? "Não" : "Sim";
-    };
-
-    const renderFacebook = (row) => {
-        return row.useFacebook === false ? "Não" : "Sim";
-    };
-
-    const renderInstagram = (row) => {
-        return row.useInstagram === false ? "Não" : "Sim";
-    };
-
-    const renderCampaigns = (row) => {
-        return row.useCampaigns === false ? "Não" : "Sim";
-    };
-
-    const renderSchedules = (row) => {
-        return row.useSchedules === false ? "Não" : "Sim";
-    };
-
-    const renderInternalChat = (row) => {
-        return row.useInternalChat === false ? "Não" : "Sim";
-    };
-
-    const renderExternalApi = (row) => {
-        return row.useExternalApi === false ? "Não" : "Sim";
-    };
-
-    const rowStyle = (record) => {
-        if (moment(record.dueDate).isValid()) {
-            const now = moment();
-            const dueDate = moment(record.dueDate);
-            const diff = dueDate.diff(now, "days");
-            if (diff >= 1 && diff <= 5) {
-                return { backgroundColor: "#fffead" };
-            }
-            if (diff <= 0) {
-                return { backgroundColor: "#fa8c8c" };
-            }
-            // else {
-            //   return { backgroundColor: "#affa8c" };
-            // }
-        }
-        return {};
-    };
+ 
 
     return (
         <MainContainer>

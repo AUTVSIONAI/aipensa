@@ -138,20 +138,22 @@ const backToMainMenu = async (
     companyId: ticket.companyId
   });
   // console.log("GETTING WHATSAPP BACK TO MAIN MENU", ticket.whatsappId, wbot.id)
-  const { queues, greetingMessage } = await ShowWhatsAppService(wbot.id!, ticket.companyId);
-
+  const { queues, greetingMessage } = await ShowWhatsAppService(
+    wbot.id!,
+    ticket.companyId
+  );
 
   let options = "";
 
-    queues.forEach((option, index) => {
-      options += `*${index + 1}* - ${option.name}\n`;
-    });
+  queues.forEach((option, index) => {
+    options += `*${index + 1}* - ${option.name}\n`;
+  });
 
-    const body = formatBody(`\u200e${greetingMessage}\n\n${options}`, ticket);
-    await sendMessage(wbot, contact, ticket, body);
+  const body = formatBody(`\u200e${greetingMessage}\n\n${options}`, ticket);
+  await sendMessage(wbot, contact, ticket, body);
 
-    const deleteDialog = await DeleteDialogChatBotsServices(contact.id);
-    return deleteDialog;
+  const deleteDialog = await DeleteDialogChatBotsServices(contact.id);
+  return deleteDialog;
 };
 
 export const sayChatbot = async (
@@ -173,7 +175,7 @@ export const sayChatbot = async (
 
   if (!getStageBot) {
     const queue = await ShowQueueService(queueId, ticket.companyId);
-    const selectedOption =  msg.text
+    const selectedOption = msg.text;
 
     const choosenQueue = queue.chatbots[+selectedOption - 1];
     if (!choosenQueue?.greetingMessage) {
@@ -190,7 +192,7 @@ export const sayChatbot = async (
         const ticketUpdateAgent = {
           ticketData: {
             userId: getUserByName.id,
-            status: "open",
+            status: "open"
           },
           ticketId: ticket.id,
           companyId: ticket.companyId
@@ -231,7 +233,7 @@ export const sayChatbot = async (
         await UpdateTicketService(ticketUpdateAgent);
       }
       await deleteAndCreateDialogStage(contact, choosenQueue.id, ticket);
-      const send = await sendDialog(choosenQueue,  contact, ticket);
+      const send = await sendDialog(choosenQueue, contact, ticket);
       return send;
     }
   }

@@ -251,9 +251,14 @@ const CampaignSchema = Yup.object().shape({
 });
 
 const DraggablePaper = (props) => {
+  const nodeRef = React.useRef(null);
   return (
-    <Draggable handle="#draggable-dialog-title" cancel={'[class*="MuiDialogContent-root"]'}>
-      <Paper {...props} />
+    <Draggable
+      handle="#draggable-dialog-title"
+      cancel={'[class*="MuiDialogContent-root"], [class*="MuiDialogActions-root"]'}
+      nodeRef={nodeRef}
+    >
+      <Paper ref={nodeRef} {...props} />
     </Draggable>
   );
 };

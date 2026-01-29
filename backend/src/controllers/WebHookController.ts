@@ -6,16 +6,17 @@ import { handleFacebookFeed } from "../services/FacebookServices/FacebookFeedLis
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const VERIFY_TOKEN =
-    process.env.WEBHOOK_VERIFY_TOKEN ||
-    process.env.VERIFY_TOKEN ||
-    "whaticket";
+    process.env.WEBHOOK_VERIFY_TOKEN || process.env.VERIFY_TOKEN || "whaticket";
 
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
   if (mode && token) {
-    if (mode === "subscribe" && (token === VERIFY_TOKEN || token === "aipensa_verify_2026")) {
+    if (
+      mode === "subscribe" &&
+      (token === VERIFY_TOKEN || token === "aipensa_verify_2026")
+    ) {
       return res.status(200).send(challenge);
     }
   }
@@ -31,7 +32,7 @@ export const webHook = async (
 ): Promise<Response> => {
   try {
     const { body } = req;
-    console.log(30, "WebHookController", { body })
+    console.log(30, "WebHookController", { body });
 
     if (body.object === "page" || body.object === "instagram") {
       let channel: string;
@@ -56,7 +57,12 @@ export const webHook = async (
           });
 
           entry.changes?.forEach((data: any) => {
-            handleFacebookFeed(getTokenPage, data, channel, getTokenPage.companyId);
+            handleFacebookFeed(
+              getTokenPage,
+              data,
+              channel,
+              getTokenPage.companyId
+            );
           });
         }
       });

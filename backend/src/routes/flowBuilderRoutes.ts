@@ -56,7 +56,7 @@ flowBuilder.post(
 flowBuilder.post(
   "/flowbuilder/content",
   isAuth,
-  upload.array('medias'),
+  upload.array("medias"),
   FlowBuilderController.FlowUploadAll
 );
 

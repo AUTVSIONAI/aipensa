@@ -10,10 +10,13 @@ interface Request {
   quotedMsg?: Message;
 }
 
-const sendFacebookMessage = async ({ body, ticket, quotedMsg }: Request): Promise<any> => {
+const sendFacebookMessage = async ({
+  body,
+  ticket,
+  quotedMsg
+}: Request): Promise<any> => {
   const { number } = ticket.contact;
   try {
-
     const send = await sendText(
       number,
       formatBody(body, ticket),
@@ -23,9 +26,8 @@ const sendFacebookMessage = async ({ body, ticket, quotedMsg }: Request): Promis
     await ticket.update({ lastMessage: body });
 
     return send;
-
   } catch (err) {
-    console.log(err)
+    console.log(err);
     throw new AppError("ERR_SENDING_FACEBOOK_MSG");
   }
 };

@@ -31,15 +31,15 @@ interface Request {
 
 const CreateMessageService = async ({
   messageData,
-  companyId,
+  companyId
 }: Request): Promise<Message> => {
   // Verifica se já existe uma mensagem com o mesmo wid e ticketId
   const existingMessage = await Message.findOne({
     where: {
       wid: messageData.wid,
       ticketId: messageData.ticketId,
-      companyId,
-    },
+      companyId
+    }
   });
 
   if (existingMessage) {
@@ -53,7 +53,7 @@ const CreateMessageService = async ({
   const message = await Message.findOne({
     where: {
       wid: messageData.wid,
-      companyId,
+      companyId
     },
     include: [
       "contact",
@@ -72,35 +72,35 @@ const CreateMessageService = async ({
               "acceptAudioMessage",
               "active",
               "urlPicture",
-              "companyId",
+              "companyId"
             ],
-            include: ["extraInfo", "tags"],
+            include: ["extraInfo", "tags"]
           },
           {
             model: Queue,
-            attributes: ["id", "name", "color"],
+            attributes: ["id", "name", "color"]
           },
           {
             model: Whatsapp,
-            attributes: ["id", "name", "groupAsTicket"],
+            attributes: ["id", "name", "groupAsTicket"]
           },
           {
             model: User,
-            attributes: ["id", "name"],
+            attributes: ["id", "name"]
           },
           {
             model: Tag,
             as: "tags",
-            attributes: ["id", "name", "color"],
-          },
-        ],
+            attributes: ["id", "name", "color"]
+          }
+        ]
       },
       {
         model: Message,
         as: "quotedMsg",
-        include: ["contact"],
-      },
-    ],
+        include: ["contact"]
+      }
+    ]
   });
 
   if (message.ticket.queueId !== null && message.queueId === null) {
@@ -122,7 +122,7 @@ const CreateMessageService = async ({
       action: "create",
       message,
       ticket: message.ticket,
-      contact: message.ticket.contact,
+      contact: message.ticket.contact
     });
   }
 

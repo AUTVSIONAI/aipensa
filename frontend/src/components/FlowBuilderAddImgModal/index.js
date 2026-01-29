@@ -251,7 +251,8 @@ const FlowBuilderAddImgModal = ({ open, onSave, onUpdate, data, close }) => {
       <Dialog
         open={activeModal}
         onClose={handleClose}
-        fullWidth="md"
+        fullWidth
+        maxWidth="md"
         scroll="paper"
       >
         <DialogTitle id="form-dialog-title">{labels.title}</DialogTitle>

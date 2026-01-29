@@ -17,7 +17,11 @@ export const SendTextMessageService = async (
 
   const client = new Client(notificameHubToken);
 
-  const channelClient = client.setChannel(connection.channel === 'whatsapp_business_account' ? 'whatsapp' : connection.channel);
+  const channelClient = client.setChannel(
+    connection.channel === "whatsapp_business_account"
+      ? "whatsapp"
+      : connection.channel
+  );
 
   const content = new TextContent(message);
 
@@ -51,7 +55,7 @@ export const SendTextMessageService = async (
       ticketId,
       fromMe: true,
       companyId: connection.companyId,
-			ack: 2
+      ack: 2
     });
 
     return newMessage;

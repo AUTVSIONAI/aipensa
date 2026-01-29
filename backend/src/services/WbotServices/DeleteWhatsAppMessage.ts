@@ -5,7 +5,10 @@ import GetWbotMessage from "../../helpers/GetWbotMessage";
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
 
-const DeleteWhatsAppMessage = async (messageId: string, companyId?: string | number): Promise<Message> => {
+const DeleteWhatsAppMessage = async (
+  messageId: string,
+  companyId?: string | number
+): Promise<Message> => {
   const message = await Message.findOne({
     where: {
       id: messageId,
@@ -34,12 +37,11 @@ const DeleteWhatsAppMessage = async (messageId: string, companyId?: string | num
       const wbot = await GetTicketWbot(ticket);
       const menssageDelete = messageToDelete as Message;
 
-      const jsonStringToParse = JSON.parse(menssageDelete.dataJson)
+      const jsonStringToParse = JSON.parse(menssageDelete.dataJson);
 
       await (wbot as WASocket).sendMessage(menssageDelete.remoteJid, {
         delete: jsonStringToParse.key
-      })
-
+      });
     } catch (err) {
       console.log(err);
       throw new AppError("ERR_DELETE_WAPP_MSG");
@@ -49,7 +51,7 @@ const DeleteWhatsAppMessage = async (messageId: string, companyId?: string | num
   if (!message.isPrivate) {
     await message.update({ isDeleted: true });
   }
-  
+
   return message;
 };
 

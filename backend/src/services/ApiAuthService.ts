@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = 'https://sandboxapicore.imaginasoft.pt/api/v1';
-const USERNAME = 'sandboxapi_nsapi_266844693';
-const PASSWORD = 'ieN83R8ilgqPu6RCEsUFdg9H22OzfKG2wjSoSsnt@AqYKsntqJIF&Ux2$2O1';
+const API_BASE_URL = "https://sandboxapicore.imaginasoft.pt/api/v1";
+const USERNAME = "sandboxapi_nsapi_266844693";
+const PASSWORD = "ieN83R8ilgqPu6RCEsUFdg9H22OzfKG2wjSoSsnt@AqYKsntqJIF&Ux2$2O1";
 
 interface AuthResponse {
   token: string; // Certifique-se de que a API retorna o token neste formato
@@ -17,18 +17,18 @@ class AuthService {
         `${API_BASE_URL}/Authentication`,
         {
           username: USERNAME,
-          password: PASSWORD,
+          password: PASSWORD
         },
         {
           headers: {
-            'Content-Type': 'application/json',
-          },
+            "Content-Type": "application/json"
+          }
         }
       );
 
       // Verifique se o token foi retornado corretamente
       if (!response.data.token) {
-        throw new Error('Token not found in the response');
+        throw new Error("Token not found in the response");
       }
 
       return response.data.token;
@@ -37,14 +37,18 @@ class AuthService {
       if (error.response) {
         // Erro retornado pela API
         throw new Error(
-          `Failed to authenticate: ${error.response.status} - ${error.response.data.message || 'No error message'}`
+          `Failed to authenticate: ${error.response.status} - ${
+            error.response.data.message || "No error message"
+          }`
         );
       } else if (error.request) {
         // Erro de conexão
-        throw new Error('Failed to authenticate: No response received from the server');
+        throw new Error(
+          "Failed to authenticate: No response received from the server"
+        );
       } else {
         // Erro genérico
-        throw new Error('Failed to authenticate: ' + error.message);
+        throw new Error("Failed to authenticate: " + error.message);
       }
     }
   }

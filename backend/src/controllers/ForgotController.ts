@@ -8,7 +8,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const TokenSenha = uuid();
   const forgotPassword = await SendMail(email, TokenSenha);
   if (!forgotPassword) {
-     return res.status(200).json({ message: "E-mail enviado com sucesso" });
+    return res.status(200).json({ message: "E-mail enviado com sucesso" });
   }
   return res.status(404).json({ error: "E-mail enviado com sucesso" });
 };

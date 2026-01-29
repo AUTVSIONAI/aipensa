@@ -41,13 +41,64 @@ const useStyles = makeStyles((theme) => ({
   mainPaper: {
     flex: 1,
     padding: theme.spacing(1),
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
   },
   customTableCell: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+  },
+  emptyState: {
+    padding: theme.spacing(4),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    textAlign: "center",
+  },
+  entityCard: {
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+    },
+  },
+  colorSwatch: {
+    width: 60,
+    height: 20,
+    margin: "0 auto",
+    borderRadius: 999,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.08)",
+  },
+  actionsRow: {
+    justifyContent: "center",
+    gap: theme.spacing(1.25),
+    paddingBottom: theme.spacing(2),
+    paddingTop: theme.spacing(1),
+  },
+  actionButton: {
+    borderRadius: 12,
+    minWidth: 44,
+    width: 44,
+    height: 44,
+    boxShadow: "none",
+    color: "white",
+  },
+  actionEdit: {
+    background: theme.palette.primary.main,
+    "&:hover": {
+      background: theme.palette.primary.dark,
+    },
+  },
+  actionDelete: {
+    background: theme.palette.error.main,
+    "&:hover": {
+      background: theme.palette.error.dark,
+    },
   },
 }));
 
@@ -220,93 +271,59 @@ const Queues = () => {
             </MainHeaderButtonsWrapper>
           </MainHeader>
           <Paper className={classes.mainPaper} variant="outlined">
-<Grid container spacing={2}>
-  {queues.map((queue) => (
-    <Grid item xs={12} sm={6} md={4} lg={3} key={queue.id}>
-      <Card
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-       >
-        <CardHeader
-          title={queue.name}
-         // subheader={`${i18n.t("queues.table.ID")}: ${queue.id}`}
-          titleTypographyProps={{ align: "center" }}
-          subheaderTypographyProps={{ align: "center" }}
-        />
-        <CardContent>
-
-          <div
-            style={{
-              backgroundColor: queue.color,
-              width: 60,
-              height: 20,
-              margin: "0 auto",
-              borderRadius: 4,
-            }}
-          />
-          <Typography variant="body2" align="center" style={{ marginTop: 10 }}>
-            {i18n.t("Ordenação")}: {queue.orderQueue}
-          </Typography>
-
-        </CardContent>
-<CardActions style={{ justifyContent: "center", gap: "10px" }}>
-  <div
-    onClick={() => handleEditQueue(queue)}
-    style={{
-      backgroundColor: "#3DB8FF",
-      borderRadius: "10px",
-      width: "40px",
-      height: "40px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      transition: "0.3s",
-    }}
-  >
-    <Edit style={{ color: "#fff" }} />
-  </div>
-
-  <div
-    onClick={() => {
-      setSelectedQueue(queue);
-      setConfirmModalOpen(true);
-    }}
-    style={{
-      backgroundColor: "#FF6B6B",
-      borderRadius: "10px",
-      width: "40px",
-      height: "40px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      transition: "0.3s",
-    }}
-  >
-    <DeleteOutline style={{ color: "#fff" }} />
-  </div>
-</CardActions>
-
-      </Card>
-    </Grid>
-  ))}
-  {loading && (
-    <Grid item xs={12}>
-      <CircularProgress style={{ display: "block", margin: "0 auto" }} />
-    </Grid>
-  )}
-</Grid>
+            {queues.length === 0 && !loading && (
+              <div className={classes.emptyState}>
+                <Typography variant="subtitle1" color="textPrimary">
+                  Nenhuma fila cadastrada
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Crie uma fila para organizar os atendimentos.
+                </Typography>
+              </div>
+            )}
+            <Grid container spacing={2}>
+              {queues.map((queue) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={queue.id}>
+                  <Card variant="outlined" className={classes.entityCard}>
+                    <CardHeader
+                      title={queue.name}
+                      titleTypographyProps={{ align: "center" }}
+                      subheaderTypographyProps={{ align: "center" }}
+                    />
+                    <CardContent>
+                      <div className={classes.colorSwatch} style={{ backgroundColor: queue.color }} />
+                      <Typography variant="body2" align="center" style={{ marginTop: 10 }}>
+                        {i18n.t("Ordenação")}: {queue.orderQueue}
+                      </Typography>
+                    </CardContent>
+                    <CardActions className={classes.actionsRow}>
+                      <Button
+                        variant="contained"
+                        className={`${classes.actionButton} ${classes.actionEdit}`}
+                        onClick={() => handleEditQueue(queue)}
+                      >
+                        <Edit fontSize="small" />
+                      </Button>
+                      <Button
+                        variant="contained"
+                        className={`${classes.actionButton} ${classes.actionDelete}`}
+                        onClick={() => {
+                          setSelectedQueue(queue);
+                          setConfirmModalOpen(true);
+                        }}
+                      >
+                        <DeleteOutline fontSize="small" />
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+              {loading && (
+                <Grid item xs={12}>
+                  <CircularProgress style={{ display: "block", margin: "0 auto" }} />
+                </Grid>
+              )}
+            </Grid>
           </Paper>
         </>}
     </MainContainer>

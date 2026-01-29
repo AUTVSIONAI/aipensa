@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useHistory } from "react-router-dom";
 import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider, Chip, Stepper, Step, StepLabel, CircularProgress, Avatar, Tooltip, InputAdornment, List, ListItem, ListItemAvatar, ListItemText, IconButton, Paper, Collapse, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
+import { makeStyles, useTheme } from "@material-ui/core/styles";
 import api from "../../services/api";
 import { socketConnection } from "../../services/socket";
 import { AuthContext } from "../../context/Auth/AuthContext";
@@ -24,6 +24,8 @@ import PostAddIcon from "@mui/icons-material/PostAdd";
 import DynamicFeedIcon from "@mui/icons-material/DynamicFeed";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import SettingsIcon from "@mui/icons-material/Settings";
+import CheckCircleIcon from "@material-ui/icons/CheckCircle";
+import TabPanel from "../../components/TabPanel";
 import { Skeleton } from "@material-ui/lab";
 import Chart from "react-apexcharts";
 
@@ -31,13 +33,16 @@ const useStyles = makeStyles((theme) => ({
   root: {
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(8),
-    background: "linear-gradient(135deg, #1e1e2f 0%, #2d2b42 100%)", // Dark futuristic bg
     minHeight: "100vh",
     // height: "100%", // Removed to allow scrolling and prevent white bottom on overflow
     display: "flex",
     flexDirection: "column",
     backgroundAttachment: "fixed",
-    color: "#fff",
+    background:
+      theme.palette.type === "dark"
+        ? "radial-gradient(1200px 600px at 20% 10%, rgba(37, 117, 252, 0.10) 0%, rgba(0,0,0,0) 55%), radial-gradient(900px 500px at 80% 30%, rgba(106, 17, 203, 0.10) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(17, 24, 39, 0.65) 0%, rgba(17, 24, 39, 0.35) 100%)"
+        : "radial-gradient(1200px 600px at 20% 10%, rgba(37, 117, 252, 0.08) 0%, rgba(255,255,255,0) 55%), radial-gradient(900px 500px at 80% 30%, rgba(106, 17, 203, 0.08) 0%, rgba(255,255,255,0) 60%), linear-gradient(180deg, rgba(244, 246, 248, 1) 0%, rgba(255,255,255,1) 100%)",
+    color: theme.palette.text.primary,
     flex: 1,
     overflowX: "hidden"
   },
@@ -45,19 +50,18 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(4)
   },
   card: {
-    border: "1px solid rgba(255, 255, 255, 0.1)",
     borderRadius: 16,
-    background: "rgba(255, 255, 255, 0.05)",
-    backdropFilter: "blur(10px)",
-    boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
     height: "100%",
     transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
     "&:hover": {
       transform: "translateY(-5px)",
-      boxShadow: "0 12px 40px 0 rgba(31, 38, 135, 0.5)",
-      border: "1px solid rgba(255, 255, 255, 0.2)"
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
     },
-    color: "#fff"
+    color: theme.palette.text.primary
   },
   cardHeader: {
     padding: theme.spacing(2),
@@ -70,27 +74,44 @@ const useStyles = makeStyles((theme) => ({
   cardTitle: {
     fontWeight: 700,
     fontSize: "1.1rem",
-    color: "#fff",
-    textShadow: "0 0 10px rgba(255,255,255,0.3)"
+    color: theme.palette.text.primary
   },
   cardContent: {
     padding: theme.spacing(3)
   },
   tabRoot: {
-    backgroundColor: "#2d2b42",
     borderRadius: 16,
     marginBottom: theme.spacing(3),
-    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.35)" : "0 8px 24px rgba(0,0,0,0.08)",
     "& .MuiTab-root": {
-      color: "rgba(255, 255, 255, 0.7)",
+      color: theme.palette.text.secondary,
       "&.Mui-selected": {
-        color: "#60a5fa",
-        fontWeight: "bold"
+        color: theme.palette.primary.main,
+        fontWeight: 700
       }
     },
     "& .MuiTabs-indicator": {
-      backgroundColor: "#60a5fa"
+      backgroundColor: theme.palette.primary.main
     }
+  },
+  mutedText: {
+    color: theme.palette.text.secondary,
+  },
+  backButton: {
+    color: theme.palette.text.secondary,
+    marginRight: theme.spacing(2),
+    textTransform: "none",
+  },
+  pageTitle: {
+    fontWeight: 800,
+  },
+  sectionIcon: {
+    width: 32,
+    height: 32,
+    backgroundColor: theme.palette.primary.main,
   },
   statVal: {
     fontWeight: 800,
@@ -143,7 +164,7 @@ const Section = ({ icon, title, children }) => {
   return (
     <Box>
       <div className={classes.cardHeader}>
-        <Avatar style={{ width: 32, height: 32, backgroundColor: "#3b82f6" }}>{icon}</Avatar>
+        <Avatar className={classes.sectionIcon}>{icon}</Avatar>
         <Typography className={classes.cardTitle}>{title}</Typography>
       </div>
       <div className={classes.cardContent}>
@@ -155,6 +176,7 @@ const Section = ({ icon, title, children }) => {
 
 const Marketing = () => {
   const classes = useStyles();
+  const theme = useTheme();
   const history = useHistory();
   const { user } = useContext(AuthContext);
   const [name, setName] = useState("Campanha WhatsApp");
@@ -265,6 +287,14 @@ const Marketing = () => {
         const params = {};
 
         const { data } = await api.get("/marketing/pages", { params });
+        
+        if (data.error) {
+             setPagesError(true);
+             setPagesErrorMsg(String(data.error));
+             setPages([]);
+             return;
+        }
+
         setPages(data?.data || []);
       } catch (err) {
         if (err.response?.status !== 400) {
@@ -286,6 +316,15 @@ const Marketing = () => {
         const params = { date_preset: datePreset };
         
         const { data } = await api.get("/marketing/insights", { params });
+        
+        if (data.error) {
+             setAdAccountError(true);
+             setInsightsError(true);
+             setInsightsErrorMsg(String(data.message || data.error));
+             setInsights([]);
+             return;
+        }
+
         setInsights(data.data || []);
       } catch (err) {
         const errorType = err.response?.data?.error;
@@ -395,6 +434,13 @@ const Marketing = () => {
       const params = { pageId: targetId, platform: feedPlatform };
 
       const { data } = await api.get("/marketing/feed", { params });
+      
+      if (data.error) {
+        toast.error(data.error);
+        setFeed([]);
+        return;
+      }
+
       setFeed(data.data || []);
     } catch (err) {
       toastError(err);
@@ -597,25 +643,9 @@ const Marketing = () => {
     }
   };
 
-  const TabPanel = (props) => {
-    const { children, value, index, ...other } = props;
-    return (
-      <div
-        role="tabpanel"
-        hidden={value !== index}
-        id={`marketing-tabpanel-${index}`}
-        aria-labelledby={`marketing-tab-${index}`}
-        {...other}
-        style={{ display: value === index ? "block" : "none" }}
-      >
-        {value === index && (
-          <Box p={3}>
-            {children}
-          </Box>
-        )}
-      </div>
-    );
-  };
+
+  // TabPanel moved outside
+
 
   return (
     <div className={classes.root}>
@@ -625,15 +655,15 @@ const Marketing = () => {
             <Button
               startIcon={<ArrowBackIcon />}
               onClick={() => history.push("/")}
-              style={{ color: "rgba(255,255,255,0.7)", marginRight: 16 }}
+              className={classes.backButton}
             >
               Voltar
             </Button>
             <Box>
-              <Typography variant="h4" style={{ fontWeight: 800, background: "linear-gradient(90deg, #fff 0%, #a5b4fc 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              <Typography variant="h4" className={classes.pageTitle}>
                 Marketing Pro
               </Typography>
-              <Typography variant="subtitle1" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+              <Typography variant="subtitle1" className={classes.mutedText}>
                 Gerencie suas campanhas e redes sociais em um único lugar.
               </Typography>
             </Box>
@@ -672,6 +702,14 @@ const Marketing = () => {
           </Tabs>
         </Paper>
 
+        {(!statusLoading && !insightsLoading && !status && (!Array.isArray(insights) || insights.length === 0)) && (
+          <Paper style={{ marginTop: 16, padding: 16 }} elevation={0}>
+            <Typography variant="body2" color="textSecondary">
+              Nenhum conteúdo disponível nas abas no momento. Verifique suas conexões ou tente novamente.
+            </Typography>
+          </Paper>
+        )}
+
         <TabPanel value={tab} index={0}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
@@ -681,14 +719,14 @@ const Marketing = () => {
                             <Chart
                                 options={{
                                     chart: { id: "basic-bar", toolbar: { show: false }, background: 'transparent', fontFamily: 'Inherit' },
-                                    theme: { mode: 'dark' },
+                                    theme: { mode: theme.palette.type === "dark" ? "dark" : "light" },
                                     xaxis: { 
                                         categories: insights.map(i => new Date(i.date_start).toLocaleDateString().slice(0,5)).reverse(),
-                                        labels: { style: { colors: 'rgba(255,255,255,0.7)' } }
+                                        labels: { style: { colors: theme.palette.text.secondary } }
                                     },
-                                    yaxis: { labels: { style: { colors: 'rgba(255,255,255,0.7)' } } },
-                                    colors: ['#3b82f6', '#10b981'],
-                                    grid: { borderColor: 'rgba(255,255,255,0.1)' },
+                                    yaxis: { labels: { style: { colors: theme.palette.text.secondary } } },
+                                    colors: [theme.palette.primary.main, (theme.palette.success && theme.palette.success.main) ? theme.palette.success.main : theme.palette.secondary.main],
+                                    grid: { borderColor: theme.palette.divider },
                                     dataLabels: { enabled: false },
                                     stroke: { curve: 'smooth', width: 3 },
                                     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.2, stops: [0, 90, 100] } }
@@ -703,7 +741,7 @@ const Marketing = () => {
                             />
                         ) : (
                              <Box p={4} textAlign="center">
-                                {insightsLoading ? <CircularProgress /> : <Typography style={{color: 'rgba(255,255,255,0.5)'}}>Sem dados de insights disponíveis para exibir o gráfico.</Typography>}
+                                {insightsLoading ? <CircularProgress /> : <Typography className={classes.mutedText}>Sem dados de insights disponíveis para exibir o gráfico.</Typography>}
                              </Box>
                         )}
                     </Section>
@@ -1573,6 +1611,60 @@ const Marketing = () => {
                        ))}
                     </Grid>
                  )}
+              </Grid>
+           </Grid>
+        </TabPanel>
+
+        <TabPanel value={tab} index={9}>
+           <Grid container spacing={3} justifyContent="center">
+              <Grid item xs={12} md={8}>
+                 <Card className={classes.card}>
+                    <Section icon={<SettingsIcon style={{ color: "white" }} />} title="Configurações">
+                       <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }} paragraph>
+                          Configure as conexões com as plataformas de Marketing e Redes Sociais.
+                       </Typography>
+                       
+                       <Box mb={4} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
+                          <Typography variant="h6" gutterBottom style={{ color: "#fff" }}>Meta (Facebook & Instagram)</Typography>
+                          
+                          {status?.adAccountId ? (
+                             <Box>
+                                <Box display="flex" alignItems="center" gap={2} mb={2}>
+                                   <CheckCircleIcon style={{ color: "#10b981" }} />
+                                   <Typography variant="body1" style={{ color: "#fff" }}>Conectado como <strong>{status.me?.name}</strong></Typography>
+                                </Box>
+                                <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Ad Account ID: {status.adAccountId}</Typography>
+                                <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Business Manager ID: {status.businessId}</Typography>
+                                
+                                <Box mt={3}>
+                                   <Button variant="outlined" color="secondary" onClick={() => window.location.href = "/connections"}>
+                                      Gerenciar Conexão
+                                   </Button>
+                                </Box>
+                             </Box>
+                          ) : (
+                             <Box>
+                                <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
+                                   Você precisa conectar sua conta do Facebook para utilizar os recursos de Marketing.
+                                </Typography>
+                                <Button variant="contained" color="primary" onClick={() => window.location.href = "/connections"}>
+                                   Conectar Agora
+                                </Button>
+                             </Box>
+                          )}
+                       </Box>
+                       
+                       <Box mb={4} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
+                          <Typography variant="h6" gutterBottom style={{ color: "#fff" }}>OpenAI / LLM</Typography>
+                          <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
+                             A configuração da IA é feita no menu "OpenAI" ou "Integrações".
+                          </Typography>
+                          <Button variant="outlined" color="primary" onClick={() => history.push("/openai")}>
+                             Ir para Configurações de IA
+                          </Button>
+                       </Box>
+                    </Section>
+                 </Card>
               </Grid>
            </Grid>
         </TabPanel>

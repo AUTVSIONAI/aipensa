@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import { i18n } from "../../translate/i18n";
 import { useHistory } from 'react-router-dom';
 import { Facebook, Instagram, WhatsApp } from "@material-ui/icons";
-import { Badge, Tooltip, Typography, Button, TextField, Box } from "@material-ui/core";
+import { Badge, Tooltip, Typography, Button, TextField, Box, Paper } from "@material-ui/core";
 import { format, isSameDay, parseISO } from "date-fns";
 import { Can } from "../../components/Can";
 import SearchIcon from '@mui/icons-material/Search';
@@ -19,41 +19,51 @@ const useStyles = makeStyles(theme => ({
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    padding: theme.spacing(1),
-    height: "100vh", // Ocupar toda a altura da tela
-    backgroundColor: theme.palette.background.default, // Usar cor de fundo do tema
+    padding: theme.spacing(3),
+    height: "100vh",
+    backgroundColor: "transparent",
+    overflowX: "hidden",
   },
   kanbanContainer: {
     width: "100%",
-    height: "calc(100vh - 150px)", // Ajustar altura para ocupar o espaço restante
-    overflow: "auto", // Adicionar scroll se necessário
-    padding: theme.spacing(1),
+    height: "calc(100vh - 180px)",
+    marginTop: theme.spacing(2),
   },
   filterContainer: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    maxWidth: "1200px",
+    padding: theme.spacing(2),
+    background: theme.palette.type === 'dark' ? "rgba(255, 255, 255, 0.05)" : "#fff",
+    borderRadius: 16,
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
     marginBottom: theme.spacing(2),
-    flexWrap: "wrap", // Permitir que os elementos se ajustem em telas menores
+    flexWrap: "wrap",
+    backdropFilter: "blur(10px)",
   },
   dateInput: {
     marginRight: theme.spacing(2),
-    marginBottom: theme.spacing(1), // Adicionar margem inferior para telas menores
-    flex: 1, // Permitir que os campos de data ocupem espaço disponível
+    marginBottom: theme.spacing(1),
+    "& .MuiOutlinedInput-root": {
+      borderRadius: 12,
+    }
   },
   button: {
-    marginBottom: theme.spacing(1), // Adicionar margem inferior para telas menores
+    marginBottom: theme.spacing(1),
+    borderRadius: 30,
+    textTransform: "none",
+    fontWeight: "bold",
+    boxShadow: "0 3px 5px 2px rgba(0, 0, 0, .1)",
   },
   connectionTag: {
-    background: "green",
+    background: "linear-gradient(45deg, #2563eb 30%, #7c3aed 90%)",
     color: "#FFF",
     marginRight: 1,
-    padding: 1,
+    padding: "2px 6px",
     fontWeight: 'bold',
-    borderRadius: 3,
-    fontSize: "0.6em",
+    borderRadius: 8,
+    fontSize: "0.7em",
   },
   lastMessageTime: {
     justifySelf: "flex-end",
@@ -61,6 +71,7 @@ const useStyles = makeStyles(theme => ({
     position: "relative",
     marginLeft: "auto",
     color: theme.palette.text.secondary,
+    fontSize: "0.8rem",
   },
   lastMessageTimeUnread: {
     justifySelf: "flex-end",
@@ -68,15 +79,47 @@ const useStyles = makeStyles(theme => ({
     position: "relative",
     color: theme.palette.success.main,
     fontWeight: "bold",
-    marginLeft: "auto"
+    marginLeft: "auto",
+    fontSize: "0.8rem",
   },
   cardButton: {
     marginRight: theme.spacing(1),
     color: theme.palette.common.white,
-    backgroundColor: theme.palette.primary.main,
+    background: "linear-gradient(45deg, #2563eb 30%, #7c3aed 90%)", // Gradient button
+    borderRadius: 20,
+    textTransform: "none",
+    padding: "4px 12px",
+    fontSize: "0.8rem",
     "&:hover": {
-      backgroundColor: theme.palette.primary.dark,
+      background: "linear-gradient(45deg, #1d4ed8 30%, #6d28d9 90%)",
     },
+  },
+  laneStyle: {
+    backgroundColor: theme.palette.type === 'dark' ? "rgba(17, 24, 39, 0.45)" : "rgba(255, 255, 255, 0.85)",
+    borderRadius: 16,
+    boxShadow: theme.palette.type === 'dark'
+      ? `0 0 0 1px rgba(255,255,255,0.08), 0 12px 32px rgba(0,0,0,0.35)`
+      : "0 6px 18px rgba(0,0,0,0.08)",
+    padding: theme.spacing(1),
+    maxHeight: "100%",
+    backdropFilter: "blur(16px)",
+  },
+  cardStyle: {
+    borderRadius: 12,
+    border: "none",
+    boxShadow: theme.palette.type === 'dark'
+      ? "0 6px 18px rgba(0,0,0,0.35)"
+      : "0 2px 8px rgba(0,0,0,0.08)",
+    backgroundColor: theme.palette.type === 'dark' ? "rgba(30, 30, 47, 0.65)" : "#fff",
+    color: theme.palette.text.primary,
+    marginBottom: theme.spacing(1),
+    transition: "transform 0.2s",
+    "&:hover": {
+        transform: "translateY(-2px)",
+        boxShadow: theme.palette.type === 'dark'
+          ? `0 0 0 1px rgba(0, 242, 255, 0.25), 0 10px 28px rgba(0,0,0,0.45)`
+          : "0 6px 16px rgba(0,0,0,0.15)",
+    }
   },
 }));
 
@@ -195,6 +238,14 @@ const Kanban = () => {
   const popularCards = () => {
     const filteredTickets = tickets.filter(ticket => ticket.tags.length === 0);
 
+    const laneStyle = {
+      backgroundColor: theme.palette.type === 'dark' ? "#2d2b42" : "#f4f5f7",
+      color: theme.palette.text.primary,
+      borderRadius: 16,
+      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+      padding: "10px",
+    };
+
     const lanes = [
       {
         id: "lane0",
@@ -205,8 +256,8 @@ const Kanban = () => {
           label: "Ticket nº " + ticket.id.toString(),
           description: (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>{ticket.contact.number}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                <Typography variant="body2" style={{ fontWeight: "bold" }}>{ticket.contact.number}</Typography>
                 <Typography
                   className={Number(ticket.unreadMessages) > 0 ? classes.lastMessageTimeUnread : classes.lastMessageTime}
                   component="span"
@@ -219,31 +270,30 @@ const Kanban = () => {
                   )}
                 </Typography>
               </div>
-              <div style={{ textAlign: 'left' }}>{ticket.lastMessage || " "}</div>
-              <Button
-                startIcon={<VisibilityIcon />}
-                style={{
-                  color: "white",
-                  backgroundColor: "#437db5",
-                  boxShadow: "none",
-                  borderRadius: "5px",
-                }}
-                className={`${classes.button} ${classes.cardButton}`}
-                onClick={() => handleCardClick(ticket.uuid)}
-              >
-                Ver Ticket
-              </Button>
-              <span style={{ marginRight: '8px' }} />
-              {ticket?.user && (<Badge style={{ backgroundColor: "#000000" }} className={classes.connectionTag}>{ticket.user?.name.toUpperCase()}</Badge>)}
+              <div style={{ textAlign: 'left', marginBottom: 10, color: theme.palette.text.secondary }}>{ticket.lastMessage || " "}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Button
+                  startIcon={<VisibilityIcon />}
+                  className={classes.cardButton}
+                  onClick={() => handleCardClick(ticket.uuid)}
+                  size="small"
+                >
+                  Ver Ticket
+                </Button>
+                {ticket?.user && (<Badge className={classes.connectionTag}>{ticket.user?.name.toUpperCase()}</Badge>)}
+              </div>
             </div>
           ),
-          title: <>
+          title: <Box display="flex" alignItems="center" gap={1}>
             <Tooltip title={ticket.whatsapp?.name}>
               {IconChannel(ticket.channel)}
-            </Tooltip> {ticket.contact.name}</>,
+            </Tooltip> 
+            <Typography variant="body1" style={{ fontWeight: "bold" }}>{ticket.contact.name}</Typography>
+          </Box>,
           draggable: true,
           href: "/tickets/" + ticket.uuid,
         })),
+        style: { ...laneStyle, borderTop: "4px solid #60a5fa" }
       },
       ...tags.map(tag => {
         const filteredTickets = tickets.filter(ticket => {
@@ -260,39 +310,33 @@ const Kanban = () => {
             label: "Ticket nº " + ticket.id.toString(),
             description: (
               <div>
-                <p>
-                  {ticket.contact.number}
-                  <br />
-                  {ticket.lastMessage || " "}
-                </p>
-                <Button
-                  startIcon={<VisibilityIcon />}
-                  style={{
-                    color: "white",
-                    backgroundColor: "#437db5",
-                    boxShadow: "none",
-                    borderRadius: "5px",
-                  }}
-                  className={`${classes.button} ${classes.cardButton}`}
-                  onClick={() => handleCardClick(ticket.uuid)}
-                >
-                  Ver Ticket
-                </Button>
-                <span style={{ marginRight: '8px' }} />
-                <p>
-                  {ticket?.user && (<Badge style={{ backgroundColor: "#000000" }} className={classes.connectionTag}>{ticket.user?.name.toUpperCase()}</Badge>)}
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <Typography variant="body2" style={{ fontWeight: "bold" }}>{ticket.contact.number}</Typography>
+                </div>
+                <div style={{ textAlign: 'left', marginBottom: 10, color: theme.palette.text.secondary }}>{ticket.lastMessage || " "}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button
+                    startIcon={<VisibilityIcon />}
+                    className={classes.cardButton}
+                    onClick={() => handleCardClick(ticket.uuid)}
+                    size="small"
+                  >
+                    Ver Ticket
+                  </Button>
+                  {ticket?.user && (<Badge className={classes.connectionTag}>{ticket.user?.name.toUpperCase()}</Badge>)}
+                </div>
               </div>
             ),
-            title: <>
+            title: <Box display="flex" alignItems="center" gap={1}>
               <Tooltip title={ticket.whatsapp?.name}>
                 {IconChannel(ticket.channel)}
-              </Tooltip> {ticket.contact.name}
-            </>,
+              </Tooltip> 
+              <Typography variant="body1" style={{ fontWeight: "bold" }}>{ticket.contact.name}</Typography>
+            </Box>,
             draggable: true,
             href: "/tickets/" + ticket.uuid,
           })),
-          style: { backgroundColor: tag.color, color: "white" }
+          style: { ...laneStyle, borderTop: `4px solid ${tag.color}` }
         };
       }),
     ];
@@ -325,9 +369,18 @@ const Kanban = () => {
     history.push('/tagsKanban');
   };
 
+  const boardCardStyle = {
+    borderRadius: 12,
+    border: "none",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    backgroundColor: theme.palette.type === 'dark' ? "#1e1e2f" : "#fff",
+    color: theme.palette.text.primary,
+    marginBottom: "10px",
+  };
+
   return (
     <div className={classes.root}>
-      <div className={classes.filterContainer}>
+      <Paper className={classes.filterContainer} elevation={0}>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
             label="Data de início"
@@ -339,6 +392,7 @@ const Kanban = () => {
             }}
             variant="outlined"
             className={classes.dateInput}
+            size="small"
           />
           <Box mx={1} />
           <TextField
@@ -351,6 +405,7 @@ const Kanban = () => {
             }}
             variant="outlined"
             className={classes.dateInput}
+            size="small"
           />
           <Box mx={1} />
           <Button
@@ -358,8 +413,8 @@ const Kanban = () => {
             style={{
               color: "white",
               backgroundColor: "#FFA500",
-              boxShadow: "none",
-              borderRadius: "5px",
+              boxShadow: "0 3px 5px 2px rgba(255, 165, 0, .3)",
+              borderRadius: 20,
             }}
             className={classes.button}
             onClick={handleSearchClick}
@@ -371,24 +426,19 @@ const Kanban = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            style={{
-              color: "white",
-              backgroundColor: "#437db5",
-              boxShadow: "none",
-              borderRadius: "5px",
-            }}
-            className={classes.button}
+            className={`${classes.button} ${classes.cardButton}`}
             onClick={handleAddConnectionClick}
           >
             {'Adicionar Quadro'}
           </Button>
         )} />
-      </div>
+      </Paper>
       <div className={classes.kanbanContainer}>
         <Board
           data={file}
           onCardMoveAcrossLanes={handleCardMove}
-          style={{ backgroundColor: 'transparent' }}
+          style={{ backgroundColor: 'transparent', padding: 0 }}
+          cardStyle={boardCardStyle}
         />
       </div>
     </div>

@@ -91,10 +91,10 @@ const Routes = () => {
             <WhatsAppsProvider>
               <LoggedInLayout>
                 <Route exact path="/dashboard" component={Dashboard} isPrivate />
-                <Route exact path="/financeiro" component={Financeiro} isPrivate />
-                <Route exact path="/companies" component={Companies} isPrivate />
+                <Route exact path="/financeiro" component={Financeiro} isPrivate roles={["admin"]} />
+                <Route exact path="/companies" component={Companies} isPrivate roles={["admin"]} />
                 <Route exact path="/tickets/:ticketId?" component={TicketResponsiveContainer} isPrivate />
-                <Route exact path="/connections" component={Connections} isPrivate />
+                <Route exact path="/connections" component={Connections} isPrivate roles={["admin"]} />
                 <Route exact path="/quick-messages" component={QuickMessages} isPrivate />
                 <Route exact path="/todolist" component={ToDoList} isPrivate />
                 <Route exact path="/schedules" component={Schedules} isPrivate />
@@ -102,15 +102,15 @@ const Routes = () => {
                 <Route exact path="/contacts" component={Contacts} isPrivate />
                 <Route exact path="/contacts/import" component={ContactImportPage} isPrivate />
                 <Route exact path="/helps" component={Helps} isPrivate />
-                <Route exact path="/users" component={Users} isPrivate />
-                <Route exact path="/messages-api" component={MessagesAPI} isPrivate />
-                <Route exact path="/settings" component={SettingsCustom} isPrivate />
-                <Route exact path="/queues" component={Queues} isPrivate />
-                <Route exact path="/reports" component={Reports} isPrivate />
-                <Route exact path="/queue-integration" component={QueueIntegration} isPrivate />
-                <Route exact path="/announcements" component={Annoucements} isPrivate />
+                <Route exact path="/users" component={Users} isPrivate roles={["admin"]} />
+                <Route exact path="/messages-api" component={MessagesAPI} isPrivate roles={["admin"]} />
+                <Route exact path="/settings" component={SettingsCustom} isPrivate roles={["admin"]} />
+                <Route exact path="/queues" component={Queues} isPrivate roles={["admin"]} />
+                <Route exact path="/reports" component={Reports} isPrivate roles={["admin"]} />
+                <Route exact path="/queue-integration" component={QueueIntegration} isPrivate roles={["admin"]} />
+                <Route exact path="/announcements" component={Annoucements} isPrivate roles={["admin"]} />
                 <Route exact path="/documentacao" component={documentacao} isPrivate />
-                <Route exact path="/empresa" component={empresa} isPrivate />
+                <Route exact path="/empresa" component={empresa} isPrivate roles={["admin"]} />
 
                 <Route
                   exact
@@ -123,25 +123,28 @@ const Routes = () => {
                   path="/flowbuilders"
                   component={FlowBuilder}
                   isPrivate
+                  roles={["admin"]}
                 />
                 <Route
                   exact
                   path="/flowbuilder/:id?"
                   component={FlowBuilderConfig}
                   isPrivate
+                  roles={["admin"]}
                 />
                 <Route exact path="/chats/:id?" component={Chat} isPrivate />
                 <Route exact path="/files" component={Files} isPrivate />
                 <Route exact path="/moments" component={ChatMoments} isPrivate />
                 <Route exact path="/Kanban" component={Kanban} isPrivate />
                 <Route exact path="/TagsKanban" component={TagsKanban} isPrivate />
-                <Route exact path="/prompts" component={Prompts} isPrivate />
-                <Route exact path="/allConnections" component={AllConnections} isPrivate />
+                <Route exact path="/prompts" component={Prompts} isPrivate roles={["admin"]} />
+                <Route exact path="/allConnections" component={AllConnections} isPrivate roles={["admin"]} />
                 <Route
                   exact
                   path="/subscription"
                   component={Subscription}
                   isPrivate
+                  roles={["admin"]}
                 />
                 {showCampaigns && (
                   <>

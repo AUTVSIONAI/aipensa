@@ -3,7 +3,7 @@ import ContactCustomField from "../../models/ContactCustomField";
 import Tag from "../../models/Tag";
 
 type Param = {
-  companyId: number
+  companyId: number;
 };
 
 const FindAllContactService = async ({
@@ -16,8 +16,16 @@ const FindAllContactService = async ({
     where,
     order: [["name", "ASC"]],
     include: [
-      { model: Tag, as: "tags", attributes: ["id", "name", "color", "updatedAt"] },
-      { model: ContactCustomField, as: "extraInfo", attributes: ["id", "name", "value"] }
+      {
+        model: Tag,
+        as: "tags",
+        attributes: ["id", "name", "color", "updatedAt"]
+      },
+      {
+        model: ContactCustomField,
+        as: "extraInfo",
+        attributes: ["id", "name", "value"]
+      }
     ]
   });
 

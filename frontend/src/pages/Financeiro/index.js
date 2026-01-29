@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, useContext } from "react";
+import React, { useState, useEffect, useReducer, useContext, useCallback, useRef } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
@@ -74,8 +74,7 @@ const useStyles = makeStyles((theme) => ({
   mainPaper: {
     flex: 1,
     padding: theme.spacing(1),
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
   },
   card: {
     height: '100%',
@@ -83,7 +82,17 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
     justifyContent: 'space-between', // Changed for icon alignment
     position: 'relative',
-    overflow: 'visible'
+    overflow: 'visible',
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+    },
   },
   cardContent: {
     position: 'relative',
@@ -109,8 +118,25 @@ const useStyles = makeStyles((theme) => ({
   },
   chartCard: {
     height: '100%',
-    padding: theme.spacing(2)
-  }
+    padding: theme.spacing(2),
+  },
+  emptyState: {
+    padding: theme.spacing(4),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    textAlign: "center",
+  },
+  payButton: {
+    color: "white",
+    backgroundColor: theme.palette.primary.main,
+    boxShadow: "none",
+    borderRadius: 12,
+    "&:hover": {
+      backgroundColor: theme.palette.primary.dark,
+      boxShadow: "none",
+    },
+  },
 }));
 
 const Invoices = () => {
@@ -131,16 +157,11 @@ const Invoices = () => {
 
   useEffect(() => {
     async function fetchData() {
-      if (user) {
-        console.log('Financeiro User:', user);
-      }
       if (user.super) {
         try {
-          console.log('Fetching companiesPlan...');
           const { data } = await api.get("/companiesPlan", {
             params: { searchParam: "", pageNumber: 1 }
           });
-          console.log('Financeiro Companies Data:', data);
           const companiesData = data.companies;
           const plansData = await listPlans();
           
@@ -259,13 +280,28 @@ const Invoices = () => {
     setPageNumber((prevState) => prevState + 1);
   };
 
-  const handleScroll = (e) => {
+  const loadMoreIfNeeded = useCallback(() => {
     if (!hasMore || loading) return;
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - (scrollTop + 100) < clientHeight) {
-      loadMore();
-    }
-  };
+    loadMore();
+  }, [hasMore, loading]);
+
+  const loadMoreSentinelRef = useRef(null);
+
+  useEffect(() => {
+    const root = document.querySelector("main");
+    const target = loadMoreSentinelRef.current;
+    if (!root || !target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMoreIfNeeded();
+      },
+      { root, rootMargin: "400px 0px 400px 0px", threshold: 0 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMoreIfNeeded]);
 
   const rowStyle = (record) => {
     const hoje = moment(moment()).format("DD/MM/yyyy");
@@ -360,7 +396,7 @@ const Invoices = () => {
 
           {/* Gráficos */}
           <Grid item xs={12} md={8}>
-             <Card style={{ height: '100%' }}>
+             <Card className={classes.card}>
                <CardContent>
                  <Typography variant="h6" gutterBottom>Distribuição por Plano</Typography>
                  <Chart options={planOptions} series={planSeries} type="bar" height={350} />
@@ -368,7 +404,7 @@ const Invoices = () => {
              </Card>
           </Grid>
           <Grid item xs={12} md={4}>
-             <Card style={{ height: '100%' }}>
+             <Card className={classes.card}>
                <CardContent>
                  <Typography variant="h6" gutterBottom>Status das Empresas</Typography>
                  <Chart options={statusOptions} series={statusSeries} type="donut" height={350} />
@@ -378,13 +414,12 @@ const Invoices = () => {
 
           {/* Tabela de Empresas */}
            <Grid item xs={12}>
-            <Card>
+            <Card className={classes.card}>
               <CardContent>
                  <Typography color="textSecondary" gutterBottom>
                   Gestão de Assinaturas (Todas as Empresas)
                 </Typography>
-                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                    <Table size="small" stickyHeader>
+                    <Table size="small">
                         <TableHead>
                             <TableRow>
                                 <TableCell>Empresa</TableCell>
@@ -411,7 +446,6 @@ const Invoices = () => {
                             })}
                         </TableBody>
                     </Table>
-                </div>
               </CardContent>
             </Card>
           </Grid>
@@ -431,8 +465,17 @@ const Invoices = () => {
       <Paper
         className={classes.mainPaper}
         variant="outlined"
-        onScroll={handleScroll}
       >
+        {invoices.length === 0 && !loading && (
+          <div className={classes.emptyState}>
+            <Typography variant="subtitle1" color="textPrimary">
+              Nenhuma fatura encontrada
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              Aguarde a sincronização ou verifique permissões.
+            </Typography>
+          </div>
+        )}
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -478,35 +521,27 @@ const Invoices = () => {
                   <TableCell align="center">{moment(invoices.dueDate).format("DD/MM/YYYY")}</TableCell>
                   <TableCell style={{ fontWeight: 'bold' }} align="center">{rowStatus(invoices)}</TableCell>
                   <TableCell align="center">
-                    {rowStatus(invoices) !== "Pago" ?
+                    {rowStatus(invoices) !== "Pago" ? (
                       <Button
                         startIcon={<AttachMoneyIcon />}
                         size="small"
-                        variant="outlined"
-                        style={{
-                        color: "white",
-                        backgroundColor: "#437db5",
-                        boxShadow: "none",
-                        borderRadius: "5px",
-                        }}
+                        variant="contained"
+                        className={classes.payButton}
                         onClick={() => handleOpenContactModal(invoices)}
                       >
                         PAGAR
-                      </Button> :
+                      </Button>
+                    ) : (
                       <Button
                         startIcon={<AttachMoneyIcon />}
                         size="small"
-                        variant="outlined"
-                        style={{
-                        color: "white",
-                        backgroundColor: "#437db5",
-                        boxShadow: "none",
-                        borderRadius: "5px",
-                        }}
+                        variant="contained"
+                        className={classes.payButton}
+                        disabled
                       >
                         PAGO
-                      </Button>}
-
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -514,9 +549,11 @@ const Invoices = () => {
             </>
           </TableBody>
         </Table>
+        <div ref={loadMoreSentinelRef} />
       </Paper>
     </MainContainer>
   );
 };
+
 
 export default Invoices;

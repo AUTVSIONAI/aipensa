@@ -5,7 +5,7 @@ module.exports = {
     return queryInterface.addColumn("Whatsapps", "expiresTicket", {
       type: DataTypes.INTEGER,
       defaultValue: 0,
-      allowNull: true,
+      allowNull: true
     });
   },
 

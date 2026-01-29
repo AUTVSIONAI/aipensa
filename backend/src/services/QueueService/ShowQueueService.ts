@@ -12,17 +12,18 @@ const ShowQueueService = async (
       id: queueId,
       companyId
     },
-    include: [{
-      model: Chatbot,
-      as: "chatbots",
-      include: [
-        {
-          model: User,
-          as: "user"
-        },
-      ]
-    }
-  ],
+    include: [
+      {
+        model: Chatbot,
+        as: "chatbots",
+        include: [
+          {
+            model: User,
+            as: "user"
+          }
+        ]
+      }
+    ],
     order: [
       [{ model: Chatbot, as: "chatbots" }, "id", "asc"],
       ["id", "ASC"]

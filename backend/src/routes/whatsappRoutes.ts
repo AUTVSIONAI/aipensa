@@ -10,7 +10,6 @@ import { deleteMedia } from "../services/WhatsappService/uploadMediaAttachment";
 
 const upload = multer(uploadConfig);
 
-
 const whatsappRoutes = express.Router();
 
 whatsappRoutes.get("/whatsapp/", isAuth, WhatsAppController.index);
@@ -21,20 +20,48 @@ whatsappRoutes.post("/whatsapp/", isAuth, WhatsAppController.store);
 whatsappRoutes.post("/facebook/", isAuth, WhatsAppController.storeFacebook);
 whatsappRoutes.get("/whatsapp/:whatsappId", isAuth, WhatsAppController.show);
 whatsappRoutes.put("/whatsapp/:whatsappId", isAuth, WhatsAppController.update);
-whatsappRoutes.delete("/whatsapp/:whatsappId", isAuth, WhatsAppController.remove);
-whatsappRoutes.post("/closedimported/:whatsappId", isAuth, WhatsAppController.closedTickets);
+whatsappRoutes.delete(
+  "/whatsapp/:whatsappId",
+  isAuth,
+  WhatsAppController.remove
+);
+whatsappRoutes.post(
+  "/closedimported/:whatsappId",
+  isAuth,
+  WhatsAppController.closedTickets
+);
 
 //restart
 whatsappRoutes.post("/whatsapp-restart/", isAuth, WhatsAppController.restart);
-whatsappRoutes.post("/whatsapp/:whatsappId/media-upload", isAuth, upload.array("file"), mediaUpload);
+whatsappRoutes.post(
+  "/whatsapp/:whatsappId/media-upload",
+  isAuth,
+  upload.array("file"),
+  mediaUpload
+);
 
-whatsappRoutes.delete("/whatsapp/:whatsappId/media-upload", isAuth, deleteMedia);
+whatsappRoutes.delete(
+  "/whatsapp/:whatsappId/media-upload",
+  isAuth,
+  deleteMedia
+);
 
+whatsappRoutes.delete(
+  "/whatsapp-admin/:whatsappId",
+  isAuth,
+  WhatsAppController.remove
+);
 
-whatsappRoutes.delete("/whatsapp-admin/:whatsappId", isAuth, WhatsAppController.remove);
+whatsappRoutes.put(
+  "/whatsapp-admin/:whatsappId",
+  isAuth,
+  WhatsAppController.updateAdmin
+);
 
-whatsappRoutes.put("/whatsapp-admin/:whatsappId", isAuth, WhatsAppController.updateAdmin);
-
-whatsappRoutes.get("/whatsapp-admin/:whatsappId", isAuth, WhatsAppController.showAdmin);
+whatsappRoutes.get(
+  "/whatsapp-admin/:whatsappId",
+  isAuth,
+  WhatsAppController.showAdmin
+);
 
 export default whatsappRoutes;

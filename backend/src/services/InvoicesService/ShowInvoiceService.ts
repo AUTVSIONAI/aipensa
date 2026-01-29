@@ -1,7 +1,9 @@
 import Invoice from "../../models/Invoices";
 import AppError from "../../errors/AppError";
 
-const ShowInvoceService = async (Invoiceid: string | number): Promise<Invoice> => {
+const ShowInvoceService = async (
+  Invoiceid: string | number
+): Promise<Invoice> => {
   const invoice = await Invoice.findByPk(Invoiceid);
 
   if (!invoice) {

@@ -1,7 +1,9 @@
 import ScheduledMessages from "../../models/ScheduledMessages";
 import AppError from "../../errors/AppError";
 
-const ScheduleService = async (id: string | number): Promise<ScheduledMessages> => {
+const ScheduleService = async (
+  id: string | number
+): Promise<ScheduledMessages> => {
   const schedule = await ScheduledMessages.findByPk(id);
 
   if (!schedule) {

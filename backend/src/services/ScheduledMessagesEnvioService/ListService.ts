@@ -38,9 +38,9 @@ const ListService = async ({
             "LIKE",
             `%${searchParam.toLowerCase()}%`
           )
-        },
-      ],
-    }
+        }
+      ]
+    };
   }
 
   whereCondition = {
@@ -48,7 +48,7 @@ const ListService = async ({
     companyId: {
       [Op.eq]: companyId
     }
-  }
+  };
 
   const { count, rows: schedules } = await ScheduledMessages.findAndCountAll({
     where: whereCondition,

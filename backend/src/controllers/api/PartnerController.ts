@@ -43,7 +43,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     email: Yup.string().required(),
     document: Yup.string().required(),
     commission: Yup.number().required(),
-    typeCommission: Yup.string().required(),
+    typeCommission: Yup.string().required()
   });
 
   try {
@@ -79,7 +79,7 @@ export const update = async (
     email: Yup.string().required(),
     document: Yup.string().required(),
     commission: Yup.number().required(),
-    typeCommission: Yup.string().required(),
+    typeCommission: Yup.string().required()
   });
 
   try {

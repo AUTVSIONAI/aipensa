@@ -14,29 +14,31 @@ const UpdateFlowBuilderService = async ({
   flowId
 }: Request): Promise<String> => {
   try {
-
     const nameExist = await FlowBuilderModel.findOne({
       where: {
         name,
         company_id: companyId
       }
-    })
-
-    console.log({ nameExist })
-    
-    if(nameExist){
-      return 'exist'
-    }
-
-    const flow = await FlowBuilderModel.update({ name }, {
-      where: {id: flowId, company_id: companyId}
     });
 
-    return 'ok';
+    console.log({ nameExist });
+
+    if (nameExist) {
+      return "exist";
+    }
+
+    const flow = await FlowBuilderModel.update(
+      { name },
+      {
+        where: { id: flowId, company_id: companyId }
+      }
+    );
+
+    return "ok";
   } catch (error) {
     console.error("Erro ao inserir o usuário:", error);
 
-    return error
+    return error;
   }
 };
 

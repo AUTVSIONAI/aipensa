@@ -1,17 +1,9 @@
-import React, { useState, useEffect, useReducer, useContext } from "react";
+import React, { useState, useEffect, useReducer, useContext, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 
 import { useHistory } from "react-router-dom";
 
 import { makeStyles } from "@material-ui/core/styles";
-import Paper from "@material-ui/core/Paper";
-import Button from "@material-ui/core/Button";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
-import IconButton from "@material-ui/core/IconButton";
 import SearchIcon from "@material-ui/icons/Search";
 import TextField from "@material-ui/core/TextField";
 import InputAdornment from "@material-ui/core/InputAdornment";
@@ -20,6 +12,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
 import Typography from '@mui/material/Typography';
+import CircularProgress from "@mui/material/CircularProgress";
 
 import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
 import EditIcon from "@material-ui/icons/Edit";
@@ -29,15 +22,16 @@ import DownloadIcon from "@material-ui/icons/GetApp";
 import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
 import Title from "../../components/Title";
+import GlassCard from "../../components/UI/GlassCard";
+import PrimaryButton from "../../components/UI/PrimaryButton";
+import OutlinedButton from "../../components/UI/OutlinedButton";
 
 import api from "../../services/api";
 import { i18n } from "../../translate/i18n";
-import TableRowSkeleton from "../../components/TableRowSkeleton";
 import ContactListDialog from "../../components/ContactListDialog";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import toastError from "../../errors/toastError";
 import { Grid } from "@material-ui/core";
-import AddIcon from '@mui/icons-material/Add';
 
 
 import planilhaExemplo from "../../assets/planilha.xlsx";
@@ -92,8 +86,34 @@ const useStyles = makeStyles((theme) => ({
   mainPaper: {
     flex: 1,
     padding: theme.spacing(1),
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
+  },
+  entityCard: {
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+    },
+  },
+  actions: {
+    justifyContent: "center",
+    gap: theme.spacing(1.25),
+    paddingBottom: theme.spacing(2),
+  },
+  searchIcon: {
+    color: theme.palette.primary.main,
+  },
+  emptyState: {
+    padding: theme.spacing(4),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    textAlign: "center",
   },
 }));
 
@@ -141,7 +161,6 @@ const ContactLists = () => {
 
   useEffect(() => {
     const companyId = user.companyId;
-    // const socket = socketManager.GetSocket();
 
     const onContactListEvent = (data) => {
       if (data.action === "update" || data.action === "create") {
@@ -158,7 +177,7 @@ const ContactLists = () => {
     return () => {
       socket.off(`company-${companyId}-ContactList`, onContactListEvent);
     };
-  }, []);
+  }, [socket, user.companyId]);
 
   const handleOpenContactListModal = () => {
     setSelectedContactList(null);
@@ -195,13 +214,28 @@ const ContactLists = () => {
     setPageNumber((prevState) => prevState + 1);
   };
 
-  const handleScroll = (e) => {
+  const loadMoreIfNeeded = useCallback(() => {
     if (!hasMore || loading) return;
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - (scrollTop + 100) < clientHeight) {
-      loadMore();
-    }
-  };
+    loadMore();
+  }, [hasMore, loading]);
+
+  const loadMoreSentinelRef = useRef(null);
+
+  useEffect(() => {
+    const root = document.querySelector("main");
+    const target = loadMoreSentinelRef.current;
+    if (!root || !target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMoreIfNeeded();
+      },
+      { root, rootMargin: "400px 0px 400px 0px", threshold: 0 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMoreIfNeeded]);
 
   const goToContacts = (id) => {
     history.push(`/contact-lists/${id}/contacts`);
@@ -244,148 +278,98 @@ const ContactLists = () => {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <SearchIcon style={{ color: "#FFA500" }} />
+                        <SearchIcon className={classes.searchIcon} />
                       </InputAdornment>
                     ),
                   }}
                 />
               </Grid>
               <Grid xs={5} sm={6} item>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  style={{
-                  color: "white",
-                  backgroundColor: "#FFA500",
-                  boxShadow: "none",
-                  borderRadius: "5px",
-                  }}
-                  onClick={handleOpenContactListModal}
-                >
+                <PrimaryButton fullWidth onClick={handleOpenContactListModal}>
                   {i18n.t("contactLists.buttons.add")}
-                </Button>
+                </PrimaryButton>
               </Grid>
             </Grid>
           </Grid>
         </Grid>
       </MainHeader>
-      <Paper
-        className={classes.mainPaper}
-        variant="outlined"
-        onScroll={handleScroll}
-      >
+      <GlassCard className={classes.mainPaper}>
 <Grid container spacing={2}>
-  {loading ? (
+  {!loading && contactLists.length === 0 && (
     <Grid item xs={12}>
-      <Card 
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-       >
-        <CardContent>
-          <Typography variant="body2" color="textSecondary">
-            Carregando...
-          </Typography>
-        </CardContent>
-      </Card>
+      <div className={classes.emptyState}>
+        <Typography variant="subtitle1" color="text.primary">
+          Nenhuma lista encontrada
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Crie uma lista ou ajuste a busca.
+        </Typography>
+      </div>
     </Grid>
-  ) : (
-    contactLists.map((contactList) => (
+  )}
+  {contactLists.map((contactList) => (
       <Grid item xs={12} sm={6} md={4} key={contactList.id}>
         <Card
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          variant="outlined"
+          className={classes.entityCard}
        >
           <CardContent>
-            <Typography variant="h6" color="textPrimary" align="center">
+            <Typography variant="h6" color="text.primary" align="center">
               {contactList.name}
             </Typography>
-            <Typography variant="body2" align="center">
+            <Typography variant="body2" align="center" color="text.secondary">
               Contatos: {contactList.contactsCount || 0}
             </Typography>
           </CardContent>
-<CardActions style={{ justifyContent: "center", gap: "10px" }}>
-  <a href={planilhaExemplo} download="planilha.xlsx">
-    <IconButton
-      size="small"
-      title="Baixar Planilha Exemplo"
-      style={{
-        backgroundColor: "#4ec24e", // Verde
-        borderRadius: "10px",
-        padding: "8px"
-      }}
-    >
-      <DownloadIcon style={{ color: "white" }} />
-    </IconButton>
-  </a>
-
-  <IconButton
-    size="small"
-    onClick={() => goToContacts(contactList.id)}
-    style={{
-      backgroundColor: "#40BFFF", // Azul claro
-      borderRadius: "10px",
-      padding: "8px"
-    }}
-    title="Ver Contatos"
-  >
-    <PeopleIcon style={{ color: "white" }} />
-  </IconButton>
-
-  <IconButton
-    size="small"
-    onClick={() => handleEditContactList(contactList)}
-    style={{
-      backgroundColor: "#FFA500", // Laranja
-      borderRadius: "10px",
-      padding: "8px"
-    }}
-    title="Editar Lista"
-  >
-    <EditIcon style={{ color: "white" }} />
-  </IconButton>
-
-  <IconButton
-    size="small"
-    onClick={() => {
-      setConfirmModalOpen(true);
-      setDeletingContactList(contactList);
-    }}
-    style={{
-      backgroundColor: "#FF6B6B", // Vermelho claro
-      borderRadius: "10px",
-      padding: "8px"
-    }}
-    title="Excluir Lista"
-  >
-    <DeleteOutlineIcon style={{ color: "white" }} />
-  </IconButton>
+          <CardActions className={classes.actions}>
+            <OutlinedButton
+              component="a"
+              href={planilhaExemplo}
+              download="planilha.xlsx"
+              title="Baixar Planilha Exemplo"
+              startIcon={<DownloadIcon />}
+            >
+              Planilha
+            </OutlinedButton>
+            <OutlinedButton
+              size="small"
+              onClick={() => goToContacts(contactList.id)}
+              title="Ver Contatos"
+              startIcon={<PeopleIcon />}
+            >
+              Contatos
+            </OutlinedButton>
+            <OutlinedButton
+              size="small"
+              onClick={() => handleEditContactList(contactList)}
+              title="Editar Lista"
+              startIcon={<EditIcon />}
+            >
+              Editar
+            </OutlinedButton>
+            <OutlinedButton
+              size="small"
+              onClick={() => {
+                setConfirmModalOpen(true);
+                setDeletingContactList(contactList);
+              }}
+              title="Excluir Lista"
+              startIcon={<DeleteOutlineIcon />}
+            >
+              Excluir
+            </OutlinedButton>
 </CardActions>
         </Card>
       </Grid>
-    ))
+    ))}
+  {loading && (
+    <Grid item xs={12}>
+      <CircularProgress style={{ display: "block", margin: "16px auto" }} />
+    </Grid>
   )}
 </Grid>
-      </Paper>
+        <div ref={loadMoreSentinelRef} />
+      </GlassCard>
     </MainContainer>
   );
 };

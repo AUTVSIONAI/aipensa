@@ -2,14 +2,19 @@ import { QueryInterface } from "sequelize";
 
 module.exports = {
   up: async (queryInterface: QueryInterface) => {
-    const settingsExist = await queryInterface.rawSelect('CompaniesSettings', {
-      where: {
-        companyId: 1,
+    const settingsExist = await queryInterface.rawSelect(
+      "CompaniesSettings",
+      {
+        where: {
+          companyId: 1
+        }
       },
-    }, ['companyId']);
+      ["companyId"]
+    );
 
     if (!settingsExist) {
-      return queryInterface.bulkInsert("CompaniesSettings",
+      return queryInterface.bulkInsert(
+        "CompaniesSettings",
         [
           {
             companyId: 1,

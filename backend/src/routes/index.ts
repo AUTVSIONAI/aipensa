@@ -46,7 +46,7 @@ import flowBuilder from "./flowBuilderRoutes";
 import flowCampaignRoutes from "./flowCampaignRoutes";
 import forgotsRoutes from "./forgotPasswordRoutes";
 import imaginasoftRoutes from "./imaginasoftRoutes";
-import clinicChatRoutes from './clinicChatRoutes';
+import clinicChatRoutes from "./clinicChatRoutes";
 import marketingRoutes from "./marketingRoutes";
 import * as WebHooksController from "../controllers/WebHookController";
 import instagramRoutes from "./instagramRoutes";
@@ -105,7 +105,7 @@ routes.use(companySettingsRoutes);
 routes.use(scheduleMessageRoutes);
 
 routes.use("/api/imaginasoft", imaginasoftRoutes);
-routes.use('/api/clinic', clinicChatRoutes);
+routes.use("/api/clinic", clinicChatRoutes);
 routes.use(marketingRoutes);
 
 // Instagram/Facebook Webhooks (Meta) - alias conforme configuração no Meta

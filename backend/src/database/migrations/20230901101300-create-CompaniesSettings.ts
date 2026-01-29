@@ -1,7 +1,7 @@
-/** 
+/**
  * @TercioSantos-0 |
  * migração/CompaniesSettings |
- * @descrição:migração tabela para configurações das empresas 
+ * @descrição:migração tabela para configurações das empresas
  */
 import { QueryInterface, DataTypes } from "sequelize";
 

@@ -67,16 +67,13 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     });
 
     return res.json({ companies, count, hasMore });
-
   } else {
     const { companies, count, hasMore } = await ListCompaniesService({
       searchParam: company.name,
       pageNumber
     });
     return res.json({ companies, count, hasMore });
-
   }
-
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
@@ -111,7 +108,9 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
     const company = await ShowCompanyService(id);
     return res.status(200).json(company);
   } else if (id !== companyId.toString()) {
-    return res.status(400).json({ error: "Você não possui permissão para acessar este recurso!" });
+    return res
+      .status(400)
+      .json({ error: "Você não possui permissão para acessar este recurso!" });
   } else if (id === companyId.toString()) {
     const company = await ShowCompanyService(id);
     return res.status(200).json(company);
@@ -119,7 +118,6 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const list = async (req: Request, res: Response): Promise<Response> => {
-
   const authHeader = req.headers.authorization;
   const [, token] = authHeader.split(" ");
   const decoded = verify(token, authConfig.secret);
@@ -137,19 +135,17 @@ export const list = async (req: Request, res: Response): Promise<Response> => {
       const id = companies[i].id;
 
       if (id === companyId) {
-        company.push(companies[i])
+        company.push(companies[i]);
         return res.status(200).json(company);
       }
     }
   }
-
 };
 
 export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-
   const companyData: CompanyData = req.body;
 
   const schema = Yup.object().shape({
@@ -174,12 +170,13 @@ export const update = async (
     const company = await UpdateCompanyService({ id, ...companyData });
     return res.status(200).json(company);
   } else if (String(companyData?.id) !== id || String(companyId) !== id) {
-    return res.status(400).json({ error: "Você não possui permissão para acessar este recurso!" });
+    return res
+      .status(400)
+      .json({ error: "Você não possui permissão para acessar este recurso!" });
   } else {
     const company = await UpdateCompanyService({ id, ...companyData });
     return res.status(200).json(company);
   }
-
 };
 
 export const updateSchedules = async (
@@ -199,12 +196,13 @@ export const updateSchedules = async (
     const company = await UpdateSchedulesService({ id, schedules });
     return res.status(200).json(company);
   } else if (companyId.toString() !== id) {
-    return res.status(400).json({ error: "Você não possui permissão para acessar este recurso!" });
+    return res
+      .status(400)
+      .json({ error: "Você não possui permissão para acessar este recurso!" });
   } else {
     const company = await UpdateSchedulesService({ id, schedules });
     return res.status(200).json(company);
   }
-
 };
 
 export const remove = async (
@@ -222,12 +220,16 @@ export const remove = async (
     const company = await DeleteCompanyService(id);
     return res.status(200).json(company);
   } else {
-    return res.status(400).json({ error: "Você não possui permissão para acessar este recurso!" });
+    return res
+      .status(400)
+      .json({ error: "Você não possui permissão para acessar este recurso!" });
   }
-
 };
 
-export const listPlan = async (req: Request, res: Response): Promise<Response> => {
+export const listPlan = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { id } = req.params;
 
   const authHeader = req.headers.authorization;
@@ -240,15 +242,19 @@ export const listPlan = async (req: Request, res: Response): Promise<Response> =
     const company = await ShowPlanCompanyService(id);
     return res.status(200).json(company);
   } else if (companyId.toString() !== id) {
-    return res.status(400).json({ error: "Você não possui permissão para acessar este recurso!" });
+    return res
+      .status(400)
+      .json({ error: "Você não possui permissão para acessar este recurso!" });
   } else {
     const company = await ShowPlanCompanyService(id);
     return res.status(200).json(company);
   }
-
 };
 
-export const indexPlan = async (req: Request, res: Response): Promise<Response> => {
+export const indexPlan = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { searchParam, pageNumber } = req.query as IndexQuery;
 
   const authHeader = req.headers.authorization;
@@ -262,7 +268,8 @@ export const indexPlan = async (req: Request, res: Response): Promise<Response> 
     const companies = await ListCompaniesPlanService();
     return res.json({ companies });
   } else {
-    return res.status(400).json({ error: "Você não possui permissão para acessar este recurso!" });
+    return res
+      .status(400)
+      .json({ error: "Você não possui permissão para acessar este recurso!" });
   }
-
 };

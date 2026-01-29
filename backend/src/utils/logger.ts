@@ -1,10 +1,8 @@
-import pino from 'pino';
-import moment from 'moment-timezone';
+import { formatInTimeZone } from "date-fns-tz";
+import pino from "pino";
 
-// Função para obter o timestamp com fuso horário
-const timezoned = () => {
-  return moment().tz('America/Sao_Paulo').format('DD-MM-YYYY HH:mm:ss');
-};
+const timezoned = () =>
+  formatInTimeZone(new Date(), "America/Sao_Paulo", "dd-MM-yyyy HH:mm:ss");
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -23,7 +21,7 @@ const logger = pino({
           }
         }
       }),
-  timestamp: () => `,"time":"${timezoned()}"`, // Adiciona o timestamp formatado
+  timestamp: () => `,"time":"${timezoned()}"`
 });
 
 export default logger;

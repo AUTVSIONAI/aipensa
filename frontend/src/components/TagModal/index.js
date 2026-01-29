@@ -397,6 +397,11 @@ const TagModal = ({ open, onClose, tagId, kanban }) => {
     onClose();
   };
 
+  const handleDialogClose = (_, reason) => {
+    if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+    handleClose();
+  };
+
   const handleSaveTag = async (values) => {
     const tagData = {
       ...values,
@@ -432,12 +437,10 @@ const TagModal = ({ open, onClose, tagId, kanban }) => {
       <div className={classes.root}>
         <Dialog
           open={open}
-          onClose={handleClose}
+          onClose={handleDialogClose}
           maxWidth="md"
           fullWidth
           scroll="paper"
-          disableBackdropClick
-          disableEscapeKeyDown
           classes={{ paper: classes.dialogPaper }}
           PaperComponent={isMobile ? Paper : DraggablePaper}
           TransitionComponent={Transition}

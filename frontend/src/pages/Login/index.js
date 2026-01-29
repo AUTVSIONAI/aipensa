@@ -1,23 +1,16 @@
-import React, { useState, useContext, useEffect } from "react";
-import { Link as RouterLink, useHistory } from "react-router-dom";
+import React, { useState, useContext } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import Button from "@material-ui/core/Button";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import TextField from "@material-ui/core/TextField";
 import Link from "@material-ui/core/Link";
-import Grid from "@material-ui/core/Grid";
-import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
 import { makeStyles } from "@material-ui/core/styles";
-import Container from "@material-ui/core/Container";
-import { i18n } from "../../translate/i18n";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import ColorModeContext from "../../layout/themeContext";
 import { versionSystem } from "../../../package.json";
 import { nomeEmpresa } from "../../../package.json";
-import useSettings from "../../hooks/useSettings";
 import IconButton from "@material-ui/core/IconButton";
-import Brightness4Icon from "@material-ui/icons/Brightness4";
-import Brightness7Icon from "@material-ui/icons/Brightness7";
 import { Checkbox, FormControlLabel, LinearProgress } from "@mui/material";
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AddIcon from '@mui/icons-material/Add';
@@ -26,16 +19,6 @@ import { Helmet } from "react-helmet";
 import Visibility from "@material-ui/icons/Visibility";
 import VisibilityOff from "@material-ui/icons/VisibilityOff";
 import InputAdornment from "@material-ui/core/InputAdornment";
-import Dialog from "@material-ui/core/Dialog";
-import Grow from "@mui/material/Grow";
-import DialogActions from "@material-ui/core/DialogActions";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
-import DialogTitle from "@material-ui/core/DialogTitle";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
-import wallfundo from "../../assets/f002.png";
-import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { useTheme } from '@material-ui/core/styles';
 import Lock from "@material-ui/icons/Lock";
 import Card from "@material-ui/core/Card";
@@ -44,11 +27,7 @@ import CardContent from "@material-ui/core/CardContent";
 // Ícones
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Grow ref={ref} {...props} />;
-});
+ 
 
 const handleRedirect = () => {
   window.open(`https://wa.me/${process.env.REACT_APP_SUPPORT_WHATSAPP}`, "_blank");
@@ -385,18 +364,14 @@ const calculatePasswordStrength = (password) => {
 
 const Login = () => {
   const classes = useStyles();
-  const history = useHistory();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { colorMode } = useContext(ColorModeContext);
-  const { appLogoFavicon, appName, mode } = colorMode;
+  const { appLogoFavicon, appName } = colorMode;
   const [user, setUser] = useState({
     email: "",
     password: "",
     rememberMe: false,
   });
-  const [allowSignup, setAllowSignup] = useState(false);
-  const { getPublicSetting } = useSettings();
   const { handleLogin } = useContext(AuthContext);
   const [showPassword, setShowPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
@@ -421,21 +396,7 @@ const Login = () => {
     event.preventDefault();
   };
 
-  useEffect(() => {
-    getPublicSetting("allowSignup")
-      .then((data) => {
-        setAllowSignup(data === "enabled");
-      })
-      .catch((error) => {
-        console.log("Error reading setting", error);
-      });
-  }, []);
-
-  const getPasswordStrengthColor = (strength) => {
-    if (strength <= 2) return "#ef4444";
-    if (strength <= 4) return "#f59e0b";
-    return "#10b981";
-  };
+ 
 
   const getPasswordStrengthText = (strength) => {
     if (strength <= 2) return "Senha fraca";

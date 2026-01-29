@@ -1,81 +1,80 @@
 import {
-    Table,
-    CreatedAt,
-    UpdatedAt,
-    Model,
-    PrimaryKey,
-    Default,
-    DataType,
-    HasMany,
-    AutoIncrement,
-    BelongsTo,
-    ForeignKey,
-    Column
+  Table,
+  CreatedAt,
+  UpdatedAt,
+  Model,
+  PrimaryKey,
+  Default,
+  DataType,
+  HasMany,
+  AutoIncrement,
+  BelongsTo,
+  ForeignKey,
+  Column
 } from "sequelize-typescript";
 import Queue from "./Queue";
 import Company from "./Company";
 
 @Table
 class Integrations extends Model<Integrations> {
-    @PrimaryKey
-    @AutoIncrement
-    @Column
-    id: number;
+  @PrimaryKey
+  @AutoIncrement
+  @Column
+  id: number;
 
-    @ForeignKey(() => Company)
-    @Column
-    companyId: number;
-    @Column(DataType.TEXT)
-    type: string;
+  @ForeignKey(() => Company)
+  @Column
+  companyId: number;
+  @Column(DataType.TEXT)
+  type: string;
 
-    @Column
-    @Column(DataType.TEXT)
-    name: string;
-    
-    @Column(DataType.TEXT)
-    projectName: string;
-    
-    @Column(DataType.TEXT)
-    jsonContent: string;
+  @Column
+  @Column(DataType.TEXT)
+  name: string;
 
-    @Default(false)
-    @Column
-    isActive: boolean;
-    @Column(DataType.TEXT)
-    urlN8N: string;
+  @Column(DataType.TEXT)
+  projectName: string;
 
-    @Column(DataType.TEXT)
-    language: string;
+  @Column(DataType.TEXT)
+  jsonContent: string;
 
-    @CreatedAt
-    @Column(DataType.DATE(6))
-    createdAt: Date;
+  @Default(false)
+  @Column
+  isActive: boolean;
+  @Column(DataType.TEXT)
+  urlN8N: string;
 
-    @UpdatedAt
-    @Column(DataType.DATE(6))
-    updatedAt: Date;
-    dataValues: string | PromiseLike<string>;
+  @Column(DataType.TEXT)
+  language: string;
 
-    @Column(DataType.TEXT)
-    token: string;
+  @CreatedAt
+  @Column(DataType.DATE(6))
+  createdAt: Date;
 
-    @Column
-    foneContact: string;
+  @UpdatedAt
+  @Column(DataType.DATE(6))
+  updatedAt: Date;
+  dataValues: string | PromiseLike<string>;
 
-    @Column
-    userLogin: string;
+  @Column(DataType.TEXT)
+  token: string;
 
-    @Column
-    passLogin: string;
+  @Column
+  foneContact: string;
 
-    @Column
-    initialCurrentMonth: number;
-    @HasMany(() => Queue)
-    queues: Queue[];
-  
-    @BelongsTo(() => Company)
-    company: Company;
-  
+  @Column
+  userLogin: string;
+
+  @Column
+  passLogin: string;
+
+  @Column
+  initialCurrentMonth: number;
+  @HasMany(() => Queue)
+  queues: Queue[];
+
+  @BelongsTo(() => Company)
+  company: Company;
 }
 
 export default Integrations;

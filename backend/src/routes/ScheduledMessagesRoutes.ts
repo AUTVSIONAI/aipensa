@@ -8,14 +8,36 @@ const upload = multer(uploadConfig);
 
 const scheduleMessageRoutes = express.Router();
 
-scheduleMessageRoutes.get("/schedules-message", isAuth, ScheduleMesageController.index);
+scheduleMessageRoutes.get(
+  "/schedules-message",
+  isAuth,
+  ScheduleMesageController.index
+);
 
-scheduleMessageRoutes.post("/schedules-message", isAuth, upload.array("file"), ScheduleMesageController.store);
+scheduleMessageRoutes.post(
+  "/schedules-message",
+  isAuth,
+  upload.array("file"),
+  ScheduleMesageController.store
+);
 
-scheduleMessageRoutes.put("/schedules-message/:scheduleId", isAuth, upload.array("file"), ScheduleMesageController.update);
+scheduleMessageRoutes.put(
+  "/schedules-message/:scheduleId",
+  isAuth,
+  upload.array("file"),
+  ScheduleMesageController.update
+);
 
-scheduleMessageRoutes.get("/schedules-message/:scheduleId", isAuth, ScheduleMesageController.show);
+scheduleMessageRoutes.get(
+  "/schedules-message/:scheduleId",
+  isAuth,
+  ScheduleMesageController.show
+);
 
-scheduleMessageRoutes.delete("/schedules-message/:scheduleId", isAuth, ScheduleMesageController.remove);
+scheduleMessageRoutes.delete(
+  "/schedules-message/:scheduleId",
+  isAuth,
+  ScheduleMesageController.remove
+);
 
 export default scheduleMessageRoutes;

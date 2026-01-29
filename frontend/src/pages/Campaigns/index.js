@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import React, { useState, useEffect, useReducer, useContext } from "react";
+import React, { useState, useEffect, useReducer, useContext, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 
 import { useHistory } from "react-router-dom";
@@ -8,11 +8,6 @@ import { useHistory } from "react-router-dom";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
 import IconButton from "@material-ui/core/IconButton";
 import SearchIcon from "@material-ui/icons/Search";
 import TextField from "@material-ui/core/TextField";
@@ -23,12 +18,12 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
 import Typography from '@mui/material/Typography';
+import CircularProgress from "@mui/material/CircularProgress";
 
 import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
 import EditIcon from "@material-ui/icons/Edit";
 import DescriptionIcon from "@material-ui/icons/Description";
-import PlayCircleOutlineIcon from "@material-ui/icons/PlayCircleOutline";
-import PauseCircleOutlineIcon from "@material-ui/icons/PauseCircleOutline";
+ 
 
 import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
@@ -36,7 +31,7 @@ import Title from "../../components/Title";
 
 import api from "../../services/api";
 import { i18n } from "../../translate/i18n";
-import TableRowSkeleton from "../../components/TableRowSkeleton";
+ 
 import CampaignModal from "../../components/CampaignModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import toastError from "../../errors/toastError";
@@ -98,8 +93,61 @@ const useStyles = makeStyles((theme) => ({
     flex: 1,
     // padding: theme.spacing(1),
     padding: theme.padding,
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
+  },
+  searchIcon: {
+    color: theme.palette.primary.main,
+  },
+  entityCard: {
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+    },
+  },
+  actions: {
+    justifyContent: "center",
+    gap: theme.spacing(1.25),
+    paddingBottom: theme.spacing(2),
+  },
+  actionButton: {
+    borderRadius: 12,
+    padding: theme.spacing(1),
+  },
+  actionIconReport: {
+    backgroundColor: "#25D366",
+    color: "#fff",
+  },
+  actionIconEdit: {
+    backgroundColor: "#40BFFF",
+    color: "#fff",
+  },
+  actionIconDelete: {
+    backgroundColor: "#FF6B6B",
+    color: "#fff",
+  },
+  emptyState: {
+    padding: theme.spacing(4),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    textAlign: "center",
+  },
+  primaryButton: {
+    color: "white",
+    backgroundColor: theme.palette.primary.main,
+    boxShadow: "none",
+    borderRadius: 12,
+    textTransform: "none",
+    "&:hover": {
+      backgroundColor: theme.palette.primary.dark,
+      boxShadow: "none",
+    },
   },
 }));
 
@@ -220,13 +268,28 @@ const Campaigns = () => {
     setPageNumber((prevState) => prevState + 1);
   };
 
-  const handleScroll = (e) => {
+  const loadMoreIfNeeded = useCallback(() => {
     if (!hasMore || loading) return;
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - (scrollTop + 100) < clientHeight) {
-      loadMore();
-    }
-  };
+    loadMore();
+  }, [hasMore, loading]);
+
+  const loadMoreSentinelRef = useRef(null);
+
+  useEffect(() => {
+    const root = document.querySelector("main");
+    const target = loadMoreSentinelRef.current;
+    if (!root || !target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMoreIfNeeded();
+      },
+      { root, rootMargin: "400px 0px 400px 0px", threshold: 0 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMoreIfNeeded]);
 
   const formatStatus = (val) => {
     switch (val) {
@@ -314,7 +377,7 @@ const Campaigns = () => {
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <SearchIcon style={{ color: "#FFA500" }} />
+                              <SearchIcon className={classes.searchIcon} />
                             </InputAdornment>
                           ),
                         }}
@@ -326,12 +389,7 @@ const Campaigns = () => {
                         fullWidth
                         variant="contained"
                         onClick={handleOpenCampaignModal}
-                        style={{
-                        color: "white",
-                        backgroundColor: "#FFA500",
-                        boxShadow: "none",
-                        borderRadius: "5px",
-                        }}
+                        className={classes.primaryButton}
                       >
                         {i18n.t("campaigns.buttons.add")}
                       </Button>
@@ -343,105 +401,64 @@ const Campaigns = () => {
             <Paper
               className={classes.mainPaper}
               variant="outlined"
-              onScroll={handleScroll}
             >
 <Grid container spacing={2}>
-  {loading ? (
+  {!loading && campaigns.length === 0 && (
     <Grid item xs={12}>
-      <Card
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-       >
-        <CardContent>
-          <Typography variant="body2" color="textSecondary">
-            Carregando...
-          </Typography>
-        </CardContent>
-      </Card>
+      <div className={classes.emptyState}>
+        <Typography variant="subtitle1" color="text.primary">
+          Nenhuma campanha encontrada
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Crie uma campanha ou ajuste a busca.
+        </Typography>
+      </div>
     </Grid>
-  ) : (
-    campaigns.map((campaign) => (
+  )}
+  {campaigns.map((campaign) => (
       <Grid item xs={12} sm={6} md={4} key={campaign.id}>
         <Card
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          variant="outlined"
+          className={classes.entityCard}
        >
           <CardContent>
-            <Typography variant="h6" color="textPrimary" align="center">
+            <Typography variant="h6" color="text.primary" align="center">
               {campaign.name}
             </Typography>
-            <Typography variant="body2" align="center">
+            <Typography variant="body2" align="center" color="text.secondary">
               Status: {formatStatus(campaign.status)}
             </Typography>
-            <Typography variant="body2" align="center">
-              Lista de Contatos:{" "}
-              {campaign.contactListId
-                ? campaign.contactList.name
-                : "Não definida"}
+            <Typography variant="body2" align="center" color="text.secondary">
+              Lista de Contatos: {campaign.contactListId ? campaign.contactList.name : "Não definida"}
             </Typography>
-            <Typography variant="body2" align="center">
-              WhatsApp:{" "}
-              {campaign.whatsappId ? campaign.whatsapp.name : "Não definido"}
+            <Typography variant="body2" align="center" color="text.secondary">
+              WhatsApp: {campaign.whatsappId ? campaign.whatsapp.name : "Não definido"}
             </Typography>
-            <Typography variant="body2" align="center">
-              Agendamento:{" "}
-              {campaign.scheduledAt
-                ? datetimeToClient(campaign.scheduledAt)
-                : "Sem agendamento"}
+            <Typography variant="body2" align="center" color="text.secondary">
+              Agendamento: {campaign.scheduledAt ? datetimeToClient(campaign.scheduledAt) : "Sem agendamento"}
             </Typography>
-            <Typography variant="body2" align="center">
-              Conclusão:{" "}
-              {campaign.completedAt
-                ? datetimeToClient(campaign.completedAt)
-                : "Não concluída"}
+            <Typography variant="body2" align="center" color="text.secondary">
+              Conclusão: {campaign.completedAt ? datetimeToClient(campaign.completedAt) : "Não concluída"}
             </Typography>
-            <Typography variant="body2" align="center">
+            <Typography variant="body2" align="center" color="text.secondary">
               Confirmação: {campaign.confirmation ? "Habilitada" : "Desabilitada"}
             </Typography>
           </CardContent>
-<CardActions style={{ justifyContent: "center", gap: "10px" }}>
+          <CardActions className={classes.actions}>
   <IconButton
     onClick={() => history.push(`/campaign/${campaign.id}/report`)}
     size="small"
-    style={{
-      backgroundColor: "#25D366", // Verde WhatsApp
-      borderRadius: "10px",
-      padding: "8px"
-    }}
+    className={`${classes.actionButton} ${classes.actionIconReport}`}
   >
-    <DescriptionIcon style={{ color: "white" }} />
+    <DescriptionIcon />
   </IconButton>
 
   <IconButton
     size="small"
     onClick={() => handleEditCampaign(campaign)}
-    style={{
-      backgroundColor: "#40BFFF", // Azul claro
-      borderRadius: "10px",
-      padding: "8px"
-    }}
+    className={`${classes.actionButton} ${classes.actionIconEdit}`}
   >
-    <EditIcon style={{ color: "white" }} />
+    <EditIcon />
   </IconButton>
 
   <IconButton
@@ -450,20 +467,21 @@ const Campaigns = () => {
       setConfirmModalOpen(true);
       setDeletingCampaign(campaign);
     }}
-    style={{
-      backgroundColor: "#FF6B6B", // Vermelho claro
-      borderRadius: "10px",
-      padding: "8px"
-    }}
+    className={`${classes.actionButton} ${classes.actionIconDelete}`}
   >
-    <DeleteOutlineIcon style={{ color: "white" }} />
+    <DeleteOutlineIcon />
   </IconButton>
 </CardActions>
         </Card>
       </Grid>
-    ))
+    ))}
+  {loading && (
+    <Grid item xs={12}>
+      <CircularProgress style={{ display: "block", margin: "16px auto" }} />
+    </Grid>
   )}
 </Grid>
+              <div ref={loadMoreSentinelRef} />
 
             </Paper>
           </>}

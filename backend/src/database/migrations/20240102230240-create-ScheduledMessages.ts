@@ -2,7 +2,7 @@ import { QueryInterface, DataTypes } from "sequelize";
 
 module.exports = {
   async up(queryInterface: QueryInterface) {
-    await queryInterface.createTable('ScheduledMessages', {
+    await queryInterface.createTable("ScheduledMessages", {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -74,6 +74,6 @@ module.exports = {
   },
 
   async down(queryInterface: QueryInterface) {
-    await queryInterface.dropTable('ScheduledMessages');
+    await queryInterface.dropTable("ScheduledMessages");
   }
 };

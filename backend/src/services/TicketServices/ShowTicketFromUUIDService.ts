@@ -8,8 +8,10 @@ import Whatsapp from "../../models/Whatsapp";
 import Company from "../../models/Company";
 import QueueIntegrations from "../../models/QueueIntegrations";
 
-const ShowTicketUUIDService = async (uuid: string,
-  companyId: number): Promise<Ticket> => {
+const ShowTicketUUIDService = async (
+  uuid: string,
+  companyId: number
+): Promise<Ticket> => {
   const ticket = await Ticket.findOne({
     where: {
       uuid,
@@ -43,12 +45,26 @@ const ShowTicketUUIDService = async (uuid: string,
       {
         model: Contact,
         as: "contact",
-        attributes: ["id", "name", "number", "email", "profilePicUrl", "acceptAudioMessage", "active", "disableBot", "urlPicture", "companyId"],
-        include: ["extraInfo", "tags",
+        attributes: [
+          "id",
+          "name",
+          "number",
+          "email",
+          "profilePicUrl",
+          "acceptAudioMessage",
+          "active",
+          "disableBot",
+          "urlPicture",
+          "companyId"
+        ],
+        include: [
+          "extraInfo",
+          "tags",
           {
             association: "wallets",
             attributes: ["id", "name"]
-          }]
+          }
+        ]
       },
       {
         model: Queue,
@@ -68,7 +84,15 @@ const ShowTicketUUIDService = async (uuid: string,
       {
         model: Whatsapp,
         as: "whatsapp",
-        attributes: ["id", "name", "groupAsTicket", "greetingMediaAttachment", "facebookUserToken", "facebookUserId", "notificameHub"]
+        attributes: [
+          "id",
+          "name",
+          "groupAsTicket",
+          "greetingMediaAttachment",
+          "facebookUserToken",
+          "facebookUserId",
+          "notificameHub"
+        ]
       },
       {
         model: Company,

@@ -40,7 +40,15 @@ const UpdateContactWalletsService = async ({
 
   const contact = await Contact.findOne({
     where: { id: contactId, companyId },
-    attributes: ["id", "name", "number", "email", "profilePicUrl", "urlPicture", "companyId"],
+    attributes: [
+      "id",
+      "name",
+      "number",
+      "email",
+      "profilePicUrl",
+      "urlPicture",
+      "companyId"
+    ],
     include: [
       "extraInfo",
       "tags",

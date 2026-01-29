@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, useContext, useRef } from "react";
+import React, { useState, useEffect, useReducer, useContext, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useHistory } from "react-router-dom";
 import { makeStyles } from "@material-ui/core/styles";
@@ -242,8 +242,77 @@ const useStyles = makeStyles((theme) => ({
     mainPaper: {
         flex: 1,
         padding: theme.spacing(1),
-        overflowY: "scroll",
-        ...theme.scrollbarStyles,
+        overflowY: "visible",
+    },
+    emptyState: {
+        padding: theme.spacing(4),
+        borderRadius: 16,
+        border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+        background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+        textAlign: "center",
+    },
+    entityCard: {
+        borderRadius: 16,
+        border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+        background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+        backdropFilter: "blur(14px)",
+        boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+        transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+        "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+        },
+    },
+    entityCardHeader: {
+        padding: theme.spacing(1),
+    },
+    entityCardContent: {
+        padding: theme.spacing(1),
+        paddingTop: 0,
+    },
+    actionsRow: {
+        padding: theme.spacing(1),
+        paddingTop: 0,
+        justifyContent: "space-around",
+    },
+    actionIconButton: {
+        borderRadius: 12,
+        padding: theme.spacing(1),
+        boxShadow: "none",
+        color: "#fff",
+        "&:disabled": {
+            opacity: 0.6,
+        },
+    },
+    actionWhats: {
+        backgroundColor: "#25D366",
+        "&:hover": {
+            backgroundColor: "#1fb358",
+        },
+    },
+    actionEdit: {
+        backgroundColor: theme.palette.primary.main,
+        "&:hover": {
+            backgroundColor: theme.palette.primary.dark,
+        },
+    },
+    actionWarn: {
+        backgroundColor: theme.palette.warning.main,
+        "&:hover": {
+            backgroundColor: theme.palette.warning.dark,
+        },
+    },
+    actionSuccess: {
+        backgroundColor: theme.palette.success.main,
+        "&:hover": {
+            backgroundColor: theme.palette.success.dark,
+        },
+    },
+    actionDelete: {
+        backgroundColor: theme.palette.error.main,
+        "&:hover": {
+            backgroundColor: theme.palette.error.dark,
+        },
     },
     legendContainer: {
         display: "flex",
@@ -287,6 +356,8 @@ const useStyles = makeStyles((theme) => ({
     mobileActionButton: {
         width: "100%",
         justifyContent: "flex-start",
+        borderRadius: 12,
+        textTransform: "none",
     },
 }));
 
@@ -504,13 +575,28 @@ const Contacts = () => {
         setPageNumber((prevState) => prevState + 1);
     };
 
-    const handleScroll = (e) => {
+    const loadMoreIfNeeded = useCallback(() => {
         if (!hasMore || loading) return;
-        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-        if (scrollHeight - (scrollTop + 100) < clientHeight) {
-            loadMore();
-        }
-    };
+        loadMore();
+    }, [hasMore, loading]);
+
+    const loadMoreSentinelRef = useRef(null);
+
+    useEffect(() => {
+        const root = document.querySelector("main");
+        const target = loadMoreSentinelRef.current;
+        if (!root || !target) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting) loadMoreIfNeeded();
+            },
+            { root, rootMargin: "400px 0px 400px 0px", threshold: 0 }
+        );
+
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [loadMoreIfNeeded]);
 
     const [tabValue, setTabValue] = useState(0);
 
@@ -560,11 +646,7 @@ const Contacts = () => {
                             setNewTicketModalOpen(true);
                         }}
                         startIcon={<WhatsApp />}
-                        style={{
-                            backgroundColor: "#25D366",
-                            color: "#fff",
-                        }}
-                        className={classes.mobileActionButton}
+                        className={`${classes.mobileActionButton} ${classes.actionWhats}`}
                     >
                         WhatsApp
                     </Button>
@@ -574,11 +656,7 @@ const Contacts = () => {
                         size="small"
                         onClick={() => hadleEditContact(contact.id)}
                         startIcon={<EditIcon />}
-                        style={{
-                            backgroundColor: "#42A5F5",
-                            color: "#fff",
-                        }}
-                        className={classes.mobileActionButton}
+                        className={`${classes.mobileActionButton} ${classes.actionEdit}`}
                     >
                         Editar
                     </Button>
@@ -592,11 +670,7 @@ const Contacts = () => {
                                 : (setConfirmOpen(true), setUnBlockingContact(contact))
                         }
                         startIcon={contact.active ? <BlockIcon /> : <CheckCircleIcon />}
-                        style={{
-                            backgroundColor: contact.active ? "#FFA726" : "#66BB6A",
-                            color: "#fff",
-                        }}
-                        className={classes.mobileActionButton}
+                        className={`${classes.mobileActionButton} ${contact.active ? classes.actionWarn : classes.actionSuccess}`}
                     >
                         {contact.active ? "Bloquear" : "Desbloquear"}
                     </Button>
@@ -613,11 +687,7 @@ const Contacts = () => {
                                     setDeletingContact(contact);
                                 }}
                                 startIcon={<DeleteOutlineIcon />}
-                                style={{
-                                    backgroundColor: "#FF6B6B",
-                                    color: "#fff",
-                                }}
-                                className={classes.mobileActionButton}
+                                className={`${classes.mobileActionButton} ${classes.actionDelete}`}
                             >
                                 Deletar
                             </Button>
@@ -627,7 +697,7 @@ const Contacts = () => {
             );
         } else {
             return (
-                <CardActions style={{ padding: "8px", justifyContent: "space-around" }}>
+                <CardActions className={classes.actionsRow}>
                     <IconButton
                         size="small"
                         disabled={!contact.active}
@@ -635,11 +705,7 @@ const Contacts = () => {
                             setContactTicket(contact);
                             setNewTicketModalOpen(true);
                         }}
-                        style={{
-                            backgroundColor: "#25D366",
-                            borderRadius: "10px",
-                            padding: "8px"
-                        }}
+                        className={`${classes.actionIconButton} ${classes.actionWhats}`}
                     >
                         <WhatsApp style={{ color: "#fff" }} />
                     </IconButton>
@@ -647,11 +713,7 @@ const Contacts = () => {
                     <IconButton
                         size="small"
                         onClick={() => hadleEditContact(contact.id)}
-                        style={{
-                            backgroundColor: "#42A5F5",
-                            borderRadius: "10px",
-                            padding: "8px"
-                        }}
+                        className={`${classes.actionIconButton} ${classes.actionEdit}`}
                     >
                         <EditIcon style={{ color: "#fff" }} />
                     </IconButton>
@@ -663,11 +725,7 @@ const Contacts = () => {
                                 ? (setConfirmOpen(true), setBlockingContact(contact))
                                 : (setConfirmOpen(true), setUnBlockingContact(contact))
                         }
-                        style={{
-                            backgroundColor: contact.active ? "#FFA726" : "#66BB6A",
-                            borderRadius: "10px",
-                            padding: "8px"
-                        }}
+                        className={`${classes.actionIconButton} ${contact.active ? classes.actionWarn : classes.actionSuccess}`}
                     >
                         {contact.active ? (
                             <BlockIcon style={{ color: "#fff" }} />
@@ -686,11 +744,7 @@ const Contacts = () => {
                                     setConfirmOpen(true);
                                     setDeletingContact(contact);
                                 }}
-                                style={{
-                                    backgroundColor: "#FF6B6B",
-                                    borderRadius: "10px",
-                                    padding: "8px"
-                                }}
+                                className={`${classes.actionIconButton} ${classes.actionDelete}`}
                             >
                                 <DeleteOutlineIcon style={{ color: "#fff" }} />
                             </IconButton>
@@ -873,7 +927,6 @@ const Contacts = () => {
             <Paper
                 className={classes.mainPaper}
                 variant="outlined"
-                onScroll={handleScroll}
             >
                 {tabValue === 0 && (
                     <>
@@ -893,31 +946,31 @@ const Contacts = () => {
                                 Total de Contatos: {contacts.length}
                             </Typography>
                         </Box>
+                        {contacts.length === 0 && !loading && (
+                            <div className={classes.emptyState}>
+                                <Typography variant="subtitle1" color="textPrimary">
+                                    Nenhum contato encontrado
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    Ajuste a busca ou adicione um novo contato.
+                                </Typography>
+                            </div>
+                        )}
                         <Grid container spacing={2}>
                             {contacts.map((contact) => (
                                 <Grid
                                     item xs={12} sm={6} md={4} lg={3} key={contact.id}>
                                     <Card
                                         variant="outlined"
-                                        style={{
-                                            backgroundColor: "#d7e0e4",
-                                            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                                            borderRadius: "10px",
-                                            padding: "10px",
-                                            margin: "5px",
-                                            transition: "transform 0.2s ease-in-out",
-                                            cursor: "pointer",
-                                        }}
-                                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-                                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                                        className={classes.entityCard}
                                     >
                                         <CardHeader
                                             avatar={<ExpandableAvatar contact={contact} />}
                                             title={contact.name}
                                             subheader={contact.email}
-                                            style={{ padding: "8px" }}
+                                            className={classes.entityCardHeader}
                                         />
-                                        <CardContent style={{ padding: "8px" }}>
+                                        <CardContent className={classes.entityCardContent}>
                                             <Typography
                                                 variant="body2"
                                                 color="textSecondary">
@@ -948,6 +1001,7 @@ const Contacts = () => {
                                 </Grid>
                             ))}
                         </Grid>
+                        <div ref={loadMoreSentinelRef} />
                     </>
                 )}
                 {tabValue === 1 && (

@@ -56,7 +56,9 @@ const CreateCompanyService = async (
   }
 
   const normalizedName = name.trim();
-  const existingByName = await Company.findOne({ where: { name: { [Op.iLike]: normalizedName } } });
+  const existingByName = await Company.findOne({
+    where: { name: { [Op.iLike]: normalizedName } }
+  });
   if (existingByName) {
     throw new AppError("ERR_COMPANY_NAME_EXISTS", 409);
   }
@@ -75,39 +77,51 @@ const CreateCompanyService = async (
 
   const planIdNum = planId ?? 1;
 
-  const txResult = await sequelize.transaction(async (t) => {
-    const createdCompany = await Company.create({
-      name,
-      phone,
-      email,
-      status,
-      planId: planIdNum,
-      dueDate,
-      recurrence,
-      document,
-      paymentMethod
-    }, { transaction: t });
+  const txResult = await sequelize.transaction(async t => {
+    const createdCompany = await Company.create(
+      {
+        name,
+        phone,
+        email,
+        status,
+        planId: planIdNum,
+        dueDate,
+        recurrence,
+        document,
+        paymentMethod
+      },
+      { transaction: t }
+    );
 
-    const user = await User.create({
-      name: companyUserName || name,
-      email: createdCompany.email,
-      password: (password || "mudar123").trim(),
-      profile: "admin",
-      companyId: createdCompany.id,
-      super: false,
-      startWork: "00:00",
-      endWork: "23:59"
-    }, { transaction: t });
+    const user = await User.create(
+      {
+        name: companyUserName || name,
+        email: createdCompany.email,
+        password: (password || "mudar123").trim(),
+        profile: "admin",
+        companyId: createdCompany.id,
+        super: false,
+        startWork: "00:00",
+        endWork: "23:59"
+      },
+      { transaction: t }
+    );
 
-    console.log(`[CreateCompanyService] VERSION 3.0 - Company created: ${createdCompany.id}, Email: '${createdCompany.email}'`);
-    console.log(`[CreateCompanyService] User created: ${user.id}, Email: '${user.email}', CompanyId: ${user.companyId}`);
+    console.log(
+      `[CreateCompanyService] VERSION 3.0 - Company created: ${createdCompany.id}, Email: '${createdCompany.email}'`
+    );
+    console.log(
+      `[CreateCompanyService] User created: ${user.id}, Email: '${user.email}', CompanyId: ${user.companyId}`
+    );
 
     return { company: createdCompany, user };
   });
 
   const { company: createdCompany } = txResult;
 
-  console.log(`[CreateCompanyService] Creating CompaniesSettings for company ${createdCompany.id}...`);
+  console.log(
+    `[CreateCompanyService] Creating CompaniesSettings for company ${createdCompany.id}...`
+  );
   try {
     await CompaniesSettings.create({
       companyId: createdCompany.id,
@@ -141,16 +155,24 @@ const CreateCompanyService = async (
       AcceptCallWhatsappMessage: "",
       sendQueuePositionMessage: ""
     });
-    console.log(`[CreateCompanyService] CompaniesSettings created successfully.`);
+    console.log(
+      `[CreateCompanyService] CompaniesSettings created successfully.`
+    );
   } catch (err) {
-    console.error(`[CreateCompanyService] ERROR creating CompaniesSettings (não bloqueante):`, err);
+    console.error(
+      `[CreateCompanyService] ERROR creating CompaniesSettings (não bloqueante):`,
+      err
+    );
   }
 
   try {
+    const platformApiKey =
+      process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY || "";
+
     await Prompt.create({
       name: "IA Padrão",
       prompt: "Você é um assistente virtual inteligente e útil.",
-      apiKey: "token_here",
+      apiKey: platformApiKey,
       voice: "pt-BR-Wavenet-A",
       provider: "openrouter",
       model: "google/gemini-2.0-flash-lite-preview-02-05:free",
@@ -166,12 +188,20 @@ const CreateCompanyService = async (
   try {
     const checkUser = await User.findOne({ where: { email: email } });
     if (checkUser) {
-      console.log(`[CreateCompanyService] SUCCESS: User '${email}' found in DB after commit. ID: ${checkUser.id}, CompanyId: ${checkUser.companyId}`);
+      console.log(
+        `[CreateCompanyService] SUCCESS: User '${email}' found in DB after commit. ID: ${checkUser.id}, CompanyId: ${checkUser.companyId}`
+      );
       // Force password re-hash check
       const valid = await checkUser.checkPassword(password || "mudar123");
-      console.log(`[CreateCompanyService] Password check immediately after creation: ${valid ? 'VALID' : 'INVALID'}`);
+      console.log(
+        `[CreateCompanyService] Password check immediately after creation: ${
+          valid ? "VALID" : "INVALID"
+        }`
+      );
     } else {
-      console.error(`[CreateCompanyService] CRITICAL ERROR: User '${email}' NOT found in DB after commit!`);
+      console.error(
+        `[CreateCompanyService] CRITICAL ERROR: User '${email}' NOT found in DB after commit!`
+      );
     }
   } catch (e) {
     console.error("[CreateCompanyService] Error verifying user:", e);

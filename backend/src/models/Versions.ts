@@ -6,7 +6,7 @@ import {
   Model,
   DataType,
   PrimaryKey,
-  AutoIncrement,
+  AutoIncrement
 } from "sequelize-typescript";
 
 @Table({ tableName: "Versions" })

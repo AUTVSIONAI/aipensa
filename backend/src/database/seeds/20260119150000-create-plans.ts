@@ -203,16 +203,20 @@ export const up = async (queryInterface: QueryInterface) => {
   ];
 
   for (const plan of plans) {
-    const existingPlan = await queryInterface.rawSelect('Plans', {
-      where: {
-        name: plan.name,
+    const existingPlan = await queryInterface.rawSelect(
+      "Plans",
+      {
+        where: {
+          name: plan.name
+        }
       },
-    }, ['id']);
+      ["id"]
+    );
 
     if (existingPlan) {
-      await queryInterface.bulkUpdate('Plans', plan, { name: plan.name });
+      await queryInterface.bulkUpdate("Plans", plan, { name: plan.name });
     } else {
-      await queryInterface.bulkInsert('Plans', [plan]);
+      await queryInterface.bulkInsert("Plans", [plan]);
     }
   }
 };

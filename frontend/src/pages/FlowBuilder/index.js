@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, useContext } from "react";
+import React, { useMemo, useState, useEffect, useContext } from "react";
 
 import { toast } from "react-toastify";
 import { useHistory } from "react-router-dom";
@@ -6,19 +6,12 @@ import { useHistory } from "react-router-dom";
 import { makeStyles } from "@material-ui/core/styles";
 
 import Paper from "@material-ui/core/Paper";
-import Avatar from "@material-ui/core/Avatar";
-import WhatsAppIcon from "@material-ui/icons/WhatsApp";
+import Chip from "@material-ui/core/Chip";
 import SearchIcon from "@material-ui/icons/Search";
 import TextField from "@material-ui/core/TextField";
 import InputAdornment from "@material-ui/core/InputAdornment";
 
-import IconButton from "@material-ui/core/IconButton";
-import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
-import EditIcon from "@material-ui/icons/Edit";
-
 import api from "../../services/api";
-import TableRowSkeleton from "../../components/TableRowSkeleton";
-import ContactModal from "../../components/ContactModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
 
 import AddIcon from "@mui/icons-material/Add";
@@ -30,18 +23,7 @@ import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper"
 import MainContainer from "../../components/MainContainer";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
-import { Can } from "../../components/Can";
-import NewTicketModal from "../../components/NewTicketModal";
-import { SocketContext } from "../../context/Socket/SocketContext";
-import WebhookModal from "../../components/WebhookModal";
-import {
-  AddCircle,
-  Build,
-  ContentCopy,
-  DevicesFold,
-  MoreVert,
-  WebhookOutlined,
-} from "@mui/icons-material";
+import { DevicesFold, MoreVert } from "@mui/icons-material";
 
 import {
   Button,
@@ -49,21 +31,10 @@ import {
   Grid,
   Menu,
   MenuItem,
-  Stack,
 } from "@mui/material";
 
 import FlowBuilderModal from "../../components/FlowBuilderModal";
 
-import {
-  colorBackgroundTable,
-  colorLineTable,
-  colorLineTableHover,
-  colorPrimary,
-  colorTitleTable,
-  colorTopTable,
-} from "../../styles/styles";
-
-import GetAppIcon from "@mui/icons-material/GetApp";
 import UploadIcon from "@mui/icons-material/Upload";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -73,58 +44,53 @@ import Input from "@mui/material/Input";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 
-const reducer = (state, action) => {
-  if (action.type === "LOAD_CONTACTS") {
-    const contacts = action.payload;
-    const newContacts = [];
-
-    contacts.forEach((contact) => {
-      const contactIndex = state.findIndex((c) => c.id === contact.id);
-      if (contactIndex !== -1) {
-        state[contactIndex] = contact;
-      } else {
-        newContacts.push(contact);
-      }
-    });
-
-    return [...state, ...newContacts];
-  }
-
-  if (action.type === "UPDATE_CONTACTS") {
-    const contact = action.payload;
-    const contactIndex = state.findIndex((c) => c.id === contact.id);
-
-    if (contactIndex !== -1) {
-      state[contactIndex] = contact;
-      return [...state];
-    } else {
-      return [contact, ...state];
-    }
-  }
-
-  if (action.type === "DELETE_CONTACT") {
-    const contactId = action.payload;
-
-    const contactIndex = state.findIndex((c) => c.id === contactId);
-    if (contactIndex !== -1) {
-      state.splice(contactIndex, 1);
-    }
-    return [...state];
-  }
-
-  if (action.type === "RESET") {
-    return [];
-  }
-};
-
 const useStyles = makeStyles((theme) => ({
+  mainContainer: {
+    display: "flex",
+    flexDirection: "column",
+  },
   mainPaper: {
     flex: 1,
-    backgroundColor: "#444394",
-    borderRadius: 0,
     padding: theme.spacing(1),
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
+  },
+  entityCard: {
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    cursor: "pointer",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+    },
+  },
+  entityCardContent: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: theme.spacing(1),
+  },
+  flowName: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1),
+    minWidth: 0,
+  },
+  flowNameText: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontWeight: 800,
+  },
+  emptyState: {
+    padding: theme.spacing(4),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    textAlign: "center",
   },
 }));
 
@@ -133,22 +99,17 @@ const FlowBuilder = () => {
   const history = useHistory();
 
   const [loading, setLoading] = useState(false);
-  const [pageNumber, setPageNumber] = useState(1);
   const [searchParam, setSearchParam] = useState("");
-  const [contacts, dispatch] = useReducer(reducer, []);
-  const [webhooks, setWebhooks] = useState([]);
+  const [flows, setFlows] = useState([]);
   const [selectedContactId, setSelectedContactId] = useState(null);
   const [selectedWebhookName, setSelectedWebhookName] = useState(null);
   const [contactModalOpen, setContactModalOpen] = useState(false);
-  const [newTicketModalOpen, setNewTicketModalOpen] = useState(false);
-  const [contactTicket, setContactTicket] = useState({});
   const [deletingContact, setDeletingContact] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmDuplicateOpen, setConfirmDuplicateOpen] = useState(false);
 
-  const [hasMore, setHasMore] = useState(false);
   const [reloadData, setReloadData] = useState(false);
-  const { user, socket } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
@@ -157,48 +118,34 @@ const FlowBuilder = () => {
   const [successfulImport, setSuccessfulImport] = useState(false);
 
   useEffect(() => {
-    dispatch({ type: "RESET" });
-    setPageNumber(1);
-  }, [searchParam]);
-
-  useEffect(() => {
+    let isMounted = true;
     setLoading(true);
     const delayDebounceFn = setTimeout(() => {
-      const fetchContacts = async () => {
+      (async () => {
         try {
           const { data } = await api.get("/flowbuilder");
-          setWebhooks(data.flows);
-          dispatch({ type: "LOAD_CONTACTS", payload: data.flows });
-          setHasMore(data.hasMore);
-          setLoading(false);
+          if (!isMounted) return;
+          setFlows(Array.isArray(data?.flows) ? data.flows : []);
         } catch (err) {
+          if (!isMounted) return;
           toastError(err);
+        } finally {
+          if (!isMounted) return;
+          setLoading(false);
         }
-      };
-      fetchContacts();
-    }, 500);
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchParam, pageNumber, reloadData]);
-
-  useEffect(() => {
-    const companyId = user.companyId;
-
-    const onContact = (data) => {
-      if (data.action === "update" || data.action === "create") {
-        dispatch({ type: "UPDATE_CONTACTS", payload: data.contact });
-      }
-
-      if (data.action === "delete") {
-        dispatch({ type: "DELETE_CONTACT", payload: +data.contactId });
-      }
-    };
-
-    socket.on(`company-${companyId}-contact`, onContact);
-
+      })();
+    }, 300);
     return () => {
-      socket.disconnect();
+      isMounted = false;
+      clearTimeout(delayDebounceFn);
     };
-  }, []);
+  }, [reloadData]);
+
+  const filteredFlows = useMemo(() => {
+    const q = (searchParam || "").trim().toLowerCase();
+    if (!q) return flows;
+    return flows.filter((flow) => String(flow?.name || "").toLowerCase().includes(q));
+  }, [flows, searchParam]);
 
   const handleSearch = (event) => {
     setSearchParam(event.target.value.toLowerCase());
@@ -212,13 +159,6 @@ const FlowBuilder = () => {
   const handleCloseContactModal = () => {
     setSelectedContactId(null);
     setContactModalOpen(false);
-  };
-
-  const handleCloseOrOpenTicket = (ticket) => {
-    setNewTicketModalOpen(false);
-    if (ticket !== undefined && ticket.uuid !== undefined) {
-      history.push(`/tickets/${ticket.uuid}`);
-    }
   };
 
   const hadleEditContact = () => {
@@ -253,18 +193,6 @@ const FlowBuilder = () => {
     }
   };
 
-  const loadMore = () => {
-    setPageNumber((prevState) => prevState + 1);
-  };
-
-  const handleScroll = (e) => {
-    if (!hasMore || loading) return;
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - (scrollTop + 100) < clientHeight) {
-      loadMore();
-    }
-  };
-
   const [anchorEl, setAnchorEl] = useState(null);
 
   const open = Boolean(anchorEl);
@@ -294,7 +222,7 @@ const FlowBuilder = () => {
         return;
       }
 
-      const flowToExport = webhooks.find((wh) => wh.id === flowId);
+      const flowToExport = flows.find((wh) => wh.id === flowId);
       const flowName = flowToExport ? flowToExport.name : "fluxo";
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -366,13 +294,6 @@ const FlowBuilder = () => {
 
   return (
     <MainContainer className={classes.mainContainer}>
-      <NewTicketModal
-        modalOpen={newTicketModalOpen}
-        initialContact={contactTicket}
-        onClose={(ticket) => {
-          handleCloseOrOpenTicket(ticket);
-        }}
-      />
       <FlowBuilderModal
         open={contactModalOpen}
         onClose={handleCloseContactModal}
@@ -491,7 +412,7 @@ const FlowBuilder = () => {
       </Dialog>
       <Dialog
         open={navigationConfirmOpen}
-        onClose={() => setNavigationConfirmOpen(false)}
+        onClose={handleNavigationConfirm}
       >
         <DialogTitle>Importação Concluída</DialogTitle>
         <DialogContent>
@@ -503,7 +424,7 @@ const FlowBuilder = () => {
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={() => setNavigationConfirmOpen(false)}
+            onClick={handleNavigationConfirm}
             variant="contained"
             color="primary"
           >
@@ -520,12 +441,9 @@ const FlowBuilder = () => {
             value={searchParam}
             onChange={handleSearch}
             InputProps={{
-              style: {
-                color: colorTitleTable(),
-              },
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon style={{ color: "#FFA500" }} />
+                  <SearchIcon color="action" />
                 </InputAdornment>
               ),
             }}
@@ -545,150 +463,122 @@ const FlowBuilder = () => {
             onClick={handleOpenContactModal}
             startIcon={<AddIcon />}
           >
-            <Stack direction={"row"} gap={1}>
-              {"Adicionar Fluxo"}
-            </Stack>
+            Adicionar Fluxo
           </Button>
         </MainHeaderButtonsWrapper>
       </MainHeader>
       <Paper
         className={classes.mainPaper}
         variant="outlined"
-        onScroll={handleScroll}
       >
-        <Stack>
-          <Grid container style={{ padding: "8px" }}>
-            <Grid item xs={4} style={{ color: colorTopTable() }}>
-              {i18n.t("contacts.table.name")}
-            </Grid>
-            <Grid item xs={4} style={{ color: colorTopTable() }} align="center">
-              Status
-            </Grid>
-            <Grid item xs={4} align="end" style={{ color: colorTopTable() }}>
-              {i18n.t("contacts.table.actions")}
-            </Grid>
-          </Grid>
-          <>
-            {webhooks.map((contact) => (
-              <Grid
-                container
-                key={contact.id}
-                sx={{
-                  padding: "8px",
-                  backgroundColor: "#ffffff",
-                  borderRadius: 0,
-                }}
+        {filteredFlows.length === 0 && !loading && (
+          <div className={classes.emptyState}>
+            <Typography variant="subtitle1" color="text.primary">
+              Nenhum fluxo encontrado
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Crie um fluxo novo ou ajuste a busca.
+            </Typography>
+          </div>
+        )}
+        <Grid container spacing={2}>
+          {filteredFlows.map((flow) => (
+            <Grid item xs={12} sm={6} md={4} key={flow.id}>
+              <Paper
+                variant="outlined"
+                className={classes.entityCard}
+                onClick={() => history.push(`/flowbuilder/${flow.id}`)}
               >
-                <Grid
-                  item
-                  xs={4}
-                  onClick={() => history.push(`/flowbuilder/${contact.id}`)}
-                >
-                  <Stack
-                    justifyContent={"center"}
-                    height={"100%"}
-                    style={{ color: "#444394" }}
-                  >
-                    <Stack direction={"row"}>
-                      <DevicesFold />
-                      <Stack justifyContent={"center"} marginLeft={1}>
-                        {contact.name}
-                      </Stack>
-                    </Stack>
-                  </Stack>
-                </Grid>
-                <Grid
-                  item
-                  xs={4}
-                  align="center"
-                  style={{ color: "#444394" }}
-                  onClick={() => history.push(`/flowbuilder/${contact.id}`)}
-                >
-                  <Stack justifyContent={"center"} height={"100%"}>
-                    {contact.active ? "Ativo" : "Desativado"}
-                  </Stack>
-                </Grid>
-                <Grid item xs={4} align="end">
-                  <Button
-                    id="basic-button"
-                    aria-controls={open ? "basic-menu" : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={open ? "true" : undefined}
-                    onClick={(e) => {
-                      handleClick(e);
-                      setDeletingContact(contact);
-                    }}
-                    sx={{ borderRadius: "36px", minWidth: "24px" }}
-                  >
-                    <MoreVert
-                      sx={{ color: "#444394", width: "21px", height: "21px" }}
+                <Box className={classes.entityCardContent} p={2}>
+                  <div className={classes.flowName}>
+                    <DevicesFold fontSize="small" />
+                    <Typography className={classes.flowNameText} color="text.primary">
+                      {flow.name}
+                    </Typography>
+                  </div>
+                  <Box display="flex" alignItems="center" style={{ gap: 8 }}>
+                    <Chip
+                      size="small"
+                      label={flow.active ? "Ativo" : "Desativado"}
+                      color={flow.active ? "primary" : "default"}
+                      variant={flow.active ? "default" : "outlined"}
                     />
-                  </Button>
-                </Grid>
-              </Grid>
-            ))}
-            <Menu
-              id="basic-menu"
-              anchorEl={anchorEl}
-              open={open}
-              sx={{ borderRadius: "40px" }}
-              onClose={handleClose}
-              MenuListProps={{
-                "aria-labelledby": "basic-button",
-              }}
-            >
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  hadleEditContact();
-                }}
-              >
-                Editar nome
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  exportLink();
-                }}
-              >
-                Editar fluxo
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  handleExportFlow(deletingContact.id);
-                }}
-              >
-                Exportar Fluxo
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  setConfirmDuplicateOpen(true);
-                }}
-              >
-                Duplicar
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  setConfirmOpen(true);
-                }}
-              >
-                Excluir
-              </MenuItem>
-            </Menu>
-            {loading && (
-              <Stack
-                justifyContent={"center"}
-                alignItems={"center"}
-                minHeight={"50vh"}
-              >
-                <CircularProgress />
-              </Stack>
-            )}
-          </>
-        </Stack>
+                    <Button
+                      id="basic-button"
+                      aria-controls={open ? "basic-menu" : undefined}
+                      aria-haspopup="true"
+                      aria-expanded={open ? "true" : undefined}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClick(e);
+                        setDeletingContact(flow);
+                      }}
+                      sx={{ borderRadius: "36px", minWidth: "24px" }}
+                    >
+                      <MoreVert sx={{ width: "21px", height: "21px" }} />
+                    </Button>
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid>
+          ))}
+          {loading && (
+            <Grid item xs={12}>
+              <CircularProgress style={{ display: "block", margin: "16px auto" }} />
+            </Grid>
+          )}
+        </Grid>
+        <Menu
+          id="basic-menu"
+          anchorEl={anchorEl}
+          open={open}
+          sx={{ borderRadius: "40px" }}
+          onClose={handleClose}
+          MenuListProps={{
+            "aria-labelledby": "basic-button",
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              handleClose();
+              hadleEditContact();
+            }}
+          >
+            Editar nome
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              handleClose();
+              exportLink();
+            }}
+          >
+            Editar fluxo
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              handleClose();
+              handleExportFlow(deletingContact.id);
+            }}
+          >
+            Exportar Fluxo
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              handleClose();
+              setConfirmDuplicateOpen(true);
+            }}
+          >
+            Duplicar
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              handleClose();
+              setConfirmOpen(true);
+            }}
+          >
+            Excluir
+          </MenuItem>
+        </Menu>
       </Paper>
     </MainContainer>
   );

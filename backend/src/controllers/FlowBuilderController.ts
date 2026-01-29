@@ -50,8 +50,8 @@ export const updateFlow = async (
 
   const flow = await UpdateFlowBuilderService({ companyId, name, flowId });
 
-  if(flow === 'exist'){
-    return res.status(402).json('exist')
+  if (flow === "exist") {
+    return res.status(402).json("exist");
   }
 
   return res.status(200).json(flow);
@@ -194,7 +194,6 @@ export const FlowDuplicate = async (req: Request, res: Response) => {
 
   return res.status(200).json(newFlow);
 };
-
 
 export const FlowUploadAll = async (req: Request, res: Response) => {
   const medias = req.files as Express.Multer.File[];

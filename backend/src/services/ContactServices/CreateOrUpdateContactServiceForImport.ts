@@ -24,23 +24,22 @@ const CreateOrUpdateContactServiceForImport = async ({
   isGroup,
   email = "",
   commandBot = "",
-  extraInfo = [], companyId
+  extraInfo = [],
+  companyId
 }: Request): Promise<Contact> => {
   const number = isGroup ? rawNumber : rawNumber.replace(/[^0-9]/g, "");
 
   const io = getIO();
   let contact: Contact | null;
 
-  contact = await Contact.findOne({ where: { number , companyId } });
+  contact = await Contact.findOne({ where: { number, companyId } });
 
   if (contact) {
     if (contact.companyId === null)
-      await contact.update({ name ,profilePicUrl, companyId })
-    else
-      await contact.update({ name , profilePicUrl });
+      await contact.update({ name, profilePicUrl, companyId });
+    else await contact.update({ name, profilePicUrl });
 
-      io.of(String(companyId))
-  .emit(`company-${companyId}-contact`, {
+    io.of(String(companyId)).emit(`company-${companyId}-contact`, {
       action: "update",
       contact
     });
@@ -56,8 +55,7 @@ const CreateOrUpdateContactServiceForImport = async ({
       extraInfo
     });
 
-    io.of(String(companyId))
-  .emit(`company-${companyId}-contact`, {
+    io.of(String(companyId)).emit(`company-${companyId}-contact`, {
       action: "create",
       contact
     });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -20,7 +20,6 @@ import { toast } from 'react-toastify';
 import './button.css';
 import { i18n } from '../../translate/i18n';
 import { AuthContext } from "../../context/Auth/AuthContext";
-import { useTheme } from '@material-ui/core';
 import FilterListIcon from '@mui/icons-material/FilterList';
 
 ChartJS.register(
@@ -78,7 +77,6 @@ export const options = {
 };
 
 export const ChartsDate = () => {
-    const theme = useTheme();
     const [initialDate, setInitialDate] = useState(new Date());
     const [finalDate, setFinalDate] = useState(new Date());
     const [ticketsData, setTicketsData] = useState({ data: [], count: 0 });
@@ -86,11 +84,20 @@ export const ChartsDate = () => {
 
     const companyId = user.companyId;
 
+    const handleGetTicketsInformation = useCallback(async () => {
+        try {
+            const { data } = await api.get(`/dashboard/ticketsDay?initialDate=${format(initialDate, 'yyyy-MM-dd')}&finalDate=${format(finalDate, 'yyyy-MM-dd')}&companyId=${companyId}`);
+            setTicketsData(data);
+        } catch (error) {
+            toast.error('Erro ao buscar informações dos tickets');
+        }
+    }, [companyId, initialDate, finalDate]);
+
     useEffect(() => {
         if (companyId) {
             handleGetTicketsInformation();
         }
-    }, [companyId]);
+    }, [companyId, handleGetTicketsInformation]);
 
     // Cores sólidas para as barras
     const barColors = [
@@ -117,14 +124,7 @@ export const ChartsDate = () => {
         ],
     };
 
-    const handleGetTicketsInformation = async () => {
-        try {
-            const { data } = await api.get(`/dashboard/ticketsDay?initialDate=${format(initialDate, 'yyyy-MM-dd')}&finalDate=${format(finalDate, 'yyyy-MM-dd')}&companyId=${companyId}`);
-            setTicketsData(data);
-        } catch (error) {
-            toast.error('Erro ao buscar informações dos tickets');
-        }
-    }
+ 
 
     return (
         <>

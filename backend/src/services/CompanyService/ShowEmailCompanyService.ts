@@ -1,7 +1,7 @@
 import Company from "../../models/Company";
 import AppError from "../../errors/AppError";
 
-const ShowEmailCompanyService = async (email: string ): Promise<Company> => {
+const ShowEmailCompanyService = async (email: string): Promise<Company> => {
   const company = await Company.findOne({
     where: { email },
     include: ["plan"]

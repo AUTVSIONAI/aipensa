@@ -37,7 +37,7 @@ interface Request {
   expiresInactiveMessage?: string;
   groupAsTicket?: string;
   importOldMessages?: string;
-  importRecentMessages?:string;
+  importRecentMessages?: string;
   importOldMessagesGroups?: boolean;
   closedTicketsPostImported?: boolean;
   timeCreateNewTicket?: number;
@@ -106,7 +106,7 @@ const CreateWhatsAppService = async ({
 }: Request): Promise<Response> => {
   const company = await Company.findOne({
     where: {
-      id: companyId,
+      id: companyId
     },
     include: [{ model: Plan, as: "plan" }]
   });
@@ -152,11 +152,11 @@ const CreateWhatsAppService = async ({
 
   const whatsappFound = await Whatsapp.findOne({ where: { companyId } });
 
-  isDefault = channel === "whatsapp" ? !whatsappFound : false
+  isDefault = channel === "whatsapp" ? !whatsappFound : false;
 
   let oldDefaultWhatsapp: Whatsapp | null = null;
 
-  if (channel === 'whatsapp' && isDefault) {
+  if (channel === "whatsapp" && isDefault) {
     oldDefaultWhatsapp = await Whatsapp.findOne({
       where: { isDefault: true, companyId, channel: channel }
     });
@@ -205,7 +205,7 @@ const CreateWhatsAppService = async ({
       isDefault,
       companyId,
       token,
-	  wavoip,
+      wavoip,
       provider,
       channel,
       facebookUserId,

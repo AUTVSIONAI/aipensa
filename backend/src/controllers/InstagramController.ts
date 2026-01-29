@@ -3,7 +3,10 @@ import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import Whatsapp from "../models/Whatsapp";
 import { sendText } from "../services/FacebookServices/graphAPI";
 
-export const sendMessage = async (req: Request, res: Response): Promise<Response> => {
+export const sendMessage = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
     const { ticketId, message } = req.body || {};
     const { companyId } = (req as any).user;

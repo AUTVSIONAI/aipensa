@@ -17,12 +17,15 @@ export const SendMessage = async (
   whatsapp: Whatsapp,
   messageData: MessageData,
   isGroup: boolean = false
-
 ): Promise<any> => {
   try {
     const wbot = await GetWhatsappWbot(whatsapp);
-    const chatId = `${messageData.number}@${!!isGroup ? 'g.us' : 's.whatsapp.net'}`;
-    const companyId = messageData?.companyId ? messageData.companyId.toString(): null;
+    const chatId = `${messageData.number}@${
+      !!isGroup ? "g.us" : "s.whatsapp.net"
+    }`;
+    const companyId = messageData?.companyId
+      ? messageData.companyId.toString()
+      : null;
 
     let message;
 
@@ -31,7 +34,7 @@ export const SendMessage = async (
         messageData.mediaName,
         messageData.mediaPath,
         companyId,
-        messageData.body,
+        messageData.body
       );
       if (options) {
         const body = fs.readFileSync(messageData.mediaPath);

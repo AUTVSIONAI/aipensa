@@ -83,6 +83,7 @@ const NotificationsPopOver = (volume) => {
 	const historyRef = useRef(history);
 
 	useEffect(() => {
+		let isMounted = true;
 		const fetchSettings = async () => {
 			try {
 				const setting = await getSetting(
@@ -91,7 +92,7 @@ const NotificationsPopOver = (volume) => {
 					}
 				);
 
-
+				if (!isMounted) return;
 
 				if (setting.showNotificationPending === true) {
 					setShowNotificationPending(true);
@@ -104,12 +105,16 @@ const NotificationsPopOver = (volume) => {
 					setShowGroupNotification(true);
 				}
 			} catch (err) {
+				if (!isMounted) return;
 				toastError(err);
 			}
 		}
 
 		fetchSettings();
-	}, [setShowTicketWithoutQueue, setShowNotificationPending]);
+		return () => {
+			isMounted = false;
+		};
+	}, [getSetting, user.allTicket, user.allowGroup]);
 
 	useEffect(() => {
 		soundAlertRef.current = play;

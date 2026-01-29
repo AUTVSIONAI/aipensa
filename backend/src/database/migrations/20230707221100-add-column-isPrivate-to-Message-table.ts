@@ -5,7 +5,7 @@ module.exports = {
     return queryInterface.addColumn("Messages", "isPrivate", {
       type: DataTypes.BOOLEAN,
       defaultValue: false
-     });
+    });
   },
 
   down: (queryInterface: QueryInterface) => {

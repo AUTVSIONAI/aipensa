@@ -27,11 +27,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const record = await CreateService(data, companyId);
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company-${companyId}-campaignSettings`, {
-      action: "create",
-      record
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-campaignSettings`, {
+    action: "create",
+    record
+  });
 
   return res.status(200).json(record);
 };

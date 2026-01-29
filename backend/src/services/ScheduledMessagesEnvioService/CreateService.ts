@@ -7,7 +7,7 @@ interface Request {
   mediaPath: string;
   mediaName: string;
   mensagem: string;
-  companyId: number
+  companyId: number;
   data_envio: Date;
   scheduledmessages: number;
   key: string;
@@ -31,7 +31,7 @@ const CreateService = async ({
     companyId: Yup.number().required(),
     data_envio: Yup.date().required(),
     scheduledmessages: Yup.number().required(),
-    key: Yup.string().required(),
+    key: Yup.string().required()
   });
 
   try {
@@ -48,19 +48,17 @@ const CreateService = async ({
     throw new AppError(err.message);
   }
 
-  console.log(mediaPath, mediaName)
+  console.log(mediaPath, mediaName);
 
-  const schedule = await ScheduledMessagesEnvio.create(
-    {
-      mediaPath,
-      mediaName,
-      mensagem,
-      companyId,
-      data_envio,
-      scheduledmessages,
-      key
-    }
-  );
+  const schedule = await ScheduledMessagesEnvio.create({
+    mediaPath,
+    mediaName,
+    mensagem,
+    companyId,
+    data_envio,
+    scheduledmessages,
+    key
+  });
 
   await schedule.reload();
 

@@ -1,4 +1,8 @@
-import { WAMessage, AnyMessageContent, WAPresence } from "@whiskeysockets/baileys";
+import {
+  WAMessage,
+  AnyMessageContent,
+  WAPresence
+} from "@whiskeysockets/baileys";
 import * as Sentry from "@sentry/node";
 import fs from "fs";
 import { exec } from "child_process";
@@ -63,35 +67,48 @@ const processAudioFile = async (audio: string): Promise<string> => {
 };
 
 const nameFileDiscovery = (pathMedia: string) => {
-  const spliting = pathMedia.split('/')
-  const first = spliting[spliting.length - 1]
-  return first.split(".")[0]
-}
+  const spliting = pathMedia.split("/");
+  const first = spliting[spliting.length - 1];
+  return first.split(".")[0];
+};
 
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 export const typeSimulation = async (ticket: Ticket, presence: WAPresence) => {
-
   const wbot = await GetTicketWbot(ticket);
 
   let contact = await Contact.findOne({
     where: {
-      id: ticket.contactId,
+      id: ticket.contactId
     }
   });
 
-  await wbot.sendPresenceUpdate(presence, `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`);
+  await wbot.sendPresenceUpdate(
+    presence,
+    `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`
+  );
   await delay(5000);
-  await wbot.sendPresenceUpdate('paused', `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`);
-
-}
+  await wbot.sendPresenceUpdate(
+    "paused",
+    `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`
+  );
+};
 
 // Função para detectar se é vídeo baseado na extensão
 const isVideoFile = (filePath: string): boolean => {
-  const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv', '.m4v'];
+  const videoExtensions = [
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".wmv",
+    ".flv",
+    ".webm",
+    ".mkv",
+    ".m4v"
+  ];
   const ext = path.extname(filePath).toLowerCase();
   return videoExtensions.includes(ext);
-}
+};
 
 const SendWhatsAppMediaFlow = async ({
   media,
@@ -103,16 +120,18 @@ const SendWhatsAppMediaFlow = async ({
   try {
     const wbot = await GetTicketWbot(ticket);
 
-    const mimetype = String(mime.lookup(media))
-    const pathMedia = media
+    const mimetype = String(mime.lookup(media));
+    const pathMedia = media;
 
     let typeMessage = mimetype.split("/")[0];
-    const mediaName = nameFileDiscovery(media)
+    const mediaName = nameFileDiscovery(media);
 
     // CORREÇÃO: Se o mime-types detectou como 'application' mas o arquivo é vídeo, corrigir
     if (typeMessage === "application" && isVideoFile(media)) {
       typeMessage = "video";
-      console.log("CORREÇÃO APLICADA: Arquivo detectado como vídeo baseado na extensão");
+      console.log(
+        "CORREÇÃO APLICADA: Arquivo detectado como vídeo baseado na extensão"
+      );
     }
 
     console.log("=== DEBUG FLOWBUILDER VIDEO ===");
@@ -135,7 +154,7 @@ const SendWhatsAppMediaFlow = async ({
       };
     } else if (typeMessage === "audio") {
       console.log("DETECTOU COMO AUDIO");
-      console.log('record', isRecord)
+      console.log("record", isRecord);
       if (isRecord) {
         const convert = await processAudio(pathMedia);
         options = {
@@ -181,7 +200,7 @@ const SendWhatsAppMediaFlow = async ({
 
     let contact = await Contact.findOne({
       where: {
-        id: ticket.contactId,
+        id: ticket.contactId
       }
     });
 

@@ -61,9 +61,9 @@ class Tag extends Model<Tag> {
   @Column
   timeLane: number;
 
-	@Column
+  @Column
   nextLaneId: number;
-	
+
   @Column
   greetingMessageLane: string;
 

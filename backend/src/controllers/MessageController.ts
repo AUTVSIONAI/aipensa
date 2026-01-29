@@ -31,16 +31,24 @@ import ShowContactService from "../services/ContactServices/ShowContactService";
 import FindOrCreateTicketService from "../services/TicketServices/FindOrCreateTicketService";
 
 import Contact from "../models/Contact";
-import { verifyMessage,  } from "../services/WbotServices/wbotMessageListener";
+import { verifyMessage } from "../services/WbotServices/wbotMessageListener";
 import UpdateTicketService from "../services/TicketServices/UpdateTicketService";
 import ListSettingsService from "../services/SettingServices/ListSettingsService";
-import ShowMessageService, { GetWhatsAppFromMessage } from "../services/MessageServices/ShowMessageService";
+import ShowMessageService, {
+  GetWhatsAppFromMessage
+} from "../services/MessageServices/ShowMessageService";
 import CompaniesSettings from "../models/CompaniesSettings";
-import { verifyMessageFace, verifyMessageMedia } from "../services/FacebookServices/facebookMessageListener";
+import {
+  verifyMessageFace,
+  verifyMessageMedia
+} from "../services/FacebookServices/facebookMessageListener";
 import EditWhatsAppMessage from "../services/MessageServices/EditWhatsAppMessage";
 import CheckContactNumber from "../services/WbotServices/CheckNumber";
 import TranscribeAudioMessageToText from "../services/MessageServices/TranscribeAudioMessageService";
-import { generateWAMessageFromContent, generateWAMessageContent } from "@whiskeysockets/baileys";
+import {
+  generateWAMessageFromContent,
+  generateWAMessageContent
+} from "@whiskeysockets/baileys";
 
 type IndexQuery = {
   pageNumber: string;
@@ -57,7 +65,6 @@ interface TokenPayload {
   exp: number;
 }
 
-
 type MessageData = {
   body: string;
   fromMe: boolean;
@@ -69,7 +76,10 @@ type MessageData = {
 };
 
 // adicionar funções de botões, pix, etc.
-export const sendListMessage = async (req: Request, res: Response): Promise<Response> => {
+export const sendListMessage = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { ticketId } = req.params;
   const { title, text, buttonText, footer, sections } = req.body;
 
@@ -94,20 +104,27 @@ export const sendListMessage = async (req: Request, res: Response): Promise<Resp
       sections
     };
 
-    const number = `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`;
-    console.log('Numero do cliente:', number);
+    const number = `${contact.number}@${
+      ticket.isGroup ? "g.us" : "s.whatsapp.net"
+    }`;
+    console.log("Numero do cliente:", number);
 
     const sendMsg = await wbot.sendMessage(number, listMessage);
     await verifyMessage(sendMsg, ticket, contact);
 
-    return res.status(200).json({ message: "List message sent successfully", sendMsg });
+    return res
+      .status(200)
+      .json({ message: "List message sent successfully", sendMsg });
   } catch (err) {
     console.error("Error sending list message: ", err);
     throw new AppError("Error sending list message", 500);
   }
 };
 
-export const sendCopyMessage = async (req: Request, res: Response): Promise<Response> => {
+export const sendCopyMessage = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { ticketId } = req.params;
   const { title, description, buttonText, copyText } = req.body;
 
@@ -120,76 +137,15 @@ export const sendCopyMessage = async (req: Request, res: Response): Promise<Resp
     if (!contact) {
       throw new AppError("Contact not found", 404);
     }
-    const whatsapp = await Whatsapp.findOne({ where: { id: ticket.whatsappId } });
-    if (!whatsapp || !whatsapp.number) {
-      console.error('Número de WhatsApp não encontrado para o ticket:', ticket.whatsappId);
-      throw new Error('Número de WhatsApp não encontrado');
-    }
-
-    const botNumber = whatsapp.number;
-    const wbot = await GetTicketWbot(ticket);
-    const copyMessage = {
-      viewOnceMessage: {
-        message: {
-          interactiveMessage: {
-            body: {
-              text: title || 'Botão copiar',  
-            },
-            footer: {
-              text: description || 'Botão copiar',  
-            },
-            nativeFlowMessage: {
-              buttons: [
-                {
-                  name: 'cta_copy',
-                  buttonParamsJson: JSON.stringify({
-                    display_text: buttonText || 'Botão copiar',  
-                    copy_code: copyText || 'Botão copiar',  
-                  }),
-                },
-              ],
-              messageParamsJson: JSON.stringify({
-                from: 'apiv2',
-                templateId: '4194019344155670',
-              }),
-            },
-          },
-        },
-      },
-    };
-    const number = `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`;
-    const newMsg = generateWAMessageFromContent(number, copyMessage, {
-      userJid: botNumber,
+    const whatsapp = await Whatsapp.findOne({
+      where: { id: ticket.whatsappId }
     });
-    await wbot.relayMessage(number, newMsg.message!,{ messageId: newMsg.key.id });
-    if (newMsg) {
-      await wbot.upsertMessage(newMsg, 'notify');
-    }
-    return res.status(200).json({ message: "Copy message sent successfully", newMsg });
-
-  } catch (error) {
-    console.error('Erro ao enviar a mensagem de cópia:', error);
-    throw new AppError("Error sending copy message", 500);
-  }
-};
-
-export const sendCALLMessage = async (req: Request, res: Response): Promise<Response> => {
-  const { ticketId } = req.params;
-  const { title, description, buttonText, copyText } = req.body;
-
-  try {
-    const ticket = await Ticket.findByPk(ticketId);
-    if (!ticket) {
-      throw new AppError("Ticket not found", 404);
-    }
-    const contact = await Contact.findByPk(ticket.contactId);
-    if (!contact) {
-      throw new AppError("Contact not found", 404);
-    }
-    const whatsapp = await Whatsapp.findOne({ where: { id: ticket.whatsappId } });
     if (!whatsapp || !whatsapp.number) {
-      console.error('Número de WhatsApp não encontrado para o ticket:', ticket.whatsappId);
-      throw new Error('Número de WhatsApp não encontrado');
+      console.error(
+        "Número de WhatsApp não encontrado para o ticket:",
+        ticket.whatsappId
+      );
+      throw new Error("Número de WhatsApp não encontrado");
     }
 
     const botNumber = whatsapp.number;
@@ -199,47 +155,134 @@ export const sendCALLMessage = async (req: Request, res: Response): Promise<Resp
         message: {
           interactiveMessage: {
             body: {
-              text: title || 'Botão copiar', 
+              text: title || "Botão copiar"
             },
             footer: {
-              text: description || 'Botão copiar',  
+              text: description || "Botão copiar"
             },
             nativeFlowMessage: {
               buttons: [
                 {
-                  name: 'cta_call',
+                  name: "cta_copy",
                   buttonParamsJson: JSON.stringify({
-                    display_text:  buttonText || 'Botão copiar',
-                    phoneNumber: copyText || 'Botão copiar',
+                    display_text: buttonText || "Botão copiar",
+                    copy_code: copyText || "Botão copiar"
                   })
-                },
+                }
               ],
               messageParamsJson: JSON.stringify({
-                from: 'apiv2',
-                templateId: '4194019344155670',
-              }),
-            },
-          },
-        },
-      },
+                from: "apiv2",
+                templateId: "4194019344155670"
+              })
+            }
+          }
+        }
+      }
     };
-    const number = `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`;
+    const number = `${contact.number}@${
+      ticket.isGroup ? "g.us" : "s.whatsapp.net"
+    }`;
     const newMsg = generateWAMessageFromContent(number, copyMessage, {
-      userJid: botNumber,
+      userJid: botNumber
     });
-    await wbot.relayMessage(number, newMsg.message!,{ messageId: newMsg.key.id });
+    await wbot.relayMessage(number, newMsg.message!, {
+      messageId: newMsg.key.id
+    });
     if (newMsg) {
-      await wbot.upsertMessage(newMsg, 'notify');
+      await wbot.upsertMessage(newMsg, "notify");
     }
-    return res.status(200).json({ message: "Copy message sent successfully", newMsg });
-
+    return res
+      .status(200)
+      .json({ message: "Copy message sent successfully", newMsg });
   } catch (error) {
-    console.error('Erro ao enviar a mensagem de cópia:', error);
+    console.error("Erro ao enviar a mensagem de cópia:", error);
     throw new AppError("Error sending copy message", 500);
   }
 };
 
-export const sendURLMessage = async (req: Request, res: Response): Promise<Response> => {
+export const sendCALLMessage = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { ticketId } = req.params;
+  const { title, description, buttonText, copyText } = req.body;
+
+  try {
+    const ticket = await Ticket.findByPk(ticketId);
+    if (!ticket) {
+      throw new AppError("Ticket not found", 404);
+    }
+    const contact = await Contact.findByPk(ticket.contactId);
+    if (!contact) {
+      throw new AppError("Contact not found", 404);
+    }
+    const whatsapp = await Whatsapp.findOne({
+      where: { id: ticket.whatsappId }
+    });
+    if (!whatsapp || !whatsapp.number) {
+      console.error(
+        "Número de WhatsApp não encontrado para o ticket:",
+        ticket.whatsappId
+      );
+      throw new Error("Número de WhatsApp não encontrado");
+    }
+
+    const botNumber = whatsapp.number;
+    const wbot = await GetTicketWbot(ticket);
+    const copyMessage = {
+      viewOnceMessage: {
+        message: {
+          interactiveMessage: {
+            body: {
+              text: title || "Botão copiar"
+            },
+            footer: {
+              text: description || "Botão copiar"
+            },
+            nativeFlowMessage: {
+              buttons: [
+                {
+                  name: "cta_call",
+                  buttonParamsJson: JSON.stringify({
+                    display_text: buttonText || "Botão copiar",
+                    phoneNumber: copyText || "Botão copiar"
+                  })
+                }
+              ],
+              messageParamsJson: JSON.stringify({
+                from: "apiv2",
+                templateId: "4194019344155670"
+              })
+            }
+          }
+        }
+      }
+    };
+    const number = `${contact.number}@${
+      ticket.isGroup ? "g.us" : "s.whatsapp.net"
+    }`;
+    const newMsg = generateWAMessageFromContent(number, copyMessage, {
+      userJid: botNumber
+    });
+    await wbot.relayMessage(number, newMsg.message!, {
+      messageId: newMsg.key.id
+    });
+    if (newMsg) {
+      await wbot.upsertMessage(newMsg, "notify");
+    }
+    return res
+      .status(200)
+      .json({ message: "Copy message sent successfully", newMsg });
+  } catch (error) {
+    console.error("Erro ao enviar a mensagem de cópia:", error);
+    throw new AppError("Error sending copy message", 500);
+  }
+};
+
+export const sendURLMessage = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { ticketId } = req.params;
   const { image, title, description, buttonText, copyText } = req.body;
   try {
@@ -251,10 +294,15 @@ export const sendURLMessage = async (req: Request, res: Response): Promise<Respo
     if (!contact) {
       throw new AppError("Contact not found", 404);
     }
-    const whatsapp = await Whatsapp.findOne({ where: { id: ticket.whatsappId } });
+    const whatsapp = await Whatsapp.findOne({
+      where: { id: ticket.whatsappId }
+    });
     if (!whatsapp || !whatsapp.number) {
-      console.error('Número de WhatsApp não encontrado para o ticket:', ticket.whatsappId);
-      throw new Error('Número de WhatsApp não encontrado');
+      console.error(
+        "Número de WhatsApp não encontrado para o ticket:",
+        ticket.whatsappId
+      );
+      throw new Error("Número de WhatsApp não encontrado");
     }
 
     const botNumber = whatsapp.number;
@@ -262,12 +310,12 @@ export const sendURLMessage = async (req: Request, res: Response): Promise<Respo
     let copyMessage: any;
 
     if (image) {
-      const base64Image = image.split(',')[1]; 
+      const base64Image = image.split(",")[1];
       const imageMessageContent = await generateWAMessageContent(
         {
           image: {
-            url: `data:image/png;base64,${base64Image}`, // Use a URL data para imagem
-          },
+            url: `data:image/png;base64,${base64Image}` // Use a URL data para imagem
+          }
         },
         { upload: wbot.waUploadToServer! }
       );
@@ -278,83 +326,90 @@ export const sendURLMessage = async (req: Request, res: Response): Promise<Respo
           message: {
             interactiveMessage: {
               body: {
-                text: title || 'Botão copiar',  // Título da mensagem
+                text: title || "Botão copiar" // Título da mensagem
               },
               footer: {
-                text: description || 'Botão copiar',  // Descrição da mensagem
+                text: description || "Botão copiar" // Descrição da mensagem
               },
               header: {
                 imageMessage: imageMessageContent,
-                hasMediaAttachment: true,
+                hasMediaAttachment: true
               },
               nativeFlowMessage: {
                 buttons: [
                   {
-                    name: 'cta_url',
+                    name: "cta_url",
                     buttonParamsJson: JSON.stringify({
-                      display_text: buttonText || 'Botão copiar',
-                      url: copyText || 'Botão copiar',
+                      display_text: buttonText || "Botão copiar",
+                      url: copyText || "Botão copiar"
                     })
-                  },
+                  }
                 ],
                 messageParamsJson: JSON.stringify({
-                  from: 'apiv2',
-                  templateId: '4194019344155670',
-                }),
-              },
-            },
-          },
-        },
+                  from: "apiv2",
+                  templateId: "4194019344155670"
+                })
+              }
+            }
+          }
+        }
       };
     } else {
-
       copyMessage = {
         viewOnceMessage: {
           message: {
             interactiveMessage: {
               body: {
-                text: title || 'Botão copiar', 
+                text: title || "Botão copiar"
               },
               footer: {
-                text: description || 'Botão copiar',  
+                text: description || "Botão copiar"
               },
               nativeFlowMessage: {
                 buttons: [
                   {
-                    name: 'cta_url',
+                    name: "cta_url",
                     buttonParamsJson: JSON.stringify({
-                      display_text: buttonText || 'Botão copiar',
-                      url: copyText || 'Botão copiar',
+                      display_text: buttonText || "Botão copiar",
+                      url: copyText || "Botão copiar"
                     })
-                  },
+                  }
                 ],
                 messageParamsJson: JSON.stringify({
-                  from: 'apiv2',
-                  templateId: '4194019344155670',
-                }),
-              },
-            },
-          },
-        },
+                  from: "apiv2",
+                  templateId: "4194019344155670"
+                })
+              }
+            }
+          }
+        }
       };
     }
-    const number = `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`;
+    const number = `${contact.number}@${
+      ticket.isGroup ? "g.us" : "s.whatsapp.net"
+    }`;
     const newMsg = generateWAMessageFromContent(number, copyMessage, {
-      userJid: botNumber,
+      userJid: botNumber
     });
-    await wbot.relayMessage(number, newMsg.message!,{ messageId: newMsg.key.id });
+    await wbot.relayMessage(number, newMsg.message!, {
+      messageId: newMsg.key.id
+    });
     if (newMsg) {
-      await wbot.upsertMessage(newMsg, 'notify');
+      await wbot.upsertMessage(newMsg, "notify");
     }
-    return res.status(200).json({ message: "Copy message sent successfully", newMsg });
-
+    return res
+      .status(200)
+      .json({ message: "Copy message sent successfully", newMsg });
   } catch (error) {
-    console.error('Erro ao enviar a mensagem de cópia:', error);
+    console.error("Erro ao enviar a mensagem de cópia:", error);
     throw new AppError("Error sending copy message", 500);
   }
 };
 
-export const sendPIXMessage = async (req: Request, res: Response): Promise<Response> => {
+export const sendPIXMessage = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { ticketId } = req.params;
   const {
     sendkey_type,
@@ -371,7 +426,7 @@ export const sendPIXMessage = async (req: Request, res: Response): Promise<Respo
   } = req.body;
 
   try {
-       const ticket = await Ticket.findByPk(ticketId);
+    const ticket = await Ticket.findByPk(ticketId);
     if (!ticket) {
       throw new AppError("Ticket not found", 404);
     }
@@ -381,12 +436,16 @@ export const sendPIXMessage = async (req: Request, res: Response): Promise<Respo
       throw new AppError("Contact not found", 404);
     }
 
-    const whatsapp = await Whatsapp.findOne({ where: { id: ticket.whatsappId } });
+    const whatsapp = await Whatsapp.findOne({
+      where: { id: ticket.whatsappId }
+    });
     if (!whatsapp || !whatsapp.number) {
-      throw new Error('Número de WhatsApp não encontrado');
+      throw new Error("Número de WhatsApp não encontrado");
     }
 
-    const number = `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`;
+    const number = `${contact.number}@${
+      ticket.isGroup ? "g.us" : "s.whatsapp.net"
+    }`;
     const botNumber = whatsapp.number;
     const wbot = await GetTicketWbot(ticket);
     const interactiveMsg = {
@@ -399,13 +458,13 @@ export const sendPIXMessage = async (req: Request, res: Response): Promise<Respo
                   name: "review_and_pay",
                   buttonParamsJson: JSON.stringify({
                     reference_id: generateRandomCode(),
-                    type: 'physical-goods',
-                    payment_configuration: 'merchant_categorization_code',
+                    type: "physical-goods",
+                    payment_configuration: "merchant_categorization_code",
                     payment_settings: [
                       {
                         type: "pix_static_code",
                         pix_static_code: {
-                          key: sendKey, 
+                          key: sendKey,
                           merchant_name: sendmerchant_name,
                           key_type: sendkey_type
                         }
@@ -418,56 +477,65 @@ export const sendPIXMessage = async (req: Request, res: Response): Promise<Respo
                     currency: "BRL",
                     total_amount: {
                       value: sendvalue * 100,
-                      offset: 100,
+                      offset: 100
                     },
                     order: {
-                      status: 'payment_requested',
-                      items: [{
-                        retailer_id: "custom-item",
-                        name: title,
-                        amount: {
-                          value: sendvalue * 100, 
-                          offset: 100,
-                        },
-                        quantity: 1,
-                        isCustomItem: true,
-                        isQuantitySet: true,
-                      }],
+                      status: "payment_requested",
+                      items: [
+                        {
+                          retailer_id: "custom-item",
+                          name: title,
+                          amount: {
+                            value: sendvalue * 100,
+                            offset: 100
+                          },
+                          quantity: 1,
+                          isCustomItem: true,
+                          isQuantitySet: true
+                        }
+                      ],
                       subtotal: {
-                        value: sendvalue * 100, 
-                        offset: 100,
+                        value: sendvalue * 100,
+                        offset: 100
                       },
                       tax: null,
                       shipping: null,
                       discount: null,
-                      order_type: "ORDER",
+                      order_type: "ORDER"
                     },
                     native_payment_methods: []
                   })
                 }
-              ],
-            },
-          },
-        },
-      },
+              ]
+            }
+          }
+        }
+      }
     };
 
-    const newMsg = generateWAMessageFromContent(number, interactiveMsg, { userJid: botNumber });
-    
-    // Envio da mensagem
-    await wbot.relayMessage(number, newMsg.message!,{ messageId: newMsg.key.id });
-    await wbot.upsertMessage(newMsg, 'notify');
+    const newMsg = generateWAMessageFromContent(number, interactiveMsg, {
+      userJid: botNumber
+    });
 
-    return res.status(200).json({ message: "Mensagem enviada com sucesso", newMsg });
+    // Envio da mensagem
+    await wbot.relayMessage(number, newMsg.message!, {
+      messageId: newMsg.key.id
+    });
+    await wbot.upsertMessage(newMsg, "notify");
+
+    return res
+      .status(200)
+      .json({ message: "Mensagem enviada com sucesso", newMsg });
   } catch (error) {
-    console.error('Erro ao enviar a mensagem:', error);
+    console.error("Erro ao enviar a mensagem:", error);
     return res.status(500).json({ message: "Erro ao enviar a mensagem" });
   }
 };
 
 const generateRandomCode = (length: number = 11): string => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let code = '';
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let code = "";
   for (let i = 0; i < length; i++) {
     const randomIndex = Math.floor(Math.random() * characters.length);
     code += characters[randomIndex];
@@ -476,24 +544,33 @@ const generateRandomCode = (length: number = 11): string => {
 };
 
 //Transcrição de Audio
-export const transcribeAudioMessage = async (req: Request, res: Response): Promise<Response> => {
+export const transcribeAudioMessage = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { fileName } = req.params;
   const { companyId } = req.user;
   try {
-    const transcribedText = await TranscribeAudioMessageToText(fileName, companyId);
-    if (typeof transcribedText === 'string') {
+    const transcribedText = await TranscribeAudioMessageToText(
+      fileName,
+      companyId
+    );
+    if (typeof transcribedText === "string") {
       return res.status(500).send({ error: transcribedText });
     }
     return res.send(transcribedText);
   } catch (error) {
     console.error(error);
-    return res.status(500).send({ error: 'Erro ao transcrever a mensagem de áudio.' });
+    return res
+      .status(500)
+      .send({ error: "Erro ao transcrever a mensagem de áudio." });
   }
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const { ticketId } = req.params;
-  const { pageNumber, selectedQueues: queueIdsStringified } = req.query as IndexQuery;
+  const { pageNumber, selectedQueues: queueIdsStringified } =
+    req.query as IndexQuery;
   const { companyId, profile } = req.user;
   let queues: number[] = [];
 
@@ -527,8 +604,8 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 function obterNomeEExtensaoDoArquivo(url) {
   var urlObj = new URL(url);
   var pathname = urlObj.pathname;
-  var filename = pathname.split('/').pop();
-  var parts = filename.split('.');
+  var filename = pathname.split("/").pop();
+  var parts = filename.split(".");
 
   var nomeDoArquivo = parts[0];
   var extensao = parts[1];
@@ -554,7 +631,13 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       await Promise.all(
         medias.map(async (media: Express.Multer.File, index) => {
           if (ticket.channel === "whatsapp") {
-            await SendWhatsAppMedia({ media, ticket, body: Array.isArray(body) ? body[index] : body, isPrivate: isPrivate === "true", isForwarded: false });
+            await SendWhatsAppMedia({
+              media,
+              ticket,
+              body: Array.isArray(body) ? body[index] : body,
+              isPrivate: isPrivate === "true",
+              isForwarded: false
+            });
           }
 
           if (["facebook", "instagram"].includes(ticket.channel)) {
@@ -566,7 +649,12 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
               });
 
               if (ticket.channel === "facebook") {
-                await verifyMessageMedia(sentMedia, ticket, ticket.contact, true);
+                await verifyMessageMedia(
+                  sentMedia,
+                  ticket,
+                  ticket.contact,
+                  true
+                );
               }
             } catch (error) {
               console.log(error);
@@ -574,7 +662,11 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
           }
 
           //limpar arquivo nao utilizado mais após envio
-          const filePath = path.resolve("public", `company${companyId}`, media.filename);
+          const filePath = path.resolve(
+            "public",
+            `company${companyId}`,
+            media.filename
+          );
           const fileExists = fs.existsSync(filePath);
 
           if (fileExists && isPrivate === "false") {
@@ -587,12 +679,12 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
         await SendWhatsAppMessage({ body, ticket, quotedMsg, vCard });
       } else if (ticket.channel === "whatsapp" && isPrivate === "true") {
         const messageData = {
-          wid: `PVT${ticket.updatedAt.toString().replace(' ', '')}`,
+          wid: `PVT${ticket.updatedAt.toString().replace(" ", "")}`,
           ticketId: ticket.id,
           contactId: undefined,
           body,
           fromMe: true,
-          mediaType: !isNil(vCard) ? 'contactMessage' : 'extendedTextMessage',
+          mediaType: !isNil(vCard) ? "contactMessage" : "extendedTextMessage",
           read: true,
           quotedMsgId: null,
           ack: 2,
@@ -603,8 +695,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
           isPrivate: isPrivate === "true"
         };
 
-        await CreateMessageService({ messageData, companyId: ticket.companyId });
-
+        await CreateMessageService({
+          messageData,
+          companyId: ticket.companyId
+        });
       } else if (["facebook", "instagram"].includes(ticket.channel)) {
         const sendText = await sendFaceMessage({ body, ticket, quotedMsg });
 
@@ -624,7 +718,6 @@ export const forwardMessage = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-
   const { quotedMsg, signMessage, messageId, contactId } = req.body;
   const { id: userId, companyId } = req.user;
   const requestUser = await User.findByPk(userId);
@@ -644,12 +737,11 @@ export const forwardMessage = async (
 
   const settings = await CompaniesSettings.findOne({
     where: { companyId }
-  }
-  )
+  });
 
   const whatsAppConnectionId = await GetWhatsAppFromMessage(message);
   if (!whatsAppConnectionId) {
-    return res.status(404).send('Whatsapp from message not found');
+    return res.status(404).send("Whatsapp from message not found");
   }
 
   const ticket = await ShowTicketService(message.ticketId, message.companyId);
@@ -683,12 +775,12 @@ export const forwardMessage = async (
       status: createTicket.isGroup ? "group" : "open",
       userId: requestUser.id,
       queueId: ticket.queueId
-    }
+    };
   } else {
     ticketData = {
       status: createTicket.isGroup ? "group" : "open",
       userId: requestUser.id
-    }
+    };
   }
 
   await UpdateTicketService({
@@ -698,35 +790,58 @@ export const forwardMessage = async (
   });
 
   let body = message.body;
-  if (message.mediaType === 'conversation' || message.mediaType === 'extendedTextMessage') {
-    await SendWhatsAppMessage({ body, ticket: createTicket, quotedMsg, isForwarded: message.fromMe ? false : true });
+  if (
+    message.mediaType === "conversation" ||
+    message.mediaType === "extendedTextMessage"
+  ) {
+    await SendWhatsAppMessage({
+      body,
+      ticket: createTicket,
+      quotedMsg,
+      isForwarded: message.fromMe ? false : true
+    });
   } else {
-
-    const mediaUrl = message.mediaUrl.replace(`:${process.env.PORT}`, '');
+    const mediaUrl = message.mediaUrl.replace(`:${process.env.PORT}`, "");
     const fileName = obterNomeEExtensaoDoArquivo(mediaUrl);
 
     if (body === fileName) {
       body = "";
     }
 
-    const publicFolder = path.join(__dirname, '..', '..', '..', 'backend', 'public');
+    const publicFolder = path.join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "backend",
+      "public"
+    );
 
-    const filePath = path.join(publicFolder, `company${createTicket.companyId}`, fileName)
+    const filePath = path.join(
+      publicFolder,
+      `company${createTicket.companyId}`,
+      fileName
+    );
 
     const mediaSrc = {
-      fieldname: 'medias',
+      fieldname: "medias",
       originalname: fileName,
-      encoding: '7bit',
+      encoding: "7bit",
       mimetype: message.mediaType,
       filename: fileName,
       path: filePath
-    } as Express.Multer.File
+    } as Express.Multer.File;
 
-    await SendWhatsAppMedia({ media: mediaSrc, ticket: createTicket, body, isForwarded: message.fromMe ? false : true });
+    await SendWhatsAppMedia({
+      media: mediaSrc,
+      ticket: createTicket,
+      body,
+      isForwarded: message.fromMe ? false : true
+    });
   }
 
   return res.send();
-}
+};
 
 export const remove = async (
   req: Request,
@@ -763,7 +878,6 @@ export const remove = async (
 };
 
 export const allMe = async (req: Request, res: Response): Promise<Response> => {
-
   const dateStart: any = req.query.dateStart;
   const dateEnd: any = req.query.dateEnd;
   const fromMe: any = req.query.fromMe;
@@ -785,17 +899,15 @@ export const send = async (req: Request, res: Response): Promise<Response> => {
   const medias = req.files as Express.Multer.File[];
 
   try {
-
     const authHeader = req.headers.authorization;
     const [, token] = authHeader.split(" ");
 
     const whatsapp = await Whatsapp.findOne({ where: { token } });
     const companyId = whatsapp.companyId;
     const company = await ShowPlanCompanyService(companyId);
-    const sendMessageWithExternalApi = company.plan.useExternalApi
+    const sendMessageWithExternalApi = company.plan.useExternalApi;
 
     if (sendMessageWithExternalApi) {
-
       if (!whatsapp) {
         throw new Error("Não foi possível realizar a operação");
       }
@@ -816,7 +928,7 @@ export const send = async (req: Request, res: Response): Promise<Response> => {
                 whatsappId: whatsapp.id,
                 data: {
                   number,
-                  body: media.originalname.replace('/', '-'),
+                  body: media.originalname.replace("/", "-"),
                   mediaPath: media.path
                 }
               },
@@ -839,10 +951,11 @@ export const send = async (req: Request, res: Response): Promise<Response> => {
       }
       return res.send({ mensagem: "Mensagem enviada!" });
     }
-    return res.status(400).json({ error: 'Essa empresa não tem permissão para usar a API Externa. Entre em contato com o Suporte para verificar nossos planos!' });
-
+    return res.status(400).json({
+      error:
+        "Essa empresa não tem permissão para usar a API Externa. Entre em contato com o Suporte para verificar nossos planos!"
+    });
   } catch (err: any) {
-
     console.log(err);
     if (Object.keys(err).length === 0) {
       throw new AppError(
@@ -878,7 +991,7 @@ export const edit = async (req: Request, res: Response): Promise<Response> => {
       ticket
     });
   return res.send();
-}
+};
 
 export const sendMessageFlow = async (
   whatsappId: number,

@@ -1,15 +1,13 @@
 import ContactTag from "../../models/ContactTag";
 
 type Param = {
-    contactId: string
-  };
+  contactId: string;
+};
 
-const FindContactTags = async ({
+const FindContactTags = async ({ contactId }: Param): Promise<ContactTag[]> => {
+  let where: any = {
     contactId
-  }: Param): Promise<ContactTag[]> => {
-    let where: any = {
-        contactId
-      };
+  };
   const contactsTags = await ContactTag.findAll({
     where
   });

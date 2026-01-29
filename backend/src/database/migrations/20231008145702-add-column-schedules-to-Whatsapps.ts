@@ -6,13 +6,11 @@ module.exports = {
       queryInterface.addColumn("Whatsapps", "schedules", {
         type: DataTypes.JSONB,
         defaultValue: []
-      }),
+      })
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
-    return Promise.all([
-      queryInterface.removeColumn("Whatsapps", "schedules"),
-    ]);
+    return Promise.all([queryInterface.removeColumn("Whatsapps", "schedules")]);
   }
 };

@@ -21,7 +21,7 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       },
       {
         name: "Petshop - Serviços",
@@ -37,7 +37,7 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       },
       {
         name: "Pizzaria - Pedido",
@@ -53,7 +53,7 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       },
       {
         name: "Loja de Sapatos - Vendas",
@@ -69,7 +69,7 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       },
       {
         name: "Contabilidade - Consultoria",
@@ -85,7 +85,7 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       },
       {
         name: "Barbearia - Agendamento",
@@ -101,7 +101,7 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       },
       {
         name: "Político - Campanha",
@@ -117,7 +117,7 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       },
       {
         name: "Academia - Planos",
@@ -133,7 +133,7 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       },
       {
         name: "Imobiliária - Imóveis",
@@ -149,7 +149,7 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       },
       {
         name: "Restaurante - Reservas",
@@ -165,8 +165,8 @@ module.exports = {
         provider: "openai",
         model: "",
         createdAt: now,
-        updatedAt: now,
-      },
+        updatedAt: now
+      }
     ];
 
     await queryInterface.bulkInsert("Prompts", prompts);
@@ -174,6 +174,5 @@ module.exports = {
 
   down: async (queryInterface: QueryInterface) => {
     await queryInterface.bulkDelete("Prompts", { apiKey: "template" });
-  },
+  }
 };
-

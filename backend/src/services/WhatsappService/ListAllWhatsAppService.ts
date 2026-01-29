@@ -7,7 +7,7 @@ interface Request {
 }
 
 const ListAllWhatsAppsService = async ({
-  session,
+  session
 }: Request): Promise<Whatsapp[]> => {
   const options: FindOptions = {
     include: [
@@ -19,7 +19,7 @@ const ListAllWhatsAppsService = async ({
     ]
   };
 
-  if (session !== undefined && session == 0) {
+  if (session !== undefined && Number(session) === 0) {
     options.attributes = { exclude: ["session"] };
   }
 

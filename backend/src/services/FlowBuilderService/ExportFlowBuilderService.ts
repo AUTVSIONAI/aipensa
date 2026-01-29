@@ -98,8 +98,7 @@ function extractFileUrls(flow: any): string[] {
       ) {
         console.log(`[${node.type}] URL encontrada: ${node.data.url}`);
         urls.push(node.data.url);
-      }
-      else if (
+      } else if (
         node.type === "singleBlock" &&
         node.data &&
         node.data.elements &&

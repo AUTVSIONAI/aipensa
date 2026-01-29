@@ -5,7 +5,7 @@ module.exports = {
     return Promise.all([
       queryInterface.addIndex("Messages", ["wid"], {
         name: "idx_messages_wid"
-      }),
+      })
     ]);
   },
 

@@ -298,7 +298,6 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
                   disablePortal
                   id="combo-box-demo"
                   value={flowSelected}
-                  error={dataItemError.flowId}
                   defaultValue={flowSelected}
                   options={flowsData}
                   onChange={(event, newValue) => {

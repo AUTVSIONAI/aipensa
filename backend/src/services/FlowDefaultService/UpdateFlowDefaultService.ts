@@ -6,8 +6,8 @@ import { randomString } from "../../utils/randomCode";
 
 interface Request {
   companyId: number;
-  flowIdWelcome: number
-  flowIdPhrase:number
+  flowIdWelcome: number;
+  flowIdPhrase: number;
 }
 
 const UpdateFlowDefaultService = async ({
@@ -16,16 +16,18 @@ const UpdateFlowDefaultService = async ({
   flowIdPhrase
 }: Request): Promise<String> => {
   try {
+    const flow = await FlowDefaultModel.update(
+      { flowIdWelcome, flowIdNotPhrase: flowIdPhrase },
+      {
+        where: { companyId }
+      }
+    );
 
-    const flow = await FlowDefaultModel.update({ flowIdWelcome, flowIdNotPhrase: flowIdPhrase }, {
-      where: {companyId}
-    });
-
-    return 'ok';
+    return "ok";
   } catch (error) {
     console.error("Erro ao inserir o usuário:", error);
 
-    return error
+    return error;
   }
 };
 

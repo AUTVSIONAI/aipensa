@@ -1,4 +1,4 @@
-/** 
+/**
  * @TercioSantos-0 |
  * controller/get/todas as configurações de 1 empresa |
  * controller/get/1 configuração específica |
@@ -13,63 +13,65 @@ import FindCompanySettingOneService from "../services/CompaniesSettings/FindComp
 type IndexGetCompanySettingQuery = {
   companyId: number;
   column: string;
-  data:string;
+  data: string;
 };
 
 type IndexGetCompanySettingOneQuery = {
   column: string;
 };
 
-export const show = async (
-    req: Request,
-    res: Response
-  ): Promise<Response> => {
-    const { companyId } = req.user;
+export const show = async (req: Request, res: Response): Promise<Response> => {
+  const { companyId } = req.user;
 
-    const settings = await FindCompanySettingsService({
-      companyId
-    });
+  const settings = await FindCompanySettingsService({
+    companyId
+  });
 
-    return res.status(200).json(settings);
-  };
+  return res.status(200).json(settings);
+};
 
-
-  export const showOne = async (req: Request, res: Response): Promise<Response> => {
-    const { column } = req.query as IndexGetCompanySettingOneQuery;
-    const { companyId } = req.user;
-    
-    const setting = await FindCompanySettingOneService({
-      companyId,
-      column
-    });
-    
-    return res.status(200).json(setting[0]);
-  };
-
-  export const showOnePayment = async (req: Request, res: Response): Promise<Response> => {
-    const { column } = req.query as IndexGetCompanySettingOneQuery;
-    const companyId = 1;
-    
-    const setting = await FindCompanySettingOneService({
-      companyId,
-      column
-    });
-    
-    return res.status(200).json(setting[0]);
-  };
-
-export const update = async(
+export const showOne = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const {  column, data } = req.body as IndexGetCompanySettingQuery;
+  const { column } = req.query as IndexGetCompanySettingOneQuery;
+  const { companyId } = req.user;
+
+  const setting = await FindCompanySettingOneService({
+    companyId,
+    column
+  });
+
+  return res.status(200).json(setting[0]);
+};
+
+export const showOnePayment = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { column } = req.query as IndexGetCompanySettingOneQuery;
+  const companyId = 1;
+
+  const setting = await FindCompanySettingOneService({
+    companyId,
+    column
+  });
+
+  return res.status(200).json(setting[0]);
+};
+
+export const update = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { column, data } = req.body as IndexGetCompanySettingQuery;
   const { companyId } = req.user;
 
   const result = await UpdateCompanySettingsService({
     companyId,
     column,
     data
-  })
-  
-  return res.status(200).json({response:true, result:result});
-}
+  });
+
+  return res.status(200).json({ response: true, result: result });
+};

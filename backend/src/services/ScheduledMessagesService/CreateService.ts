@@ -58,7 +58,7 @@ const CreateService = async ({
     mediaPath: Yup.string(),
     mediaName: Yup.string(),
     tipo_arquivo: Yup.string(),
-    usuario_envio: Yup.string(),
+    usuario_envio: Yup.string()
   });
 
   try {
@@ -85,27 +85,25 @@ const CreateService = async ({
     throw new AppError(err.message);
   }
 
-  const schedule = await ScheduledMessages.create(
-    {
-      data_mensagem_programada,
-      id_conexao,
-      intervalo,
-      valor_intervalo,
-      mensagem,
-      tipo_dias_envio,
-      mostrar_usuario_mensagem,
-      criar_ticket,
-      contatos,
-      tags,
-      companyId,
-      nome,
-      mediaPath,
-      mediaName,
-      tipo_arquivo,
-      usuario_envio,
-      enviar_quantas_vezes
-    }
-  );
+  const schedule = await ScheduledMessages.create({
+    data_mensagem_programada,
+    id_conexao,
+    intervalo,
+    valor_intervalo,
+    mensagem,
+    tipo_dias_envio,
+    mostrar_usuario_mensagem,
+    criar_ticket,
+    contatos,
+    tags,
+    companyId,
+    nome,
+    mediaPath,
+    mediaName,
+    tipo_arquivo,
+    usuario_envio,
+    enviar_quantas_vezes
+  });
 
   await schedule.reload();
 

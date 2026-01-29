@@ -6,10 +6,10 @@ module.exports = {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 550
-    })
+    });
   },
 
   down: (queryInterface: QueryInterface) => {
-    return queryInterface.removeColumn("Users", "defaultTicketsManagerWidth")
+    return queryInterface.removeColumn("Users", "defaultTicketsManagerWidth");
   }
 };

@@ -14,13 +14,20 @@ const FLOW_SPECS: FlowSpec[] = [
   {
     name: "Clínica Médica",
     greeting: "Olá, bem-vindo à nossa clínica. Vamos agendar sua consulta.",
-    qualify: ["Especialidade", "Plano ou Particular", "Horário preferido", "Nome", "Telefone"],
+    qualify: [
+      "Especialidade",
+      "Plano ou Particular",
+      "Horário preferido",
+      "Nome",
+      "Telefone"
+    ],
     action: "schedule",
     variables: { companyName: "", phone: "", address: "" }
   },
   {
     name: "Petshop",
-    greeting: "Olá, bem-vindo ao petshop. Qual serviço você precisa para seu pet?",
+    greeting:
+      "Olá, bem-vindo ao petshop. Qual serviço você precisa para seu pet?",
     qualify: ["Serviço", "Porte/Raça", "Disponibilidade", "Nome", "Telefone"],
     action: "schedule",
     variables: { companyName: "", phone: "", address: "" }
@@ -34,7 +41,8 @@ const FLOW_SPECS: FlowSpec[] = [
   },
   {
     name: "Loja de Sapatos",
-    greeting: "Olá, bem-vindo à loja. Vamos encontrar o melhor calçado para você.",
+    greeting:
+      "Olá, bem-vindo à loja. Vamos encontrar o melhor calçado para você.",
     qualify: ["Tipo", "Numeração", "Estilo", "Disponibilidade"],
     action: "checkout",
     variables: { companyName: "", phone: "", address: "" }
@@ -49,7 +57,13 @@ const FLOW_SPECS: FlowSpec[] = [
   {
     name: "Barbearia",
     greeting: "Olá, bem-vindo à barbearia. Vamos agendar seu horário.",
-    qualify: ["Serviço", "Profissional preferido", "Horário", "Nome", "Telefone"],
+    qualify: [
+      "Serviço",
+      "Profissional preferido",
+      "Horário",
+      "Nome",
+      "Telefone"
+    ],
     action: "schedule",
     variables: { companyName: "", phone: "", address: "" }
   },
@@ -63,7 +77,12 @@ const FLOW_SPECS: FlowSpec[] = [
   {
     name: "Academia",
     greeting: "Olá, bem-vindo à academia. Qual seu objetivo?",
-    qualify: ["Objetivo", "Plano de interesse", "Aula experimental", "Agendar visita"],
+    qualify: [
+      "Objetivo",
+      "Plano de interesse",
+      "Aula experimental",
+      "Agendar visita"
+    ],
     action: "schedule",
     variables: { companyName: "", phone: "", address: "" }
   },
@@ -101,7 +120,10 @@ const buildFlowPayload = (spec: FlowSpec) => ({
       id: "confirm",
       type: "message",
       position: { x: 550, y: 50 },
-      data: { label: "Confirmação enviada", text: "Confirmação enviada. Em breve você receberá detalhes." }
+      data: {
+        label: "Confirmação enviada",
+        text: "Confirmação enviada. Em breve você receberá detalhes."
+      }
     }
   ],
   connections: [
@@ -151,7 +173,11 @@ export const ensureFlowSeeds = async () => {
             { x: 800, y: 50 }
           ];
           nodes.forEach((n: any, idx: number) => {
-            if (!n?.position || typeof n.position.x !== "number" || typeof n.position.y !== "number") {
+            if (
+              !n?.position ||
+              typeof n.position.x !== "number" ||
+              typeof n.position.y !== "number"
+            ) {
               n.position = positions[Math.min(idx, positions.length - 1)];
               needsUpdate = true;
             }
@@ -159,12 +185,17 @@ export const ensureFlowSeeds = async () => {
               const fallback =
                 n?.content ||
                 n?.title ||
-                (typeof n === "object" ? JSON.stringify(n).slice(0, 40) : "Bloco");
+                (typeof n === "object"
+                  ? JSON.stringify(n).slice(0, 40)
+                  : "Bloco");
               n.data = { ...(n.data || {}), label: fallback };
               needsUpdate = true;
             }
             if (!n?.data?.message) {
-              n.data = { ...(n.data || {}), message: n.data?.label || "Mensagem" };
+              n.data = {
+                ...(n.data || {}),
+                message: n.data?.label || "Mensagem"
+              };
               needsUpdate = true;
             }
             if (n?.type === "questions") {
@@ -175,7 +206,9 @@ export const ensureFlowSeeds = async () => {
               n.data = {
                 ...(n.data || {}),
                 message: n.data?.message || "Selecione uma opção",
-                arrayOption: Array.isArray(n.data?.arrayOption) ? n.data.arrayOption : []
+                arrayOption: Array.isArray(n.data?.arrayOption)
+                  ? n.data.arrayOption
+                  : []
               };
               needsUpdate = true;
             }
@@ -184,7 +217,10 @@ export const ensureFlowSeeds = async () => {
                 ...(n.data || {}),
                 typebotIntegration: {
                   ...(n.data?.typebotIntegration || {}),
-                  message: n.data?.typebotIntegration?.message || n.data?.label || "Pergunta não configurada"
+                  message:
+                    n.data?.typebotIntegration?.message ||
+                    n.data?.label ||
+                    "Pergunta não configurada"
                 }
               };
               needsUpdate = true;

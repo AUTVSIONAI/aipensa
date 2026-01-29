@@ -14,7 +14,7 @@ module.exports = {
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.removeColumn("Whatsapps", "queueIdImportMessages"),
-    ])
+      queryInterface.removeColumn("Whatsapps", "queueIdImportMessages")
+    ]);
   }
 };

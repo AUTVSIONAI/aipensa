@@ -109,6 +109,9 @@ class CompaniesSettings extends Model<CompaniesSettings> {
   @Column
   sendQueuePositionMessage: string;
 
+  @Column
+  enableAutoStatus: string;
+
   @CreatedAt
   createdAt: Date;
 

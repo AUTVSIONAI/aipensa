@@ -4,7 +4,6 @@ import { Formik, Form, Field } from "formik";
 import { toast } from "react-toastify";
 
 import { makeStyles } from "@material-ui/core/styles";
-import { green } from "@material-ui/core/colors";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
 import Dialog from "@material-ui/core/Dialog";
@@ -12,7 +11,7 @@ import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { i18n } from "../../translate/i18n";
-import { MenuItem, FormControl, InputLabel, Select, Typography, Box, Chip } from "@material-ui/core";
+import { MenuItem, FormControl, InputLabel, Select, Typography, Box } from "@material-ui/core";
 import { Visibility, VisibilityOff } from "@material-ui/icons";
 import { InputAdornment, IconButton } from "@material-ui/core";
 import QueueSelectSingle from "../QueueSelectSingle";
@@ -250,18 +249,7 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-const PromptSchema = Yup.object().shape({
-    name: Yup.string().min(5, "Muito curto!").max(100, "Muito longo!").required("Obrigatório"),
-    prompt: Yup.string().min(50, "Muito curto!").required("Descreva o treinamento para Inteligência Artificial"),
-    voice: Yup.string().required("Informe o modo para Voz"),
-    max_tokens: Yup.number().required("Informe o número máximo de tokens"),
-    temperature: Yup.number().required("Informe a temperatura"),
-    apikey: Yup.string().required("Informe a API Key"),
-    queueId: Yup.number().required("Informe a fila"),
-    max_messages: Yup.number().required("Informe o número máximo de mensagens"),
-    provider: Yup.string().required("Selecione o provedor de IA"),
-    model: Yup.string().required("Selecione o modelo")
-});
+ 
 
 const openaiModels = [
     { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
@@ -348,7 +336,7 @@ const PromptModal = ({ open, onClose, promptId }) => {
         };
 
         fetchPrompt();
-    }, [promptId, open]);
+    }, [promptId, open, initialState]);
 
     const handleClose = () => {
         setPrompt(initialState);
@@ -577,7 +565,6 @@ const PromptModal = ({ open, onClose, promptId }) => {
                                     variant="outlined"
                                     margin="dense"
                                     fullWidth
-                                    required
                                     className={classes.formControl}
                                     InputProps={{
                                         startAdornment: (
@@ -585,6 +572,7 @@ const PromptModal = ({ open, onClose, promptId }) => {
                                                 <VpnKeyIcon className={classes.fieldIcon} />
                                             </InputAdornment>
                                         ),
+                                        placeholder: "Usada a chave da plataforma se não informado",
                                         endAdornment: (
                                             <InputAdornment position="end">
                                                 <IconButton onClick={handleToggleApiKey}>

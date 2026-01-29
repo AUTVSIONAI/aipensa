@@ -43,7 +43,7 @@ export const markSeen = async (id: string, token: string): Promise<void> => {
 };
 
 export const showTypingIndicator = async (
-  id: string, 
+  id: string,
   token: string,
   action: string
 ): Promise<void> => {
@@ -88,11 +88,11 @@ export const replyComment = async (
     console.error("Error replying comment:", error?.response?.data || error);
     // Tentar fallback para /comments se /replies falhar (depende se é top-level ou reply)
     try {
-        await apiBase(token).post(`${commentId}/comments`, {
-            message: message
-        });
+      await apiBase(token).post(`${commentId}/comments`, {
+        message: message
+      });
     } catch (e) {
-        console.error("Fallback reply failed:", e?.response?.data);
+      console.error("Fallback reply failed:", e?.response?.data);
     }
   }
 };
@@ -127,12 +127,15 @@ export const sendAttachment = async (
 ): Promise<void> => {
   const formData = new FormData();
   formData.append("recipient", JSON.stringify({ id }));
-  formData.append("message", JSON.stringify({
-    attachment: {
-      type,
-      payload: { is_reusable: true }
-    }
-  }));
+  formData.append(
+    "message",
+    JSON.stringify({
+      attachment: {
+        type,
+        payload: { is_reusable: true }
+      }
+    })
+  );
 
   const fileReaderStream = createReadStream(file.path);
   formData.append("filedata", fileReaderStream);
@@ -184,7 +187,10 @@ export const profilePsid = async (id: string, token: string): Promise<any> => {
     try {
       return await getProfile(id, token);
     } catch (e) {
-      console.log("Error profilePsid second attempt (fallback used):", e?.message);
+      console.log(
+        "Error profilePsid second attempt (fallback used):",
+        e?.message
+      );
       return {
         id: id,
         name: "Instagram User " + id.substring(0, 4),

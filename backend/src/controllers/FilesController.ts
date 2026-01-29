@@ -45,11 +45,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   });
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company${companyId}-file`, {
-      action: "create",
-      fileList
-    });
+  io.of(String(companyId)).emit(`company${companyId}-file`, {
+    action: "create",
+    fileList
+  });
 
   return res.status(200).json(fileList);
 };
@@ -63,16 +62,17 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(file);
 };
 
-export const uploadMedias = async (req: Request, res: Response): Promise<Response> => {
+export const uploadMedias = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { fileId, id, mediaType } = req.body;
   const files = req.files as Express.Multer.File[];
   const file = head(files);
 
   try {
-
-    let fileOpt
+    let fileOpt;
     if (files.length > 0) {
-
       for (const [index, file] of files.entries()) {
         fileOpt = await FilesOptions.findOne({
           where: {
@@ -82,7 +82,7 @@ export const uploadMedias = async (req: Request, res: Response): Promise<Respons
         });
 
         await fileOpt.update({
-          path: file.filename.replace('/', '-'),
+          path: file.filename.replace("/", "-"),
           mediaType: Array.isArray(mediaType) ? mediaType[index] : mediaType
         });
       }
@@ -109,15 +109,13 @@ export const update = async (
   const fileList = await UpdateService({ fileData, id: fileId, companyId });
 
   const io = getIO();
-  io.of(String(companyId))
-  .emit(`company${companyId}-file`, {
+  io.of(String(companyId)).emit(`company${companyId}-file`, {
     action: "update",
     fileList
   });
 
   return res.status(200).json(fileList);
 };
-
 
 export const remove = async (
   req: Request,
@@ -129,8 +127,7 @@ export const remove = async (
   await DeleteService(fileId, companyId);
 
   const io = getIO();
-  io.of(String(companyId))
-  .emit(`company${companyId}-file`, {
+  io.of(String(companyId)).emit(`company${companyId}-file`, {
     action: "delete",
     fileId
   });

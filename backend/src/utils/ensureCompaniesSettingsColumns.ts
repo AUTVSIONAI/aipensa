@@ -51,7 +51,9 @@ export const ensureCompaniesSettingsColumns = async () => {
   } catch (err) {
     // silencioso para não travar o boot; logs mínimos
     // eslint-disable-next-line no-console
-    console.error("[ensureCompaniesSettingsColumns] Falha ao garantir colunas:", err);
+    console.error(
+      "[ensureCompaniesSettingsColumns] Falha ao garantir colunas:",
+      err
+    );
   }
 };
-

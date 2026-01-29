@@ -32,4 +32,3 @@ module.exports = {
     await queryInterface.bulkDelete("FlowDefaults", { companyId: 1 });
   }
 };
-

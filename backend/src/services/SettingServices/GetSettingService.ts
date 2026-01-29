@@ -1,23 +1,22 @@
 import Setting from "../../models/Setting";
 
 interface Request {
-    key: string;
+  key: string;
 }
 
 const GetSettingService = async ({
-    key
+  key
 }: Request): Promise<any | undefined> => {
-
-    const setting = await Setting.findOne({
-        where: {
-            key
-        }
-    });
-    if (setting === null) {
-        return "enabled"
+  const setting = await Setting.findOne({
+    where: {
+      key
     }
+  });
+  if (setting === null) {
+    return "enabled";
+  }
 
-    return setting;
+  return setting;
 };
 
 export default GetSettingService;

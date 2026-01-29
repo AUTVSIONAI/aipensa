@@ -6,9 +6,9 @@ import { randomString } from "../../utils/randomCode";
 
 interface Request {
   userId: number;
-  companyId: number
-  flowIdWelcome: number
-  flowIdPhrase: number
+  companyId: number;
+  flowIdWelcome: number;
+  flowIdPhrase: number;
 }
 
 const CreateFlowDefaultService = async ({
@@ -29,7 +29,7 @@ const CreateFlowDefaultService = async ({
   } catch (error) {
     console.error("Erro ao inserir o usuário:", error);
 
-    return error
+    return error;
   }
 };
 

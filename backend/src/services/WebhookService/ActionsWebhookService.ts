@@ -678,17 +678,17 @@ export const ActionsWebhookService = async (
         await typeSimulation(ticket, "paused");
       }
 
-            if (nodeSelected.type === "interval") {
+      if (nodeSelected.type === "interval") {
         const timerSeconds = parseInt(nodeSelected.data.sec, 10);
         console.log(`Timer dedicado: Iniciando ${timerSeconds} segundos...`);
-        
-        await new Promise((resolve) => {
+
+        await new Promise(resolve => {
           setTimeout(() => {
             console.log(`Timer dedicado: ${timerSeconds} segundos finalizado.`);
             resolve(true);
           }, timerSeconds * 1000);
         });
-        
+
         console.log(`Timer dedicado: Prosseguindo para próximo node...`);
       }
 

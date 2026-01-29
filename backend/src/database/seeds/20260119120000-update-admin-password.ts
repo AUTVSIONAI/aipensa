@@ -9,7 +9,7 @@ module.exports = {
     }
 
     const passwordHash = await hash(adminPassword, 8);
-    
+
     // Atualiza a senha do usuário admin@admin.com
     await queryInterface.sequelize.query(
       `UPDATE "Users" SET "passwordHash" = :passwordHash WHERE email = :email`,

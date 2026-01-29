@@ -20,14 +20,19 @@ const useStyles = makeStyles((theme) => ({
         overflow: "hidden",
         borderTopRightRadius: 0,
         borderBottomRightRadius: 0,
+        background: "transparent",
+        border: "none",
+        boxShadow: "none",
     },
 
     ticketsList: {
         flex: 1,
         maxHeight: "100%",
-        overflowY: "scroll",
+        overflowY: "auto",
         ...theme.scrollbarStyles,
-        borderTop: "2px solid rgba(0, 0, 0, 0.12)",
+        borderTop: "none",
+        background: "transparent",
+        padding: theme.spacing(1),
     },
 
     ticketsListHeader: {
@@ -64,7 +69,12 @@ const useStyles = makeStyles((theme) => ({
     noTicketsDiv: {
         display: "flex",
         // height: "190px",
-        margin: 40,
+        margin: theme.spacing(4, 2),
+        padding: theme.spacing(3),
+        borderRadius: 16,
+        background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255,255,255,0.75)",
+        border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.06)",
+        backdropFilter: "blur(16px)",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
@@ -212,7 +222,8 @@ const TicketsListCustom = (props) => {
         forceSearch,
         statusFilter,
         userFilter,
-        sortTickets
+        sortTickets,
+        compact
     } = props;
 
     const classes = useStyles();
@@ -431,6 +442,7 @@ const TicketsListCustom = (props) => {
                                     ticket={ticket}
                                     key={ticket.id}
                                     setTabOpen={setTabOpen}
+                                    compact={compact}
                                 />
                                 // </List>
                             ))}

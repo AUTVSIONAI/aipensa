@@ -7,7 +7,9 @@ const ShowContactService = async (
   companyId: number
 ): Promise<Contact> => {
   const contact = await Contact.findByPk(id, {
-    include: ["extraInfo", "tags",
+    include: [
+      "extraInfo",
+      "tags",
       {
         association: "wallets",
         attributes: ["id", "name"]
@@ -16,7 +18,7 @@ const ShowContactService = async (
         model: Whatsapp,
         as: "whatsapp",
         attributes: ["id", "name", "expiresTicket", "groupAsTicket"]
-      },
+      }
     ]
   });
 

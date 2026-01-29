@@ -8,17 +8,20 @@ import GetTicketWbot from "./GetTicketWbot";
 import ShowWhatsAppService from "../services/WhatsappService/ShowWhatsAppService";
 
 const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
-
   if (ticket.whatsappId) {
     // console.log("SETTING MESSAGES AS READ", ticket.whatsappId)
     const whatsapp = await ShowWhatsAppService(
       ticket.whatsappId,
 
-
       ticket.companyId
     );
 
-    if (["open", "group"].includes(ticket.status) && whatsapp && whatsapp.status === 'CONNECTED' && ticket.unreadMessages > 0) {
+    if (
+      ["open", "group"].includes(ticket.status) &&
+      whatsapp &&
+      whatsapp.status === "CONNECTED" &&
+      ticket.unreadMessages > 0
+    ) {
       try {
         const wbot = await GetTicketWbot(ticket);
         // no baileys temos que marcar cada mensagem como lida
@@ -33,12 +36,15 @@ const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
         });
 
         if (getJsonMessage.length > 0) {
-
           getJsonMessage.forEach(async message => {
             const msg: proto.IWebMessageInfo = JSON.parse(message.dataJson);
-            if (msg.key && msg.key.fromMe === false && !ticket.isBot && (ticket.userId || ticket.isGroup)) {
-
-              await wbot.readMessages([msg.key])
+            if (
+              msg.key &&
+              msg.key.fromMe === false &&
+              !ticket.isBot &&
+              (ticket.userId || ticket.isGroup)
+            ) {
+              await wbot.readMessages([msg.key]);
             }
           });
         }
@@ -64,16 +70,13 @@ const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
             action: "updateUnread",
             ticketId: ticket.id
           });
-
       } catch (err) {
         logger.warn(
           `Could not mark messages as read. Maybe whatsapp session disconnected? Err: ${err}`
         );
       }
-
     }
   }
-
 };
 
 export default SetTicketMessagesAsRead;

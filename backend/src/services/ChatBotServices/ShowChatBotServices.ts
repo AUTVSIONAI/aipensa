@@ -20,7 +20,7 @@ const ShowChatBotServices = async (id: number | string): Promise<Chatbot> => {
           {
             model: User,
             as: "user"
-          },
+          }
         ]
       },
       {
@@ -30,13 +30,13 @@ const ShowChatBotServices = async (id: number | string): Promise<Chatbot> => {
           {
             model: User,
             as: "user"
-          },
+          }
         ]
       },
       {
         model: User,
         as: "user"
-      },
+      }
     ]
   });
 

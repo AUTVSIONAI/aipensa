@@ -1,6 +1,6 @@
-import axios from 'axios';
-import fs from 'node:fs';
-import path from 'node:path';
+import axios from "axios";
+import fs from "node:fs";
+import path from "node:path";
 import stringSimilarity from "string-similarity";
 // import multer from 'multer';
 
@@ -8,13 +8,13 @@ import formatBody from "../../helpers/Mustache";
 import Contact from "../../models/Contact";
 import { default as Setting } from "../../models/Setting";
 import Ticket from "../../models/Ticket";
-import Whatsapp from '../../models/Whatsapp';
+import Whatsapp from "../../models/Whatsapp";
 import UpdateTicketService from "../../services/TicketServices/UpdateTicketService";
 import { TypebotService } from "../services/TypebotServices";
 import ListUserQueueServices from "../../services/UserQueueServices/ListUserQueueServices";
-import type { IContent } from '../services/HubMessageListener';
-import { SendMediaMessageService } from '../services/SendMediaMessageService';
-import { SendTextMessageService } from '../services/SendTextMessageService';
+import type { IContent } from "../services/HubMessageListener";
+import { SendMediaMessageService } from "../services/SendMediaMessageService";
+import { SendTextMessageService } from "../services/SendTextMessageService";
 
 export async function verifyChatbot(
   connection: Whatsapp,
@@ -31,12 +31,16 @@ export async function verifyChatbot(
     ticket.amountUsedBotQueues >= maxUseBotQueues
   ) {
     const whats = await Whatsapp.findByPk(ticket.whatsappId);
-    if (whats.maxUseBotQueues && whats.maxUseBotQueues != null && whats.maxUseBotQueues > 0) {
+    if (
+      whats.maxUseBotQueues &&
+      whats.maxUseBotQueues != null &&
+      whats.maxUseBotQueues > 0
+    ) {
       UpdateTicketService({
         ticketData: { queueId: whats.maxUseBotQueues },
         ticketId: ticket.id,
         companyId: ticket.companyId
-      })
+      });
     }
     return;
   }
@@ -140,7 +144,7 @@ export async function verifyChatbot(
         await UpdateTicketService({
           ticketData: { queueId: foundQueueId },
           ticketId: ticket.id,
-          companyId: ticket.companyId,
+          companyId: ticket.companyId
         });
 
         await ticket.update({
@@ -172,7 +176,6 @@ export async function verifyChatbot(
           await ticket.update({
             typebotSessionId: startChatResponse.sessionId
           });
-
         } else {
           console.log("Verificando Se Fluxo Existe No TypeBot");
           try {
@@ -298,7 +301,7 @@ export async function verifyChatbot(
               ticket.id,
               ticket.contact,
               ticket.whatsapp
-            )
+            );
           }
 
           if (message.type === "image") {
@@ -307,12 +310,13 @@ export async function verifyChatbot(
               const url = message.content?.url;
 
               // Baixar a imagem da URL e salvar localmente
-              const response = await axios.get(url, { responseType: 'stream' });
+              const response = await axios.get(url, { responseType: "stream" });
               const imageStream = response.data;
-              const mimetype = response.headers['content-type'];
-              const [, extension] = mimetype.split('/');
-              const localFilePath = `./public/company${ticket.companyId
-                }/${makeid(10)}.${extension}`;
+              const mimetype = response.headers["content-type"];
+              const [, extension] = mimetype.split("/");
+              const localFilePath = `./public/company${
+                ticket.companyId
+              }/${makeid(10)}.${extension}`;
               const fileStream = fs.createWriteStream(localFilePath);
               const filename = localFilePath.substring(
                 localFilePath.lastIndexOf("/") + 1
@@ -323,19 +327,23 @@ export async function verifyChatbot(
               const media = {
                 fieldname: undefined,
                 originalname: undefined,
-                encoding: '7bit',
+                encoding: "7bit",
                 size: undefined,
                 stream: undefined,
-                destination: path.join(__dirname, "public", `company${ticket.companyId}`),
+                destination: path.join(
+                  __dirname,
+                  "public",
+                  `company${ticket.companyId}`
+                ),
                 buffer: undefined,
                 path: path.resolve(localFilePath),
                 filename,
-                mimetype,
-              }
+                mimetype
+              };
 
               await SendMediaMessageService(
                 media,
-                '',
+                "",
                 ticket.id,
                 ticket.contact,
                 ticket.whatsapp,
@@ -464,7 +472,7 @@ export async function verifyChatbot(
   if (typeBot === "typeBot") {
     return typeBotIn();
   }
-};
+}
 
 export function makeid(length) {
   var result = "";

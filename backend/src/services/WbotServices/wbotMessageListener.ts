@@ -1471,7 +1471,8 @@ const verifyQueue = async (
   console.log("verifyQueue");
   // console.log("GETTING WHATSAPP VERIFY QUEUE", ticket.whatsappId, wbot.id)
   const whatsapp = await ShowWhatsAppService(wbot.id!, companyId);
-  const { queues, greetingMessage, maxUseBotQueues, timeUseBotQueues } = whatsapp;
+  const { queues, greetingMessage, maxUseBotQueues, timeUseBotQueues } =
+    whatsapp;
 
   let chatbot = false;
 
@@ -1801,15 +1802,22 @@ const verifyQueue = async (
 
       const promptWithFallback = {
         ...prompt.toJSON(),
-        apiKey: prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken,
-        voiceKey: prompt.voiceKey || settings?.openaikeyaudio || settings?.userApiToken
+        apiKey:
+          prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken,
+        voiceKey:
+          prompt.voiceKey || settings?.openaikeyaudio || settings?.userApiToken
       } as any;
 
-      console.log(`[wbotMessageListener] Calling handleOpenAi (Connection) for ${msg.key.remoteJid}`, {
-        promptName: promptWithFallback.name,
-        apiKey: promptWithFallback.apiKey ? `${promptWithFallback.apiKey.substring(0, 8)}...` : "undefined",
-        model: promptWithFallback.model // Add model logging
-      });
+      console.log(
+        `[wbotMessageListener] Calling handleOpenAi (Connection) for ${msg.key.remoteJid}`,
+        {
+          promptName: promptWithFallback.name,
+          apiKey: promptWithFallback.apiKey
+            ? `${promptWithFallback.apiKey.substring(0, 8)}...`
+            : "undefined",
+          model: promptWithFallback.model // Add model logging
+        }
+      );
 
       await handleOpenAi(
         promptWithFallback,
@@ -3650,9 +3658,10 @@ export const convertTextToSpeechAndSaveToFile = (
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (serviceRegion === "openai" || serviceRegion === "openrouter") {
-      const baseUrl = serviceRegion === "openrouter" 
-        ? "https://openrouter.ai/api/v1" 
-        : undefined;
+      const baseUrl =
+        serviceRegion === "openrouter"
+          ? "https://openrouter.ai/api/v1"
+          : undefined;
 
       const openai = new OpenAI({
         apiKey: subscriptionKey,
@@ -3660,25 +3669,25 @@ export const convertTextToSpeechAndSaveToFile = (
       });
 
       const allowedVoices = ["alloy", "verse", "aria", "charcoal", "sage"];
-      const chosenVoice =
-        allowedVoices.includes(String(voice).toLowerCase())
-          ? voice
-          : "alloy";
+      const chosenVoice = allowedVoices.includes(String(voice).toLowerCase())
+        ? voice
+        : "alloy";
 
-      openai.audio.speech.create({
-        model: "tts-1",
-        voice: chosenVoice as any,
-        input: text,
-      })
-      .then(async (mp3) => {
-        const buffer = Buffer.from(await mp3.arrayBuffer());
-        await fs.promises.writeFile(`${filename}.${audioToFormat}`, buffer);
-        resolve();
-      })
-      .catch((error) => {
-        console.error("OpenAI TTS Error:", error);
-        reject(error);
-      });
+      openai.audio.speech
+        .create({
+          model: "tts-1",
+          voice: chosenVoice as any,
+          input: text
+        })
+        .then(async mp3 => {
+          const buffer = Buffer.from(await mp3.arrayBuffer());
+          await fs.promises.writeFile(`${filename}.${audioToFormat}`, buffer);
+          resolve();
+        })
+        .catch(error => {
+          console.error("OpenAI TTS Error:", error);
+          reject(error);
+        });
       return;
     }
 
@@ -4916,20 +4925,29 @@ const handleMessage = async (
       !ticket.userId &&
       !isNil(whatsapp.promptId)
     ) {
-      console.log(`[wbotMessageListener] Triggering OpenAI for ticket ${ticket.id} (Queue Ignored)`);
+      console.log(
+        `[wbotMessageListener] Triggering OpenAI for ticket ${ticket.id} (Queue Ignored)`
+      );
       const { prompt } = whatsapp;
 
       const promptWithFallback = {
         ...prompt.toJSON(),
-        apiKey: prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken,
-        voiceKey: prompt.voiceKey || settings?.openaikeyaudio || settings?.userApiToken
+        apiKey:
+          prompt.apiKey || settings?.openaikeyaudio || settings?.userApiToken,
+        voiceKey:
+          prompt.voiceKey || settings?.openaikeyaudio || settings?.userApiToken
       } as any;
 
-      console.log(`[wbotMessageListener] Calling handleOpenAi (Connection) for ${msg.key.remoteJid}`, {
-        promptName: promptWithFallback.name,
-        apiKey: promptWithFallback.apiKey ? `${promptWithFallback.apiKey.substring(0, 8)}...` : "undefined",
-        model: promptWithFallback.model
-      });
+      console.log(
+        `[wbotMessageListener] Calling handleOpenAi (Connection) for ${msg.key.remoteJid}`,
+        {
+          promptName: promptWithFallback.name,
+          apiKey: promptWithFallback.apiKey
+            ? `${promptWithFallback.apiKey.substring(0, 8)}...`
+            : "undefined",
+          model: promptWithFallback.model
+        }
+      );
 
       await handleOpenAi(
         promptWithFallback,
@@ -4941,7 +4959,11 @@ const handleMessage = async (
         ticketTraking
       );
     } else if (!isNil(whatsapp.promptId) && !isGroup && !msg.key.fromMe) {
-        console.log(`[wbotMessageListener] Skipping OpenAI for ticket ${ticket.id}. Reasons: userId=${!!ticket.userId}`);
+      console.log(
+        `[wbotMessageListener] Skipping OpenAI for ticket ${
+          ticket.id
+        }. Reasons: userId=${!!ticket.userId}`
+      );
     }
 
     console.log("log... 4444", { ticket });
@@ -5031,15 +5053,15 @@ const handleMessage = async (
           typebot: lastFlow.data.typebotIntegration
         });
       } catch (error) {
-        console.log('Erro no typebotListener: ', error)
+        console.log("Erro no typebotListener: ", error);
         // get axios error  data and status code
         const axiosError = error as AxiosError;
         const { data, status } = axiosError.response || {};
 
-        console.log('axiosError', axiosError)
-        console.log('data', data)
-        console.log('status: ', status)
-        
+        console.log("axiosError", axiosError);
+        console.log("data", data);
+        console.log("status: ", status);
+
         if (status === 404 && (data as any)?.message === "Session not found.") {
           await ticket.destroy();
           // await ticket.update({
@@ -5119,7 +5141,15 @@ const handleMessage = async (
       !ticket.useIntegration
     ) {
       // console.log("antes do verifyqueue")
-      await verifyQueue(wbot, msg, ticket, contact, settings, ticketTraking, mediaSent);
+      await verifyQueue(
+        wbot,
+        msg,
+        ticket,
+        contact,
+        settings,
+        ticketTraking,
+        mediaSent
+      );
 
       if (ticketTraking.chatbotAt === null) {
         await ticketTraking.update({

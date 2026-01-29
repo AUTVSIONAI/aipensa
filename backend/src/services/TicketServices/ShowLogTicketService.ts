@@ -11,7 +11,6 @@ const ShowLogTicketService = async ({
   ticketId,
   companyId
 }: Request): Promise<LogTicket[]> => {
-  
   const logs = await LogTicket.findAll({
     where: {
       ticketId

@@ -6,7 +6,13 @@ module.exports = {
     const companyId = 1;
     const userId = 1;
 
-    const mkFlow = (name: string, greeting: string, qualify: string[], cta: string, variables: any) => ({
+    const mkFlow = (
+      name: string,
+      greeting: string,
+      qualify: string[],
+      cta: string,
+      variables: any
+    ) => ({
       user_id: userId,
       name,
       company_id: companyId,
@@ -16,7 +22,11 @@ module.exports = {
           { id: "start", type: "message", content: greeting },
           { id: "qualify", type: "questions", fields: qualify },
           { id: "cta", type: "action", action: cta },
-          { id: "confirm", type: "message", content: "Confirmação enviada. Em breve você receberá detalhes." }
+          {
+            id: "confirm",
+            type: "message",
+            content: "Confirmação enviada. Em breve você receberá detalhes."
+          }
         ],
         edges: [
           { from: "start", to: "qualify" },
@@ -33,7 +43,13 @@ module.exports = {
       mkFlow(
         "Clínica Médica",
         "Olá, bem-vindo à nossa clínica. Vamos agendar sua consulta.",
-        ["Especialidade", "Plano ou Particular", "Horário preferido", "Nome", "Telefone"],
+        [
+          "Especialidade",
+          "Plano ou Particular",
+          "Horário preferido",
+          "Nome",
+          "Telefone"
+        ],
         "schedule",
         { companyName: "", phone: "", address: "" }
       ),
@@ -82,7 +98,12 @@ module.exports = {
       mkFlow(
         "Academia",
         "Olá, bem-vindo à academia. Qual seu objetivo?",
-        ["Objetivo", "Plano de interesse", "Aula experimental", "Agendar visita"],
+        [
+          "Objetivo",
+          "Plano de interesse",
+          "Aula experimental",
+          "Agendar visita"
+        ],
         "schedule",
         { companyName: "", phone: "", address: "" }
       ),
@@ -109,4 +130,3 @@ module.exports = {
     await queryInterface.bulkDelete("FlowBuilders", { active: true });
   }
 };
-

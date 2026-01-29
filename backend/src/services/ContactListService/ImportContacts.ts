@@ -30,7 +30,12 @@ export async function ImportContacts(
       has(row, "Número") ||
       has(row, "number")
     ) {
-      number = row["numero"] || row["número"] || row["Numero"] || row["Número"] || row["number"];
+      number =
+        row["numero"] ||
+        row["número"] ||
+        row["Numero"] ||
+        row["Número"] ||
+        row["number"];
       number = `${number}`.replace(/\D/g, "");
     }
 
@@ -45,8 +50,6 @@ export async function ImportContacts(
 
     return { name, number, email, contactListId, companyId };
   });
-
-
 
   const contactList: ContactListItem[] = [];
 
@@ -64,7 +67,6 @@ export async function ImportContacts(
     }
   }
 
-
   if (contactList) {
     for (let newContact of contactList) {
       try {
@@ -74,7 +76,7 @@ export async function ImportContacts(
         newContact.number = number;
         await newContact.save();
       } catch (e) {
-        console.log(e)
+        console.log(e);
         logger.error(`Número de contato inválido: ${newContact.number}`);
       }
     }

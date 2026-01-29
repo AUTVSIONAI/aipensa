@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect, useMemo } from "react";
 import clsx from "clsx";
+import { useLocation } from "react-router-dom";
 // import moment from "moment";
 
 // import { isNill } from "lodash";
@@ -85,48 +86,41 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.down("sm")]: {
       height: "calc(100vh - 56px)",
     },
-    backgroundColor: theme.palette.fancyBackground,
-    "& .MuiButton-outlinedPrimary": {
-      color: theme.palette.primary,
-      border:
-        theme.mode === "light"
-          ? "1px solid rgba(0 124 102)"
-          : "1px solid rgba(255, 255, 255, 0.5)",
-    },
-    "& .MuiTab-textColorPrimary.Mui-selected": {
-      color: theme.palette.primary,
-    },
+    // Background is now handled globally in App.js for the body, but we ensure transparency here
+    backgroundColor: "transparent",
   },
   chip: {
-    background: "red",
+    background: "rgba(255, 0, 0, 0.7)",
     color: "white",
-  },
-  avatar: {
-    width: "100%",
+    backdropFilter: "blur(4px)",
+    border: "1px solid rgba(255,255,255,0.2)"
   },
   toolbar: {
-    paddingRight: 24, // keep right padding when drawer closed
-    color: theme.palette.dark.main,
+    paddingRight: 24, 
+    color: theme.palette.text.primary,
     boxShadow: "none",
-    borderRadius: 0,
-    background: theme.palette.barraSuperior,
+    background: "transparent",
+    minHeight: "64px",
+    display: "flex",
+    alignItems: "center",
   },
   toolbarIcon: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    // backgroundColor: "#FFF",
-    backgroundSize: "cover",
+    justifyContent: "space-between",
     padding: "0 8px",
-    minHeight: "48px",
-    [theme.breakpoints.down("sm")]: {
-      height: "48px",
-    },
+    minHeight: "64px",
+    background: "transparent", // Glass effect comes from drawerPaper
   },
   clock: {
-    color: "yellow", // Define a cor amarela para o relógio
+    color: theme.palette.text.secondary,
     fontSize: 14,
     marginLeft: 16,
+    fontWeight: 500,
+    background: "rgba(255,255,255,0.05)",
+    padding: "4px 12px",
+    borderRadius: "12px",
+    border: "1px solid rgba(255,255,255,0.1)"
   },
   appBar: {
     zIndex: theme.zIndex.drawer + 1,
@@ -134,34 +128,32 @@ const useStyles = makeStyles((theme) => ({
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
     }),
+    background: theme.palette.type === 'dark' ? "rgba(10, 14, 23, 0.6)" : "rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(12px)",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+    boxShadow: "none",
   },
   appBarShift: {
     marginLeft: drawerWidth,
-    boxShadow: "none",
     width: `calc(100% - ${drawerWidth}px)`,
     transition: theme.transitions.create(["width", "margin"], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
     }),
-    [theme.breakpoints.down("sm")]: {
-      display: "none",
-    },
   },
-  // menuButton: {
-  //   marginRight: 36,
-  // },
   menuButtonHidden: {
     display: "none",
   },
   title: {
     flexGrow: 1,
-    fontSize: 14,
-    color: "white",
+    fontSize: 16,
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+    textShadow: theme.palette.type === 'dark' ? "0 0 20px rgba(0, 242, 255, 0.3)" : "none", // Subtle glow
   },
   drawerPaper: {
     position: "relative",
     whiteSpace: "nowrap",
-    // overflowX: "hidden",
     width: drawerWidth,
     transition: theme.transitions.create("width", {
       easing: theme.transitions.easing.sharp,
@@ -169,8 +161,12 @@ const useStyles = makeStyles((theme) => ({
     }),
     overflowX: "hidden",
     overflowY: "hidden",
+    // Glassmorphism Sidebar
+    backgroundColor: theme.palette.type === 'dark' ? "rgba(17, 24, 39, 0.65)" : "rgba(255, 255, 255, 0.85)",
+    backdropFilter: "blur(16px)",
+    borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+    boxShadow: "4px 0 24px 0 rgba(0,0,0,0.2)",
   },
-
   drawerPaperClose: {
     overflowX: "hidden",
     overflowY: "hidden",
@@ -182,107 +178,57 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.up("sm")]: {
       width: theme.spacing(9),
     },
+    // Glassmorphism Sidebar Closed
+    backgroundColor: theme.palette.type === 'dark' ? "rgba(17, 24, 39, 0.65)" : "rgba(255, 255, 255, 0.85)",
+    backdropFilter: "blur(16px)",
+    borderRight: "1px solid rgba(255, 255, 255, 0.08)",
   },
-
   appBarSpacer: {
-    minHeight: "48px",
+    minHeight: "64px",
   },
   content: {
     flex: 1,
     overflow: "auto",
+    height: "100%",
+    paddingTop: 8,
   },
-  container: {
-    paddingTop: theme.spacing(4),
-    paddingBottom: theme.spacing(4),
+  contentNoScroll: {
+    overflow: "hidden",
   },
-  // paper: {
-  //     padding: theme.spacing(2),
-  //     display: "flex",
-  //     overflow: "auto",
-  //     flexDirection: "column",
-  //   },
   containerWithScroll: {
     flex: 1,
-    // padding: theme.spacing(1),
-    overflowY: "scroll", // Use "auto" para mostrar a barra de rolagem apenas quando necessário
-    overflowX: "hidden", // Oculta a barra de rolagem horizontal
-    ...theme.scrollbarStyles,
-    borderRadius: "8px",
-    border: "2px solid transparent",
+    overflowY: "auto",
+    overflowX: "hidden",
+    ...theme.scrollbarStylesSoft,
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
     "&::-webkit-scrollbar": {
       display: "none",
     },
-    "-ms-overflow-style": "none",
-    "scrollbar-width": "none",
-  },
-  NotificationsPopOver: {
-    // color: theme.barraSuperior.secondary.main,
   },
   logo: {
     width: "100%",
-    height: "45px",
-    maxWidth: 180,
+    height: "40px",
+    maxWidth: 160,
     [theme.breakpoints.down("sm")]: {
-      width: "auto",
-      height: "100%",
-      maxWidth: 180,
+      maxWidth: 140,
     },
-    logo: theme.logo,
-    
   },
   hideLogo: {
     display: "none",
   },
   avatar2: {
-    width: theme.spacing(4),
-    height: theme.spacing(4),
+    width: 40,
+    height: 40,
     cursor: "pointer",
-    borderRadius: "50%",
-    border: "2px solid #ccc",
-  },
-  updateDiv: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  aboutDialog: {
-    backgroundColor: theme.palette.background.paper,
-    borderRadius: "16px",
-    padding: theme.spacing(4),
-  },
-  aboutTitle: {
-    color: theme.palette.primary.main,
-    fontWeight: "bold",
-    marginBottom: theme.spacing(2),
-    textAlign: "center",
-  },
-  aboutContent: {
-    display: "flex",
-    flexDirection: "column",
-    gap: theme.spacing(2),
-  },
-  aboutItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: theme.spacing(2),
-  },
-  aboutIcon: {
-    color: theme.palette.secondary.main,
-    minWidth: "40px",
-  },
-  aboutLink: {
-    color: theme.palette.primary.main,
-    textDecoration: "none",
+    borderRadius: "12px", // Rounded square
+    border: `2px solid ${theme.palette.primary.main}`,
+    boxShadow: `0 0 10px ${theme.palette.primary.main}`, // Glow effect
+    transition: "all 0.3s",
     "&:hover": {
-      textDecoration: "underline",
-    },
-  },
-  versionText: {
-    color: theme.palette.text.secondary,
-    fontStyle: "italic",
-    marginTop: theme.spacing(2),
-    textAlign: "center",
+      transform: "scale(1.05)",
+      boxShadow: `0 0 15px ${theme.palette.primary.main}`,
+    }
   },
 }));
 
@@ -325,6 +271,7 @@ const SmallAvatar = withStyles((theme) => ({
 
 const LoggedInLayout = ({ children, themeToggle }) => {
   const classes = useStyles();
+  const location = useLocation();
   const [userToken, setUserToken] = useState("disabled");
   const [loadingUserToken, setLoadingUserToken] = useState(false);
   const [userModalOpen, setUserModalOpen] = useState(false);
@@ -372,6 +319,14 @@ const LoggedInLayout = ({ children, themeToggle }) => {
     // getSetting();
     return () => {
       clearInterval(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
     };
   }, []);
 
@@ -504,8 +459,11 @@ const LoggedInLayout = ({ children, themeToggle }) => {
           </IconButton>
         </div>
         <List className={classes.containerWithScroll}>
-          {/* {mainListItems} */}
-          <MainListItems collapsed={!drawerOpen} />
+          <MainListItems
+            collapsed={!drawerOpen}
+            drawerClose={drawerClose}
+            onExpand={() => setDrawerOpen(true)}
+          />
         </List>
         <Divider />
       </Drawer>
@@ -627,7 +585,7 @@ const LoggedInLayout = ({ children, themeToggle }) => {
           </div>
         </Toolbar>
       </AppBar>
-      <main className={classes.content}>
+      <main className={clsx(classes.content, location.pathname.startsWith("/settings") && classes.contentNoScroll)}>
         <div className={classes.appBarSpacer} />
 
         {children ? children : null}

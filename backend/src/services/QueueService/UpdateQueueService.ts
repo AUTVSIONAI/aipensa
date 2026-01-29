@@ -109,13 +109,19 @@ const UpdateQueueService = async (
           {
             model: User,
             as: "user"
-          },
+          }
         ],
         // attributes: ["id", "name", "greetingMessage"],
-        order: [[{ model: Chatbot, as: "chatbots" }, "id", "asc"], ["id", "ASC"]]
+        order: [
+          [{ model: Chatbot, as: "chatbots" }, "id", "asc"],
+          ["id", "ASC"]
+        ]
       }
     ],
-    order: [[{ model: Chatbot, as: "chatbots" }, "id", "asc"], ["id", "ASC"]]
+    order: [
+      [{ model: Chatbot, as: "chatbots" }, "id", "asc"],
+      ["id", "ASC"]
+    ]
   });
   return queue;
 };

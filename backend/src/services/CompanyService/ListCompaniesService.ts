@@ -17,16 +17,17 @@ const ListCompaniesService = async ({
   searchParam = "",
   pageNumber = "1"
 }: Request): Promise<Response> => {
- 
   const limit = 20;
   const offset = limit * (+pageNumber - 1);
 
   const { count, rows: companies } = await Company.findAndCountAll({
-    include: [{
-      model: Plan,
-      as: "plan",
-      attributes: ["name"]
-    }],
+    include: [
+      {
+        model: Plan,
+        as: "plan",
+        attributes: ["name"]
+      }
+    ],
     limit,
     offset,
     order: [["name", "ASC"]]

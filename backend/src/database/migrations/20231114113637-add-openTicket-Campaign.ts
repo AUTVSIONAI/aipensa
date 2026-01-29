@@ -5,10 +5,10 @@ module.exports = {
     return queryInterface.addColumn("Campaigns", "openTicket", {
       type: DataTypes.STRING,
       defaultValue: "disabled"
-    })
+    });
   },
 
   down: (queryInterface: QueryInterface) => {
-    return queryInterface.removeColumn("Campaigns", "openTicket")
+    return queryInterface.removeColumn("Campaigns", "openTicket");
   }
 };

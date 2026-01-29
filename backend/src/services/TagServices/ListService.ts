@@ -32,7 +32,9 @@ const ListService = async ({
   const limit = 20;
   const offset = limit * (+pageNumber - 1);
 
-  const sanitizedSearchParam = removeAccents(searchParam.toLocaleLowerCase().trim());
+  const sanitizedSearchParam = removeAccents(
+    searchParam.toLocaleLowerCase().trim()
+  );
 
   if (Number(kanban) === 0) {
     if (searchParam) {
@@ -61,20 +63,15 @@ const ListService = async ({
           // include: [
           //   {
           model: Contact,
-          as: "contacts",
+          as: "contacts"
           //   }
           // ]
-        },
+        }
       ],
-      attributes: [
-        'id',
-        'name',
-        'color',
-      ],
+      attributes: ["id", "name", "color"],
       offset,
-      order: [["name", "ASC"]],
+      order: [["name", "ASC"]]
     });
-
 
     const hasMore = count > offset + tags.length;
 
@@ -83,7 +80,6 @@ const ListService = async ({
       count,
       hasMore
     };
-
   } else {
     if (searchParam) {
       whereCondition = {
@@ -105,7 +101,7 @@ const ListService = async ({
       whereCondition = {
         ...whereCondition,
         id: { [Op.ne]: [tagId] }
-      }
+      };
     }
 
     // console.log(whereCondition)
@@ -117,15 +113,10 @@ const ListService = async ({
       include: [
         {
           model: TicketTag,
-          as: "ticketTags",
-
-        },
+          as: "ticketTags"
+        }
       ],
-      attributes: [
-        'id',
-        'name',
-        'color',
-      ],
+      attributes: ["id", "name", "color"]
     });
 
     const hasMore = count > offset + tags.length;

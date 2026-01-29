@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import React, { useState, useEffect, useReducer, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { toast } from "react-toastify";
 
 import { useHistory } from "react-router-dom";
@@ -39,67 +39,38 @@ import { isArray } from "lodash";
 import { useDate } from "../../hooks/useDate";
 import { SocketContext } from "../../context/Socket/SocketContext";
 import { AddCircle, Build, DevicesFold, TextFields } from "@mui/icons-material";
-import { CircularProgress, Grid, Stack } from "@mui/material";
+import { Chip, CircularProgress, Grid, Stack, Typography } from "@mui/material";
 import { Can } from "../../components/Can";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import CampaignModalPhrase from "../../components/CampaignModalPhrase";
-import { colorBackgroundTable, colorLineTable, colorLineTableHover, colorTopTable } from "../../styles/styles";
-
-const reducer = (state, action) => {
-  if (action.type === "LOAD_CAMPAIGNS") {
-    const campaigns = action.payload;
-    const newCampaigns = [];
-
-    if (isArray(campaigns)) {
-      campaigns.forEach(campaign => {
-        const campaignIndex = state.findIndex(u => u.id === campaign.id);
-        if (campaignIndex !== -1) {
-          state[campaignIndex] = campaign;
-        } else {
-          newCampaigns.push(campaign);
-        }
-      });
-    }
-
-    return [...state, ...newCampaigns];
-  }
-
-  if (action.type === "UPDATE_CAMPAIGNS") {
-    const campaign = action.payload;
-    const campaignIndex = state.findIndex(u => u.id === campaign.id);
-
-    if (campaignIndex !== -1) {
-      state[campaignIndex] = campaign;
-      return [...state];
-    } else {
-      return [campaign, ...state];
-    }
-  }
-
-  if (action.type === "DELETE_CAMPAIGN") {
-    const campaignId = action.payload;
-
-    const campaignIndex = state.findIndex(u => u.id === campaignId);
-    if (campaignIndex !== -1) {
-      state.splice(campaignIndex, 1);
-    }
-    return [...state];
-  }
-
-  if (action.type === "RESET") {
-    return [];
-  }
-};
+import { colorBackgroundTable } from "../../styles/styles";
 
 const useStyles = makeStyles(theme => ({
   mainPaper: {
     flex: 1,
-    backgroundColor: colorBackgroundTable(),
     borderRadius: 12,
     padding: theme.spacing(1),
-    overflowY: "scroll",
-    ...theme.scrollbarStyles
-  }
+    overflowY: "visible",
+  },
+  entityCard: {
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+    },
+  },
+  emptyState: {
+    padding: theme.spacing(4),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    textAlign: "center",
+  },
 }));
 
 const CampaignsPhrase = () => {
@@ -110,14 +81,7 @@ const CampaignsPhrase = () => {
   const { user } = useContext(AuthContext);
 
   const [loading, setLoading] = useState(true);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState(null);
-  const [deletingCampaign, setDeletingCampaign] = useState(null);
-  const [campaignModalOpen, setCampaignModalOpen] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [searchParam, setSearchParam] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletingContact, setDeletingContact] = useState(null);
 
   const [campaignflows, setCampaignFlows] = useState([]);
@@ -147,13 +111,6 @@ const CampaignsPhrase = () => {
     getCampaigns()
   }
 
-  const handleScroll = e => {
-    if (!hasMore || loading) return;
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - (scrollTop + 100) < clientHeight) {
-    }
-  };
-
   useEffect(() => {
     getCampaigns();
   }, []);
@@ -162,9 +119,9 @@ const CampaignsPhrase = () => {
     <MainContainer>
       <ConfirmationModal
         title={
-          deletingCampaign &&
+          deletingContact &&
           `${i18n.t("campaigns.confirmationModal.deleteTitle")} ${
-            deletingCampaign.name
+            deletingContact.name
           }?`
         }
         open={confirmModalOpen}
@@ -182,7 +139,7 @@ const CampaignsPhrase = () => {
       <MainHeader>
         <Grid style={{ width: "99.6%" }} container>
           <Grid xs={12} sm={8} item>
-            <Title>Campanhas</Title>
+            <Title>Fluxo de Campanha</Title>
           </Grid>
           <Grid xs={12} sm={4} item>
             <Grid spacing={2} container>
@@ -226,94 +183,75 @@ const CampaignsPhrase = () => {
       <Paper
         className={classes.mainPaper}
         variant="outlined"
-        onScroll={handleScroll}
       >
-        <Stack>
-          <Grid container style={{ padding: "8px" }}>
-            <Grid item xs={4} style={{ color: colorTopTable() }}>
-              Nome
-            </Grid>
-            <Grid item xs={4} style={{ color: colorTopTable() }} align="center">
-              Status
-            </Grid>
-            <Grid item xs={4} align="end" style={{ color: colorTopTable() }}>
-              {i18n.t("contacts.table.actions")}
-            </Grid>
-          </Grid>
-          <>
-            {!loading &&
-              campaignflows.map(flow => (
-                <Grid
-                  container
-                  key={flow.id}
-                  sx={{
-                    padding: "8px",
-                    backgroundColor: colorLineTable(),
-                    borderRadius: 4,
-                    marginTop: 0.5,
-                    "&:hover": {
-                      backgroundColor: colorLineTableHover()
-                    }
-                  }}
-                >
-                  <Grid item xs={4}>
-                    <Stack
-                      justifyContent={"center"}
-                      height={"100%"}
-                      style={{ color: "#ededed" }}
-                    >
-                      <Stack direction={"row"}>
-                        <TextFields />
-                        <Stack justifyContent={"center"} marginLeft={1}>
-                          {flow.name}
-                        </Stack>
-                      </Stack>
+        {!loading && campaignflows.length === 0 && (
+          <div className={classes.emptyState}>
+            <Typography variant="subtitle1" color="text.primary">
+              Nenhuma campanha encontrada
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Clique em “Campanha” para criar um novo fluxo.
+            </Typography>
+          </div>
+        )}
+        <Grid container spacing={2}>
+          {!loading &&
+            campaignflows.map((flow) => (
+              <Grid item xs={12} sm={6} md={4} key={flow.id}>
+                <Paper variant="outlined" className={classes.entityCard}>
+                  <Stack spacing={1} style={{ padding: 16 }}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <TextFields fontSize="small" />
+                      <Typography variant="subtitle1" color="text.primary" style={{ fontWeight: 800 }}>
+                        {flow.name}
+                      </Typography>
                     </Stack>
-                  </Grid>
-                  <Grid item xs={4} align="center" style={{ color: "#ededed" }}>
-                    <Stack justifyContent={"center"} height={"100%"}>
-                      {flow.status ? "Ativo" : "Desativado"}
-                    </Stack>
-                  </Grid>
-                  <Grid item xs={4} align="end">
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        setCampaignFlowSelected(flow.id);
-                        setModalOpenPhrase(true);
-                      }}
-                    >
-                      <EditIcon style={{ color: "#ededed" }} />
-                    </IconButton>
-                    <Can
-                      role={user.profile}
-                      perform="contacts-page:deleteContact"
-                      yes={() => (
+                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                      <Chip
+                        size="small"
+                        label={flow.status ? "Ativo" : "Desativado"}
+                        color={flow.status ? "primary" : "default"}
+                        variant={flow.status ? "default" : "outlined"}
+                      />
+                      <Stack direction="row" spacing={1}>
                         <IconButton
                           size="small"
-                          onClick={e => {
-                            setConfirmModalOpen(true);
-                            setDeletingContact(flow);
+                          onClick={() => {
+                            setCampaignFlowSelected(flow.id);
+                            setModalOpenPhrase(true);
                           }}
                         >
-                          <DeleteOutlineIcon style={{ color: "#ededed" }} />
+                          <EditIcon />
                         </IconButton>
-                      )}
-                    />
-                  </Grid>
-                </Grid>
-              ))}
-            {loading && (
-              <Stack
-                justifyContent={"center"}
-                alignItems={"center"}
-                minHeight={"50vh"}
-              >
+                        <Can
+                          role={user.profile}
+                          perform="contacts-page:deleteContact"
+                          yes={() => (
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setConfirmModalOpen(true);
+                                setDeletingContact(flow);
+                              }}
+                            >
+                              <DeleteOutlineIcon />
+                            </IconButton>
+                          )}
+                        />
+                      </Stack>
+                    </Stack>
+                  </Stack>
+                </Paper>
+              </Grid>
+            ))}
+          {loading && (
+            <Grid item xs={12}>
+              <Stack justifyContent={"center"} alignItems={"center"} minHeight={"50vh"}>
                 <CircularProgress />
               </Stack>
-            )}
-          </>
-        </Stack>
+            </Grid>
+          )}
+        </Grid>
       </Paper>
     </MainContainer>
   );

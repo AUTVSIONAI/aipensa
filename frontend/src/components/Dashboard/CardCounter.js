@@ -10,7 +10,8 @@ const useStyles = makeStyles(theme => ({
 	cardAvatar: {
 		fontSize: '55px',
 		color: grey[500],
-		backgroundColor: '#ffffff',
+		backgroundColor: theme.palette.background.paper,
+		border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
 		width: theme.spacing(7),
 		height: theme.spacing(7)
 	},

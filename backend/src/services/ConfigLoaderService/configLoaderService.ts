@@ -1,37 +1,35 @@
 interface WebhookConfig {
-    attempts: number;
-    backoff: {
-      type: 'fixed' | 'exponential';
-      delay: number;
-    };
-    limiter: {
-      max: number;
-      duration: number;
-    };
-  }
-  
-  interface Config {
-    webhook: WebhookConfig;
-    // Adicione outras configurações conforme necessário
-  }
-  
-  function configLoader(): Config {
+  attempts: number;
+  backoff: {
+    type: "fixed" | "exponential";
+    delay: number;
+  };
+  limiter: {
+    max: number;
+    duration: number;
+  };
+}
 
-    return {
-      webhook: {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
-        limiter: {
-          max: 1,
-          duration: 150,
-        },
+interface Config {
+  webhook: WebhookConfig;
+  // Adicione outras configurações conforme necessário
+}
+
+function configLoader(): Config {
+  return {
+    webhook: {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 1000
       },
-      // Adicione outras configurações conforme necessário
-    };
-  }
-  
-  export default configLoader;
-  
+      limiter: {
+        max: 1,
+        duration: 150
+      }
+    }
+    // Adicione outras configurações conforme necessário
+  };
+}
+
+export default configLoader;

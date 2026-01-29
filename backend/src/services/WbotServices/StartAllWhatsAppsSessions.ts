@@ -8,8 +8,11 @@ export const StartAllWhatsAppsSessions = async (
   try {
     const whatsapps = await ListWhatsAppsService({ companyId });
     if (whatsapps.length > 0) {
-      const promises = whatsapps.map(async (whatsapp) => {
-        if (whatsapp.channel === "whatsapp" && whatsapp.status !== "DISCONNECTED") {
+      const promises = whatsapps.map(async whatsapp => {
+        if (
+          whatsapp.channel === "whatsapp" &&
+          whatsapp.status !== "DISCONNECTED"
+        ) {
           return StartWhatsAppSession(whatsapp, companyId);
         }
       });
@@ -26,7 +29,6 @@ export const StartAllWhatsAppsSessions = async (
     //     }, timeClosed);
     //   });
     // }
-
   } catch (e) {
     Sentry.captureException(e);
   }

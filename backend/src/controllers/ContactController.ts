@@ -60,9 +60,10 @@ interface ContactData {
   wallets?: null | number[] | string[];
 }
 
-
-
-export const importXls = async (req: Request, res: Response): Promise<Response> => {
+export const importXls = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { companyId } = req.user;
   const { contacts, validateContact } = req.body;
 
@@ -71,7 +72,7 @@ export const importXls = async (req: Request, res: Response): Promise<Response> 
     for (const contactItem of contacts) {
       try {
         const { number, name, email, tags } = contactItem;
-        const simpleNumber = String(number).replace(/[^\d.-]+/g, '');
+        const simpleNumber = String(number).replace(/[^\d.-]+/g, "");
         let validNumber = simpleNumber;
 
         if (validateContact === "true") {
@@ -89,13 +90,17 @@ export const importXls = async (req: Request, res: Response): Promise<Response> 
           profilePicUrl: "",
           isGroup: false,
           email,
-          companyId,
+          companyId
         };
 
-        const contact = await CreateOrUpdateContactServiceForImport(contactData);
+        const contact = await CreateOrUpdateContactServiceForImport(
+          contactData
+        );
 
         if (tags) {
-          const tagList = String(tags).split(',').map(tag => tag.trim());
+          const tagList = String(tags)
+            .split(",")
+            .map(tag => tag.trim());
           for (const tagName of tagList) {
             try {
               let [tag, created] = await Tag.findOrCreate({
@@ -105,7 +110,7 @@ export const importXls = async (req: Request, res: Response): Promise<Response> 
                 where: { contactId: contact.id, tagId: tag.id }
               });
             } catch (error) {
-              logger.info("Erro ao criar Tags", error)
+              logger.info("Erro ao criar Tags", error);
             }
           }
         }
@@ -114,21 +119,19 @@ export const importXls = async (req: Request, res: Response): Promise<Response> 
         console.error("Error importing contact", error);
       }
     }
-    
+
     const io = getIO();
-    io.of(String(companyId))
-    .emit(`company-${companyId}-contact`, {
+    io.of(String(companyId)).emit(`company-${companyId}-contact`, {
       action: "create",
       contact: createdContacts[0] // Just emit one or maybe all? Existing code emits one.
     });
-    
+
     return res.status(200).json(createdContacts);
   }
 
   const { number, name, email, tags } = req.body;
-  const simpleNumber = String(number).replace(/[^\d.-]+/g, '');
+  const simpleNumber = String(number).replace(/[^\d.-]+/g, "");
   let validNumber = simpleNumber;
-
 
   if (validateContact === "true") {
     validNumber = await CheckContactNumber(simpleNumber, companyId);
@@ -136,7 +139,7 @@ export const importXls = async (req: Request, res: Response): Promise<Response> 
   /**
    * Código desabilitado por demora no retorno
    */
-  // 
+  //
   // const profilePicUrl = await GetProfilePicUrl(validNumber, companyId);
   // const defaultWhatsapp = await GetDefaultWhatsApp(companyId);
 
@@ -146,22 +149,20 @@ export const importXls = async (req: Request, res: Response): Promise<Response> 
     profilePicUrl: "",
     isGroup: false,
     email,
-    companyId,
+    companyId
     // whatsappId: defaultWhatsapp.id
   };
 
   const contact = await CreateOrUpdateContactServiceForImport(contactData);
 
   if (tags) {
-    const tagList = tags.split(',').map(tag => tag.trim());
+    const tagList = tags.split(",").map(tag => tag.trim());
 
     for (const tagName of tagList) {
       try {
         let [tag, created] = await Tag.findOrCreate({
           where: { name: tagName, companyId, color: "#A4CCCC", kanban: 0 }
-
         });
-
 
         // Associate the tag with the contact
         await ContactTag.findOrCreate({
@@ -171,28 +172,30 @@ export const importXls = async (req: Request, res: Response): Promise<Response> 
           }
         });
       } catch (error) {
-        logger.info("Erro ao criar Tags", error)
+        logger.info("Erro ao criar Tags", error);
       }
     }
   }
   const io = getIO();
 
-
-
-  io.of(String(companyId))
-    .emit(`company-${companyId}-contact`, {
-      action: "create",
-      contact
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-contact`, {
+    action: "create",
+    contact
+  });
 
   return res.status(200).json(contact);
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const { searchParam, pageNumber, contactTag: tagIdsStringified, isGroup } = req.query as IndexQuery;
+  const {
+    searchParam,
+    pageNumber,
+    contactTag: tagIdsStringified,
+    isGroup
+  } = req.query as IndexQuery;
   const { id: userId, companyId } = req.user;
 
-  console.log("index", { companyId, userId, searchParam })
+  console.log("index", { companyId, userId, searchParam });
 
   let tagsIds: number[] = [];
 
@@ -219,7 +222,7 @@ export const getContact = async (
   const { name, number } = req.body as IndexGetContactQuery;
   const { companyId } = req.user;
 
-  console.log("getContact", { companyId, name, number })
+  console.log("getContact", { companyId, name, number });
 
   const contact = await GetContactService({
     name,
@@ -235,20 +238,19 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const newContact: ContactData = req.body;
   const newRemoteJid = newContact.number;
 
-  console.log("store", { companyId, newContact })
+  console.log("store", { companyId, newContact });
 
   const findContact = await Contact.findOne({
     where: {
       number: newContact.number.replace("-", "").replace(" ", ""),
       companyId
     }
-  })
+  });
   if (findContact) {
     throw new AppError("Contact already exists");
   }
 
   newContact.number = newContact.number.replace("-", "").replace(" ", "");
-
 
   const schema = Yup.object().shape({
     name: Yup.string().required(),
@@ -262,7 +264,6 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   } catch (err: any) {
     throw new AppError(err.message);
   }
-
 
   const validNumber = await CheckContactNumber(newContact.number, companyId);
 
@@ -279,11 +280,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   });
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company-${companyId}-contact`, {
-      action: "create",
-      contact
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-contact`, {
+    action: "create",
+    contact
+  });
 
   return res.status(200).json(contact);
 };
@@ -321,9 +321,19 @@ export const update = async (
 
   const oldContact = await ShowContactService(contactId, companyId);
 
-  if (oldContact.number != contactData.number && oldContact.channel == "whatsapp") {
-    const isGroup = oldContact && oldContact.remoteJid ? oldContact.remoteJid.endsWith("@g.us") : oldContact.isGroup;
-    const validNumber = await CheckContactNumber(contactData.number, companyId, isGroup);
+  if (
+    oldContact.number != contactData.number &&
+    oldContact.channel == "whatsapp"
+  ) {
+    const isGroup =
+      oldContact && oldContact.remoteJid
+        ? oldContact.remoteJid.endsWith("@g.us")
+        : oldContact.isGroup;
+    const validNumber = await CheckContactNumber(
+      contactData.number,
+      companyId,
+      isGroup
+    );
     const number = validNumber;
     contactData.number = number;
   }
@@ -335,11 +345,10 @@ export const update = async (
   });
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company-${companyId}-contact`, {
-      action: "update",
-      contact
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-contact`, {
+    action: "update",
+    contact
+  });
 
   return res.status(200).json(contact);
 };
@@ -356,11 +365,10 @@ export const remove = async (
   await DeleteContactService(contactId);
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company-${companyId}-contact`, {
-      action: "delete",
-      contactId
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-contact`, {
+    action: "delete",
+    contactId
+  });
 
   return res.status(200).json({ message: "Contact deleted" });
 };
@@ -383,11 +391,10 @@ export const toggleAcceptAudio = async (
   const contact = await ToggleAcceptAudioContactService({ contactId });
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company-${companyId}-contact`, {
-      action: "update",
-      contact
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-contact`, {
+    action: "update",
+    contact
+  });
 
   return res.status(200).json(contact);
 };
@@ -400,14 +407,17 @@ export const blockUnblock = async (
   const { companyId } = req.user;
   const { active } = req.body;
 
-  const contact = await BlockUnblockContactService({ contactId, companyId, active });
+  const contact = await BlockUnblockContactService({
+    contactId,
+    companyId,
+    active
+  });
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company-${companyId}-contact`, {
-      action: "update",
-      contact
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-contact`, {
+    action: "update",
+    contact
+  });
 
   return res.status(200).json(contact);
 };
@@ -421,136 +431,138 @@ export const upload = async (req: Request, res: Response) => {
 
   const io = getIO();
 
-  io.of(String(companyId))
-    .emit(`company-${companyId}-contact`, {
-      action: "reload",
-      records: response
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-contact`, {
+    action: "reload",
+    records: response
+  });
 
   return res.status(200).json(response);
 };
 
 export const getContactProfileURL = async (req: Request, res: Response) => {
-  const { number } = req.params
+  const { number } = req.params;
   const { companyId } = req.user;
 
-  console.log("getContactProfileURL", { number, companyId })
+  console.log("getContactProfileURL", { number, companyId });
   if (number) {
     const validNumber = await CheckContactNumber(number, companyId);
 
-
     const profilePicUrl = await GetProfilePicUrl(validNumber, companyId);
 
-    const contact = await NumberSimpleListService({ number: validNumber, companyId: companyId })
+    const contact = await NumberSimpleListService({
+      number: validNumber,
+      companyId: companyId
+    });
 
     let obj: any;
     if (contact.length > 0) {
       obj = {
         contactId: contact[0].id,
         profilePicUrl: profilePicUrl
-      }
+      };
     } else {
       obj = {
         contactId: 0,
         profilePicUrl: profilePicUrl
-      }
+      };
     }
-    
+
     return res.status(200).json(obj);
   }
+};
 
-  };
+export const getContactVcard = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { name, number } = req.query as IndexGetContactQuery;
+  const { companyId } = req.user;
 
-  export const getContactVcard = async (
-    req: Request,
-    res: Response
-  ): Promise<Response> => {
-    const { name, number } = req.query as IndexGetContactQuery;
-    const { companyId } = req.user;
+  let vNumber = number;
+  const numberDDI = vNumber.toString().substr(0, 2);
+  const numberDDD = vNumber.toString().substr(2, 2);
+  const numberUser = vNumber.toString().substr(-8, 8);
 
-    let vNumber = number;
-    const numberDDI = vNumber.toString().substr(0, 2);
-    const numberDDD = vNumber.toString().substr(2, 2);
-    const numberUser = vNumber.toString().substr(-8, 8);
-
-    if (numberDDD <= '30' && numberDDI === '55') {
-      console.log("menor 30")
-      vNumber = `${numberDDI + numberDDD + 9 + numberUser}@s.whatsapp.net`;
-    } else if (numberDDD > '30' && numberDDI === '55') {
-      console.log("maior 30")
-      vNumber = `${numberDDI + numberDDD + numberUser}@s.whatsapp.net`;
-    } else {
-      vNumber = `${number}@s.whatsapp.net`;
-    }
-
-
-    const contact = await GetContactService({
-      name,
-      number,
-      companyId
-    });
-
-    return res.status(200).json(contact);
-  };
-
-  export const getContactTags = async (
-    req: Request,
-    res: Response
-  ): Promise<Response> => {
-    const { contactId } = req.params;
-
-    const contactTags = await FindContactTags({ contactId });
-
-    let tags = false;
-
-    if (contactTags.length > 0) {
-      tags = true;
-    }
-
-    return res.status(200).json({ tags: tags });
-
+  if (numberDDD <= "30" && numberDDI === "55") {
+    console.log("menor 30");
+    vNumber = `${numberDDI + numberDDD + 9 + numberUser}@s.whatsapp.net`;
+  } else if (numberDDD > "30" && numberDDI === "55") {
+    console.log("maior 30");
+    vNumber = `${numberDDI + numberDDD + numberUser}@s.whatsapp.net`;
+  } else {
+    vNumber = `${number}@s.whatsapp.net`;
   }
 
-  export const toggleDisableBot = async (req: Request, res: Response): Promise<Response> => {
-    var { contactId } = req.params;
-    const { companyId } = req.user;
-    const contact = await ToggleDisableBotContactService({ contactId });
+  const contact = await GetContactService({
+    name,
+    number,
+    companyId
+  });
 
-    const io = getIO();
-    io.of(String(companyId))
-      .emit(`company-${companyId}-contact`, {
-        action: "update",
-        contact
-      });
+  return res.status(200).json(contact);
+};
 
-    return res.status(200).json(contact);
-  };
+export const getContactTags = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { contactId } = req.params;
 
-  export const updateContactWallet = async (
-    req: Request,
-    res: Response
-  ): Promise<Response> => {
-    const { wallets } = req.body;
-    const { contactId } = req.params;
-    const { companyId } = req.user;
+  const contactTags = await FindContactTags({ contactId });
 
-    const contact = await UpdateContactWalletsService({
-      wallets,
-      contactId,
-      companyId
-    });
+  let tags = false;
 
-    return res.status(200).json(contact);
-  };
+  if (contactTags.length > 0) {
+    tags = true;
+  }
 
-  export const listWhatsapp = async (req: Request, res: Response): Promise<Response> => {
+  return res.status(200).json({ tags: tags });
+};
 
-    const { name } = req.query as unknown as SearchContactParams;
-    const { companyId } = req.user;
+export const toggleDisableBot = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  var { contactId } = req.params;
+  const { companyId } = req.user;
+  const contact = await ToggleDisableBotContactService({ contactId });
 
-    const contactsAll = await SimpleListService({ name, companyId });
+  const io = getIO();
+  io.of(String(companyId)).emit(`company-${companyId}-contact`, {
+    action: "update",
+    contact
+  });
 
-    const contacts = contactsAll.filter(contact => contact.channel == "whatsapp");
+  return res.status(200).json(contact);
+};
 
-    return res.json(contacts);
-  };
+export const updateContactWallet = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { wallets } = req.body;
+  const { contactId } = req.params;
+  const { companyId } = req.user;
+
+  const contact = await UpdateContactWalletsService({
+    wallets,
+    contactId,
+    companyId
+  });
+
+  return res.status(200).json(contact);
+};
+
+export const listWhatsapp = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { name } = req.query as unknown as SearchContactParams;
+  const { companyId } = req.user;
+
+  const contactsAll = await SimpleListService({ name, companyId });
+
+  const contacts = contactsAll.filter(contact => contact.channel == "whatsapp");
+
+  return res.json(contacts);
+};

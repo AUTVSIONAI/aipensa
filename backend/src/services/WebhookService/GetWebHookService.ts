@@ -1,37 +1,32 @@
 import { WebhookModel } from "../../models/Webhook";
-import User from "../../models/User";
 
 interface Request {
   companyId: number;
-  hashId: string
+  hashId: string;
 }
 
 interface Response {
-  webhook: WebhookModel
+  webhook: WebhookModel;
 }
 
 const GetWebHookService = async ({
   companyId,
   hashId
 }: Request): Promise<Response> => {
-  
-    try {
-    
-        // Realiza a consulta com paginação usando findAndCountAll
-        const { count, rows } = await WebhookModel.findAndCountAll({
-          where: {
-            company_id: companyId,
-            hash_id: hashId
-          }
-        });
-        let hook = rows[0]
+  const webhook = await WebhookModel.findOne({
+    where: {
+      company_id: companyId,
+      hash_id: hashId
+    }
+  });
 
-        return {
-            webhook: hook
-        }
-      } catch (error) {
-        console.error('Erro ao consultar usuários:', error);
-      }
+  if (!webhook) {
+    throw new Error("Webhook não encontrado");
+  }
+
+  return {
+    webhook
+  };
 };
 
 export default GetWebHookService;

@@ -75,8 +75,52 @@ const useStyles = makeStyles((theme) => ({
   mainPaper: {
     flex: 1,
     padding: theme.padding,
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
+  },
+  emptyState: {
+    padding: theme.spacing(4),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+    textAlign: "center",
+  },
+  entityCard: {
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+    },
+  },
+  actionsRow: {
+    justifyContent: "center",
+    gap: theme.spacing(1.25),
+    paddingBottom: theme.spacing(2),
+    paddingTop: theme.spacing(1),
+  },
+  actionButton: {
+    borderRadius: 12,
+    minWidth: 44,
+    width: 44,
+    height: 44,
+    boxShadow: "none",
+    color: "white",
+  },
+  actionEdit: {
+    background: theme.palette.primary.main,
+    "&:hover": {
+      background: theme.palette.primary.dark,
+    },
+  },
+  actionDelete: {
+    background: theme.palette.error.main,
+    "&:hover": {
+      background: theme.palette.error.dark,
+    },
   },
   customTableCell: {
     display: "flex",
@@ -825,121 +869,82 @@ const Connections = () => {
                   </Card>
                 </Grid>
               ) : (
-                whatsApps?.length > 0 &&
-                whatsApps.map((whatsApp) => (
-                  <Grid item xs={12} sm={6} md={4} key={whatsApp.id}>
-                    <Card
-                      variant="outlined"
-                      style={{
-                        backgroundColor: "#d7e0e4",
-                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                        borderRadius: "10px",
-                        padding: "20px",
-                        margin: "10px",
-                        transition: "transform 0.2s ease-in-out",
-                        cursor: "pointer",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.transform = "scale(1.03)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.transform = "scale(1)")
-                      }
-                    >
-                      <CardContent>
-                        <Typography
-                          variant="subtitle1"
-                          color="textPrimary"
-                          align="center"
-                        >
-                          {IconChannel(whatsApp.channel)}
+                <>
+                  {(!whatsApps || whatsApps.length === 0) && (
+                    <Grid item xs={12}>
+                      <div className={classes.emptyState}>
+                        <Typography variant="subtitle1" color="textPrimary">
+                          Nenhuma conexão encontrada
                         </Typography>
-                        <Typography variant="subtitle2" align="center">
-                          {whatsApp.channel === "instagram" && <span style={{fontSize: "0.8em", color: "#e1306c", display: "block", marginBottom: "5px"}}>(Instagram)</span>}
-                          {i18n.t("connections.table.name")}: {whatsApp.name}
+                        <Typography variant="body2" color="textSecondary">
+                          Adicione uma conexão para começar a atender.
                         </Typography>
-                        <Typography variant="body2" align="center">
-                          {i18n.t("connections.table.number")}:{" "}
-                          {whatsApp.number && whatsApp.channel === "whatsapp"
-                            ? formatSerializedId(whatsApp.number)
-                            : whatsApp.number}
-                        </Typography>
-                        <Typography variant="body2" align="center" component="div">
-                          {i18n.t("connections.table.status")}:{" "}
-                          {renderStatusToolTips(whatsApp)}
-                        </Typography>
-                        <Typography variant="body2" align="center" component="div">
-                          {i18n.t("connections.table.session")}:{" "}
-                          {renderActionButtons(whatsApp)}
-                        </Typography>
-                        <Typography variant="body2" align="center">
-                          {i18n.t("connections.table.lastUpdate")}:{" "}
-                          {format(
-                            parseISO(whatsApp.updatedAt),
-                            "dd/MM/yy HH:mm"
-                          )}
-                        </Typography>
-                        {whatsApp.isDefault && (
-                          <Typography
-                            variant="body2"
-                            align="center"
-                            style={{ color: green[500] }}
-                          >
-                            {i18n.t("connections.table.default")}
-                          </Typography>
-                        )}
-                      </CardContent>
-                      <Can
-                        role={user.profile}
-                        perform="connections-page:addConnection"
-                        yes={() => (
-                          <CardActions
-                            style={{ justifyContent: "flex-end", gap: "10px" }}
-                          >
-                            <div
-                              onClick={() => handleEditWhatsApp(whatsApp)}
-                              style={{
-                                backgroundColor: "#3DB8FF",
-                                borderRadius: "10px",
-                                width: "40px",
-                                height: "40px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "pointer",
-                                transition: "0.3s",
-                              }}
-                            >
-                              <Edit style={{ color: "#fff" }} />
-                            </div>
-
-                            <div
-                              onClick={() =>
-                                handleOpenConfirmationModal(
-                                  "delete",
-                                  whatsApp.id
-                                )
-                              }
-                              style={{
-                                backgroundColor: "#FF6B6B",
-                                borderRadius: "10px",
-                                width: "40px",
-                                height: "40px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "pointer",
-                                transition: "0.3s",
-                              }}
-                            >
-                              <DeleteOutline style={{ color: "#fff" }} />
-                            </div>
-                          </CardActions>
-                        )}
-                      />
-                    </Card>
-                  </Grid>
-                ))
+                      </div>
+                    </Grid>
+                  )}
+                  {whatsApps?.length > 0 &&
+                    whatsApps.map((whatsApp) => (
+                      <Grid item xs={12} sm={6} md={4} key={whatsApp.id}>
+                        <Card variant="outlined" className={classes.entityCard}>
+                          <CardContent>
+                            <Typography variant="subtitle1" color="textPrimary" align="center">
+                              {IconChannel(whatsApp.channel)}
+                            </Typography>
+                            <Typography variant="subtitle2" align="center">
+                              {whatsApp.channel === "instagram" && (
+                                <span style={{ fontSize: "0.8em", color: "#e1306c", display: "block", marginBottom: "5px" }}>
+                                  (Instagram)
+                                </span>
+                              )}
+                              {i18n.t("connections.table.name")}: {whatsApp.name}
+                            </Typography>
+                            <Typography variant="body2" align="center">
+                              {i18n.t("connections.table.number")}:{" "}
+                              {whatsApp.number && whatsApp.channel === "whatsapp"
+                                ? formatSerializedId(whatsApp.number)
+                                : whatsApp.number}
+                            </Typography>
+                            <Typography variant="body2" align="center" component="div">
+                              {i18n.t("connections.table.status")}: {renderStatusToolTips(whatsApp)}
+                            </Typography>
+                            <Typography variant="body2" align="center" component="div">
+                              {i18n.t("connections.table.session")}: {renderActionButtons(whatsApp)}
+                            </Typography>
+                            <Typography variant="body2" align="center">
+                              {i18n.t("connections.table.lastUpdate")}: {format(parseISO(whatsApp.updatedAt), "dd/MM/yy HH:mm")}
+                            </Typography>
+                            {whatsApp.isDefault && (
+                              <Typography variant="body2" align="center" style={{ color: green[500] }}>
+                                {i18n.t("connections.table.default")}
+                              </Typography>
+                            )}
+                          </CardContent>
+                          <Can
+                            role={user.profile}
+                            perform="connections-page:addConnection"
+                            yes={() => (
+                              <CardActions className={classes.actionsRow}>
+                                <Button
+                                  variant="contained"
+                                  className={`${classes.actionButton} ${classes.actionEdit}`}
+                                  onClick={() => handleEditWhatsApp(whatsApp)}
+                                >
+                                  <Edit fontSize="small" />
+                                </Button>
+                                <Button
+                                  variant="contained"
+                                  className={`${classes.actionButton} ${classes.actionDelete}`}
+                                  onClick={() => handleOpenConfirmationModal("delete", whatsApp.id)}
+                                >
+                                  <DeleteOutline fontSize="small" />
+                                </Button>
+                              </CardActions>
+                            )}
+                          />
+                        </Card>
+                      </Grid>
+                    ))}
+                </>
               )}
             </Grid>
           </Paper>

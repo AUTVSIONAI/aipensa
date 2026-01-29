@@ -37,11 +37,14 @@ const CreateService = async ({
   const [tag] = await Tag.findOrCreate({
     where: { name, color, kanban, companyId },
     defaults: {
-      name, color, kanban, companyId,
+      name,
+      color,
+      kanban,
+      companyId,
       timeLane,
       nextLaneId: String(nextLaneId) === "" ? null : nextLaneId,
       greetingMessageLane,
-      rollbackLaneId: String(rollbackLaneId) === "" ? null : rollbackLaneId,
+      rollbackLaneId: String(rollbackLaneId) === "" ? null : rollbackLaneId
     }
   });
 

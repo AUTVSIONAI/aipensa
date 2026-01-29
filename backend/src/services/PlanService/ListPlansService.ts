@@ -38,7 +38,7 @@ const ListPlansService = async ({
       isPublic: false
     };
   }
-  
+
   if (listPublic === "true") {
     whereCondition = {
       ...whereCondition,

@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 
-import Queue from '../../models/Queue';
+import Queue from "../../models/Queue";
 import Whatsapp from "../../models/Whatsapp";
 import HubMessageListener from "../services/HubMessageListener";
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-	console.log('aaa', req.body, req.params);
+  console.log("aaa", req.body, req.params);
 
-	return res.send(req.query["hub.challenge"])
-}
+  return res.send(req.query["hub.challenge"]);
+};
 
 export const listen = async (
   req: Request,
@@ -23,12 +23,10 @@ export const listen = async (
       {
         model: Queue,
         as: "queues",
-        attributes: ["id", "name", "color", "greetingMessage"],
+        attributes: ["id", "name", "color", "greetingMessage"]
       }
     ],
-    order: [
-      ["queues", "id", "ASC"],
-    ]
+    order: [["queues", "id", "ASC"]]
   });
 
   try {

@@ -2,8 +2,8 @@ import Mustache from "mustache";
 import Ticket from "../models/Ticket";
 
 function makeid(length) {
-  var result = '';
-  var characters = '0123456789';
+  var result = "";
+  var characters = "0123456789";
   var charactersLength = characters.length;
   for (var i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -12,15 +12,22 @@ function makeid(length) {
 }
 
 export const msgsd = (): string => {
-
   let ms = "";
 
   const hh = new Date().getHours();
 
-  if (hh >= 6) { ms = "Bom dia"; }
-  if (hh > 11) { ms = "Boa tarde"; }
-  if (hh > 17) { ms = "Boa noite"; }
-  if (hh > 23 || hh < 6) { ms = "Boa madrugada"; }
+  if (hh >= 6) {
+    ms = "Bom dia";
+  }
+  if (hh > 11) {
+    ms = "Boa tarde";
+  }
+  if (hh > 17) {
+    ms = "Boa noite";
+  }
+  if (hh > 23 || hh < 6) {
+    ms = "Boa madrugada";
+  }
 
   return ms;
 };
@@ -63,10 +70,10 @@ export const hour = (): string => {
 
 export const firstName = (ticket?: Ticket): string => {
   if (ticket && ticket?.contact?.name) {
-    const nameArr = ticket?.contact?.name.split(' ');
+    const nameArr = ticket?.contact?.name.split(" ");
     return nameArr[0];
   }
-  return '';
+  return "";
 };
 
 export default (body: string, ticket?: Ticket): string => {
@@ -82,7 +89,7 @@ export default (body: string, ticket?: Ticket): string => {
     connection: ticket ? ticket?.whatsapp?.name : "",
     data_hora: new Array(date(), hour()).join(" às "),
     protocol: new Array(control(), ticket ? ticket.id.toString() : "").join(""),
-    name_company: ticket ? ticket?.company?.name : "",
+    name_company: ticket ? ticket?.company?.name : ""
   };
 
   return Mustache.render(body, view);

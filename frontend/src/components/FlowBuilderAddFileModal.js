@@ -79,7 +79,7 @@ const FlowBuilderAddFileModal = ({ open, onSave, onUpdate, data, close }) => {
   };
 
   return (
-    <Dialog open={open} onClose={close}>
+    <Dialog open={Boolean(open)} onClose={close} fullWidth={true} maxWidth="md">
       <DialogTitle>Adicionar Nó de Arquivo</DialogTitle>
       <DialogContent>
         {/* Campo para inserir o rótulo */}

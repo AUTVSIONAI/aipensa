@@ -55,8 +55,8 @@ const CreateService = async (data: Data): Promise<Campaign> => {
       { model: ContactList },
       { model: Whatsapp, attributes: ["id", "name"] },
       { model: User, attributes: ["id", "name"] },
-      { model: Queue, attributes: ["id", "name"] },
-        ]
+      { model: Queue, attributes: ["id", "name"] }
+    ]
   });
 
   return record;

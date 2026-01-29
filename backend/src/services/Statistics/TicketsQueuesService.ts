@@ -33,12 +33,19 @@ const TicketsQueuesService = async ({
     {
       model: User,
       as: "user",
-      attributes: ["id", "name", "profile", "online", "profileImage"],
+      attributes: ["id", "name", "profile", "online", "profileImage"]
     },
     {
       model: Contact,
       as: "contact",
-      attributes: ["id", "name", "number", "profilePicUrl", "companyId", "urlPicture"]
+      attributes: [
+        "id",
+        "name",
+        "number",
+        "profilePicUrl",
+        "companyId",
+        "urlPicture"
+      ]
     },
     {
       model: Queue,
@@ -88,7 +95,7 @@ const TicketsQueuesService = async ({
     ...whereCondition,
     status: { [Op.in]: ["open", "pending"] },
     companyId
-  }
+  };
 
   if (dateStart && dateEnd) {
     whereCondition = {
@@ -109,7 +116,7 @@ const TicketsQueuesService = async ({
     subQuery: false,
     order: [
       ["user", "name", "ASC"],
-      ["updatedAt", "DESC"],
+      ["updatedAt", "DESC"]
     ]
   });
   return tickets;

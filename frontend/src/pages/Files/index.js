@@ -4,6 +4,7 @@ import React, {
     useReducer,
     useCallback,
     useContext,
+    useRef,
 } from "react";
 import { toast } from "react-toastify";
 
@@ -94,8 +95,52 @@ const useStyles = makeStyles((theme) => ({
     mainPaper: {
         flex: 1,
         padding: theme.spacing(1),
-        overflowY: "scroll",
-        ...theme.scrollbarStyles,
+        overflowY: "visible",
+    },
+    emptyState: {
+        padding: theme.spacing(4),
+        borderRadius: 16,
+        border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+        background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255, 255, 255, 0.75)",
+        textAlign: "center",
+    },
+    entityCard: {
+        borderRadius: 16,
+        border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+        background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+        backdropFilter: "blur(14px)",
+        boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+        transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+        "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: theme.palette.type === "dark" ? "0 22px 56px rgba(0,0,0,0.55)" : "0 14px 34px rgba(0,0,0,0.14)",
+        },
+    },
+    actionsRow: {
+        justifyContent: "center",
+        gap: theme.spacing(1.25),
+        paddingBottom: theme.spacing(2),
+        paddingTop: theme.spacing(1),
+    },
+    actionButton: {
+        borderRadius: 12,
+        minWidth: 44,
+        width: 44,
+        height: 44,
+        boxShadow: "none",
+        color: "white",
+    },
+    actionEdit: {
+        background: theme.palette.primary.main,
+        "&:hover": {
+            background: theme.palette.primary.dark,
+        },
+    },
+    actionDelete: {
+        background: theme.palette.error.main,
+        "&:hover": {
+            background: theme.palette.error.dark,
+        },
     },
 }));
 
@@ -200,13 +245,28 @@ const FileLists = () => {
         setPageNumber((prevState) => prevState + 1);
     };
 
-    const handleScroll = (e) => {
+    const loadMoreIfNeeded = useCallback(() => {
         if (!hasMore || loading) return;
-        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-        if (scrollHeight - (scrollTop + 100) < clientHeight) {
-            loadMore();
-        }
-    };
+        loadMore();
+    }, [hasMore, loading]);
+
+    const loadMoreSentinelRef = useRef(null);
+
+    useEffect(() => {
+        const root = document.querySelector("main");
+        const target = loadMoreSentinelRef.current;
+        if (!root || !target) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting) loadMoreIfNeeded();
+            },
+            { root, rootMargin: "400px 0px 400px 0px", threshold: 0 }
+        );
+
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [loadMoreIfNeeded]);
 
     return (
         <MainContainer>
@@ -225,9 +285,9 @@ const FileLists = () => {
                 aria-labelledby="form-dialog-title"
                 fileListId={selectedFileList && selectedFileList.id}
             />
-            {user.profile === "user" ?
+            {user.profile === "user" ? (
                 <ForbiddenPage />
-                :
+            ) : (
                 <>
                     <MainHeader>
                         <Title>{i18n.t("files.title")} ({files.length})</Title>
@@ -263,25 +323,21 @@ const FileLists = () => {
                     <Paper
                         className={classes.mainPaper}
                         variant="outlined"
-                        onScroll={handleScroll}
                     >
+                        {files.length === 0 && !loading && (
+                            <div className={classes.emptyState}>
+                                <Typography variant="subtitle1" color="textPrimary">
+                                    Nenhum arquivo encontrado
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    Ajuste a busca ou adicione um novo arquivo.
+                                </Typography>
+                            </div>
+                        )}
 <Grid container spacing={2}>
   {loading ? (
     <Grid item xs={12}>
-      <Card 
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-       >
+      <Card variant="outlined" className={classes.entityCard}>
         <CardContent>
           <Typography variant="body2" color="textSecondary">
             {i18n.t("loading")}
@@ -293,71 +349,44 @@ const FileLists = () => {
     files.map((fileList) => (
       <Grid item xs={12} sm={6} md={4} key={fileList.id}>
         <Card
-       variant="outlined"
-       style={{
-       backgroundColor: "#d7e0e4",
-       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-       borderRadius: "10px",
-       padding: "20px",
-       margin: "10px",
-       transition: "transform 0.2s ease-in-out",
-       cursor: "pointer",
-        }}
-       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-       >
+          variant="outlined"
+          className={classes.entityCard}
+        >
           <CardContent>
             <Typography variant="h6" color="textPrimary" align="center">
               {fileList.name}
             </Typography>
           </CardContent>
-<CardActions style={{ justifyContent: "center", gap: "10px" }}>
-  <div
-    onClick={() => handleEditFileList(fileList)}
-    style={{
-      backgroundColor: "#3DB8FF",
-      borderRadius: "10px",
-      width: "40px",
-      height: "40px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      transition: "0.3s",
-    }}
-  >
-    <EditIcon style={{ color: "#fff" }} />
-  </div>
-
-  <div
-    onClick={() => {
-      setConfirmModalOpen(true);
-      setDeletingFileList(fileList);
-    }}
-    style={{
-      backgroundColor: "#FF6B6B",
-      borderRadius: "10px",
-      width: "40px",
-      height: "40px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      transition: "0.3s",
-    }}
-  >
-    <DeleteOutlineIcon style={{ color: "#fff" }} />
-  </div>
-</CardActions>
+          <CardActions className={classes.actionsRow}>
+            <Button
+              variant="contained"
+              className={`${classes.actionButton} ${classes.actionEdit}`}
+              onClick={() => handleEditFileList(fileList)}
+            >
+              <EditIcon fontSize="small" />
+            </Button>
+            <Button
+              variant="contained"
+              className={`${classes.actionButton} ${classes.actionDelete}`}
+              onClick={() => {
+                setConfirmModalOpen(true);
+                setDeletingFileList(fileList);
+              }}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </Button>
+          </CardActions>
 
         </Card>
       </Grid>
     ))
   )}
 </Grid>
+                        <div ref={loadMoreSentinelRef} />
 
                     </Paper>
-                </>}
+                </>
+            )}
         </MainContainer>
     );
 };

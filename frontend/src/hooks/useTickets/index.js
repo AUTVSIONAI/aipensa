@@ -52,7 +52,6 @@ const useTickets = ({
             });
             
             let tickets = [];
-            
             tickets = data.tickets;
           
             setTickets(tickets);
@@ -73,7 +72,7 @@ const useTickets = ({
             //   format(new Date(), 'yyyy-MM-dd'),
             //   userFilter)
 
-            const {data} = await api.get("/dashboard/moments", {
+            const { data } = await api.get("/dashboard/moments", {
               params: {
                 status,
                 showAll,
@@ -86,7 +85,7 @@ const useTickets = ({
 
             // console.log(data)
             let tickets = [];
-            tickets = data.filter(item => item.userId == userFilter);            
+            tickets = data.filter(item => item.userId === userFilter);
 
             setTickets(tickets);
             setHasMore(null);
@@ -115,7 +114,8 @@ const useTickets = ({
     statusFilter,
     forceSearch,
     sortTickets,
-    searchOnMessages
+    searchOnMessages,
+    userFilter
   ]);
 
   return { tickets, loading, hasMore, count };

@@ -58,7 +58,9 @@ const ListTicketsServiceKanban = async ({
   const effectiveQueueIds =
     sanitizedQueueIds.length > 0
       ? sanitizedQueueIds
-      : (await ShowUserService(userId, companyId)).queues.map(queue => queue.id);
+      : (await ShowUserService(userId, companyId)).queues.map(
+          queue => queue.id
+        );
 
   let whereCondition: Filterable["where"] = {
     [Op.or]: [{ userId }, { status: "pending" }],
@@ -91,7 +93,7 @@ const ListTicketsServiceKanban = async ({
       model: Whatsapp,
       as: "whatsapp",
       attributes: ["name"]
-    },
+    }
   ];
 
   if (showAll === "true") {

@@ -14,12 +14,20 @@ const ShowWhatsAppService = async (
   const findOptions: FindOptions = {
     include: [
       {
-        model: FlowBuilderModel,
+        model: FlowBuilderModel
       },
       {
         model: Queue,
         as: "queues",
-        attributes: ["id", "name", "color", "greetingMessage", "integrationId", "fileListId", "closeTicket"],
+        attributes: [
+          "id",
+          "name",
+          "color",
+          "greetingMessage",
+          "integrationId",
+          "fileListId",
+          "closeTicket"
+        ],
         include: [
           {
             model: Chatbot,
@@ -30,7 +38,7 @@ const ShowWhatsAppService = async (
       },
       {
         model: Prompt,
-        as: "prompt",
+        as: "prompt"
       }
     ],
     order: [
@@ -39,7 +47,7 @@ const ShowWhatsAppService = async (
     ]
   };
 
-  if (session !== undefined && session == 0) {
+  if (session !== undefined && Number(session) === 0) {
     findOptions.attributes = { exclude: ["session"] };
   }
 

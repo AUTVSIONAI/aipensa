@@ -37,7 +37,9 @@ const ListContactsService = async ({
 
   if (searchParam) {
     // console.log("searchParam", searchParam)
-    const sanitizedSearchParam = removeAccents(searchParam.toLocaleLowerCase().trim());
+    const sanitizedSearchParam = removeAccents(
+      searchParam.toLocaleLowerCase().trim()
+    );
     whereCondition = {
       ...whereCondition,
       [Op.or]: [
@@ -69,7 +71,6 @@ const ListContactsService = async ({
   // }
 
   if (Array.isArray(tagsIds) && tagsIds.length > 0) {
-
     const contactTagFilter: any[] | null = [];
     // for (let tag of tags) {
     const contactTags = await ContactTag.findAll({
@@ -91,20 +92,29 @@ const ListContactsService = async ({
   }
 
   if (isGroup === "false") {
-    console.log("isGroup", isGroup)
+    console.log("isGroup", isGroup);
     whereCondition = {
       ...whereCondition,
       isGroup: false
-    }
+    };
   }
-
 
   const limit = 100;
   const offset = limit * (+pageNumber - 1);
 
   const { count, rows: contacts } = await Contact.findAndCountAll({
     where: whereCondition,
-    attributes: ["id", "name", "number", "email", "isGroup", "urlPicture", "active", "companyId", "channel"],
+    attributes: [
+      "id",
+      "name",
+      "number",
+      "email",
+      "isGroup",
+      "urlPicture",
+      "active",
+      "companyId",
+      "channel"
+    ],
     limit,
     include: [
       // {
@@ -113,13 +123,13 @@ const ListContactsService = async ({
       //   attributes: ["id", "status", "createdAt", "updatedAt"],
       //   limit: 1,
       //   order: [["updatedAt", "DESC"]]
-      // },   
+      // },
       {
         model: Tag,
         as: "tags",
         attributes: ["id", "name"]
         //include: ["tags"]
-      },
+      }
       // {
       //   model: Whatsapp,
       //   as: "whatsapp",

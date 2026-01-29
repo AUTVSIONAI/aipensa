@@ -31,17 +31,15 @@ const CreateTicketService = async ({
   companyId,
   whatsappId = ""
 }: Request): Promise<Ticket> => {
-
   const io = getIO();
 
   let whatsapp;
-  let defaultWhatsapp
+  let defaultWhatsapp;
 
   if (whatsappId !== "undefined" && whatsappId !== null && whatsappId !== "") {
     // console.log("GETTING WHATSAPP CREATE TICKETSERVICE", whatsappId)
-    whatsapp = await ShowWhatsAppService(whatsappId, companyId)
+    whatsapp = await ShowWhatsAppService(whatsappId, companyId);
   }
-
 
   defaultWhatsapp = await GetDefaultWhatsAppByUser(userId);
 

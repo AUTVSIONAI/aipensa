@@ -4,6 +4,7 @@ import React, {
   useReducer,
   useContext,
   useRef,
+  useCallback
 } from "react";
 
 import { toast } from "react-toastify";
@@ -15,8 +16,7 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
-import Paper from "@material-ui/core/Paper";
-import Button from "@material-ui/core/Button";
+import { Button } from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";
 import TextField from "@material-ui/core/TextField";
 import InputAdornment from "@material-ui/core/InputAdornment";
@@ -41,6 +41,9 @@ import { AuthContext } from "../../context/Auth/AuthContext";
 import { Can } from "../../components/Can";
 import useContactLists from "../../hooks/useContactLists";
 import { Grid } from "@material-ui/core";
+import GlassCard from "../../components/UI/GlassCard";
+import PrimaryButton from "../../components/UI/PrimaryButton";
+import OutlinedButton from "../../components/UI/OutlinedButton";
 
 import planilhaExemplo from "../../assets/planilha.xlsx";
 import ForbiddenPage from "../../components/ForbiddenPage";
@@ -100,8 +103,15 @@ const useStyles = makeStyles((theme) => ({
   mainPaper: {
     flex: 1,
     padding: theme.spacing(1),
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
+  },
+  searchIcon: {
+    color: theme.palette.primary.main,
   },
 }));
 
@@ -183,7 +193,7 @@ const ContactListItems = () => {
     return () => {
       socket.off(`company-${companyId}-ContactListItem`, onCompanyContactLists);
     };
-  }, [contactListId]);
+  }, [socket, user.companyId]);
 
   const handleSearch = (event) => {
     setSearchParam(event.target.value.toLowerCase());
@@ -234,13 +244,28 @@ const ContactListItems = () => {
     setPageNumber((prevState) => prevState + 1);
   };
 
-  const handleScroll = (e) => {
+  const loadMoreIfNeeded = useCallback(() => {
     if (!hasMore || loading) return;
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - (scrollTop + 100) < clientHeight) {
-      loadMore();
-    }
-  };
+    loadMore();
+  }, [hasMore, loading]);
+
+  const loadMoreSentinelRef = useRef(null);
+
+  useEffect(() => {
+    const root = document.querySelector("main");
+    const target = loadMoreSentinelRef.current;
+    if (!root || !target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMoreIfNeeded();
+      },
+      { root, rootMargin: "400px 0px 400px 0px", threshold: 0 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMoreIfNeeded]);
 
   const goToContactLists = () => {
     history.push("/contact-lists");
@@ -302,72 +327,47 @@ const ContactListItems = () => {
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <SearchIcon style={{ color: "#FFA500" }} />
+                              <SearchIcon className={classes.searchIcon} />
                             </InputAdornment>
                           ),
                         }}
                       />
                     </Grid>
                     <Grid xs={4} sm={2} item>
-                      <Button
+                      <OutlinedButton
                         startIcon={<PersonIcon />}
                         fullWidth
-                        variant="contained"
-                        style={{
-                        color: "white",
-                        backgroundColor: "#FFA500",
-                        boxShadow: "none",
-                        borderRadius: 0
-                        }}
                         onClick={goToContactLists}
                       >
                         {i18n.t("contactListItems.buttons.lists")}
-                      </Button>
+                      </OutlinedButton>
                     </Grid>
                     <Grid xs={4} sm={2} item>
-                      <Button
+                      <PrimaryButton
                         startIcon={<AttachFileIcon />}
                         fullWidth
-                        variant="contained"
-                        style={{
-                        color: "white",
-                        backgroundColor: "#4ec24e",
-                        boxShadow: "none",
-                        borderRadius: 0
-                        }}
                         onClick={() => {
                           fileUploadRef.current.value = null;
                           fileUploadRef.current.click();
                         }}
                       >
                         {i18n.t("contactListItems.buttons.import")}
-                      </Button>
+                      </PrimaryButton>
                     </Grid>
                     <Grid xs={4} sm={2} item>
-                      <Button
+                      <PrimaryButton
                         startIcon={<CheckIcon />}
                         fullWidth
-                        variant="contained"
-                        style={{
-                        color: "white",
-                        backgroundColor: "#437db5",
-                        boxShadow: "none",
-                        borderRadius: 0
-                        }}
                         onClick={handleOpenContactListItemModal}
                       >
                         {i18n.t("contactListItems.buttons.add")}
-                      </Button>
+                      </PrimaryButton>
                     </Grid>
                   </Grid>
                 </Grid>
               </Grid>
             </MainHeader>
-            <Paper
-              className={classes.mainPaper}
-              variant="outlined"
-              onScroll={handleScroll}
-            >
+            <GlassCard className={classes.mainPaper}>
               <>
                 <input
                   style={{ display: "none" }}
@@ -450,7 +450,8 @@ const ContactListItems = () => {
                   </>
                 </TableBody>
               </Table>
-            </Paper>
+              <div ref={loadMoreSentinelRef} />
+            </GlassCard>
           </>}
     </MainContainer>
   );

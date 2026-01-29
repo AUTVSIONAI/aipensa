@@ -45,7 +45,7 @@ const CreateChannelsService = async ({
       ...channel,
       status: "CONNECTED",
       companyId,
-      notificameHub: true,
+      notificameHub: true
     };
   });
 

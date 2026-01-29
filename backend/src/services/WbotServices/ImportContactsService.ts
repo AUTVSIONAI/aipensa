@@ -7,9 +7,12 @@ import ShowBaileysService from "../BaileysServices/ShowBaileysService";
 import CreateContactService from "../ContactServices/CreateContactService";
 import { isString, isArray } from "lodash";
 import path from "path";
-import fs from 'fs';
+import fs from "fs";
 
-const ImportContactsService = async (companyId?: number, whatsappId?: number): Promise<void> => {
+const ImportContactsService = async (
+  companyId?: number,
+  whatsappId?: number
+): Promise<void> => {
   try {
     const defaultWhatsapp = await GetDefaultWhatsApp(whatsappId, companyId);
     const wbot = getWbot(defaultWhatsapp.id);
@@ -21,14 +24,21 @@ const ImportContactsService = async (companyId?: number, whatsappId?: number): P
       phoneContacts = JSON.parse(JSON.stringify(contactsString.contacts));
 
       const publicFolder = path.resolve(__dirname, "..", "..", "..", "public");
-      const beforeFilePath = path.join(publicFolder,`company${companyId}`, 'contatos_antes.txt');
-      fs.writeFile(beforeFilePath, JSON.stringify(phoneContacts, null, 2), (err) => {
-        if (err) {
-          logger.error(`Failed to write contacts to file: ${err}`);
-          // throw err; // Don't throw, just log
+      const beforeFilePath = path.join(
+        publicFolder,
+        `company${companyId}`,
+        "contatos_antes.txt"
+      );
+      fs.writeFile(
+        beforeFilePath,
+        JSON.stringify(phoneContacts, null, 2),
+        err => {
+          if (err) {
+            logger.error(`Failed to write contacts to file: ${err}`);
+            // throw err; // Don't throw, just log
+          }
         }
-      });
-
+      );
     } catch (err) {
       Sentry.captureException(err);
       logger.error(`Could not get whatsapp contacts from phone. Err: ${err}`);
@@ -36,8 +46,12 @@ const ImportContactsService = async (companyId?: number, whatsappId?: number): P
     }
 
     const publicFolder = path.resolve(__dirname, "..", "..", "..", "public");
-    const afterFilePath = path.join(publicFolder,`company${companyId}`, 'contatos_depois.txt');
-    fs.writeFile(afterFilePath, JSON.stringify(phoneContacts, null, 2), (err) => {
+    const afterFilePath = path.join(
+      publicFolder,
+      `company${companyId}`,
+      "contatos_depois.txt"
+    );
+    fs.writeFile(afterFilePath, JSON.stringify(phoneContacts, null, 2), err => {
       if (err) {
         logger.error(`Failed to write contacts to file: ${err}`);
       }

@@ -1,8 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-import FormData from 'form-data';
-import axios from 'axios';
-import OpenAI from 'openai';
+import fs from "fs";
+import path from "path";
+import FormData from "form-data";
+import axios from "axios";
+import OpenAI from "openai";
 import Setting from "../../models/Setting";
 // import Configuration from 'openai';
 
@@ -15,62 +15,66 @@ type Response = { transcribedText: string } | string;
 async function fetchOpenAIToken(companyId: number) {
   let key_OPENAI_TOKEN = null;
   try {
-    
     // Tenta pegar da empresa atual
     let getopenaitoken = await Setting.findOne({
-      where: { companyId: companyId, key: "openaikeyaudio" },
+      where: { companyId: companyId, key: "openaikeyaudio" }
     });
 
     // Se não encontrar, tenta pegar da empresa 1 (Global/Super Admin)
     if (!getopenaitoken) {
-       getopenaitoken = await Setting.findOne({
-        where: { companyId: 1, key: "openaikeyaudio" },
+      getopenaitoken = await Setting.findOne({
+        where: { companyId: 1, key: "openaikeyaudio" }
       });
     }
 
     key_OPENAI_TOKEN = getopenaitoken?.value;
 
     return key_OPENAI_TOKEN;
-
   } catch (error) {
     console.error("Error retrieving settings:", error);
-  return null;
+    return null;
   }
-  
 }
 
 // const openai = new OpenAI({ apiKey: OpenaiKEY });
 
-const TranscribeAudioMessageToText = async (fileName: string, companyId: number): Promise<Response> => {
+const TranscribeAudioMessageToText = async (
+  fileName: string,
+  companyId: number
+): Promise<Response> => {
   const token = await fetchOpenAIToken(companyId);
   const publicFolder = path.resolve(__dirname, "..", "..", "..", "public");
 
   const filePath = `${publicFolder}/company${companyId}/${fileName}`;
-  
+
   if (!fs.existsSync(filePath)) {
     console.error(`Arquivo não encontrado: ${filePath}`);
-    return 'Arquivo não encontrado';
+    return "Arquivo não encontrado";
   }
 
-  try { 
+  try {
     const audioFile = fs.createReadStream(filePath);
     const form = new FormData();
-    form.append('file', audioFile);
-    form.append('model', 'whisper-1');
-    form.append('response_format', 'text');
-    form.append('language', 'pt');
+    form.append("file", audioFile);
+    form.append("model", "whisper-1");
+    form.append("response_format", "text");
+    form.append("language", "pt");
 
-    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', form, {
-      headers: {
-        ...form.getHeaders(),
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await axios.post(
+      "https://api.openai.com/v1/audio/transcriptions",
+      form,
+      {
+        headers: {
+          ...form.getHeaders(),
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
 
     return { transcribedText: response.data };
   } catch (error) {
     console.error(error);
-    return 'Conversão pra texto falhou';
+    return "Conversão pra texto falhou";
   }
 };
 

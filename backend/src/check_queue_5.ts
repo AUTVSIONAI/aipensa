@@ -1,4 +1,3 @@
-
 import { QueryTypes } from "sequelize";
 import sequelize from "./database";
 import Whatsapp from "./models/Whatsapp";
@@ -16,9 +15,10 @@ async function checkQueue5() {
     // Check Whatsapp settings
     const whatsapps = await Whatsapp.findAll();
     for (const w of whatsapps) {
-      console.log(`Whatsapp ${w.id} (${w.name}): timeSendQueue=${w.timeSendQueue}, sendIdQueue=${w.sendIdQueue}`);
+      console.log(
+        `Whatsapp ${w.id} (${w.name}): timeSendQueue=${w.timeSendQueue}, sendIdQueue=${w.sendIdQueue}`
+      );
     }
-
   } catch (error) {
     console.error("Error:", error);
   }

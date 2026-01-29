@@ -64,107 +64,176 @@ const App = () => {
         typography: {
           fontFamily: [
             '"Inter"',
+            '"Poppins"',
             '"Roboto"',
-            '"Segoe UI"',
-            '"Helvetica Neue"',
-            'Arial',
             'sans-serif'
           ].join(','),
-          
-          // Configurações para diferentes elementos
-          h1: {
-            fontSize: '2.125rem',
-            fontWeight: 600,
-            letterSpacing: '-0.01562em'
+          h1: { fontSize: '2.125rem', fontWeight: 700, letterSpacing: '-0.01562em' },
+          h2: { fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.00833em' },
+          h3: { fontSize: '1.25rem', fontWeight: 600, letterSpacing: '0em' },
+          button: { fontWeight: 600, textTransform: 'none', borderRadius: '12px' },
+        },
+        overrides: {
+          MuiCssBaseline: {
+            '@global': {
+              body: {
+                backgroundColor: mode === 'light' ? '#F4F6F8' : '#0a0e17', // Deep Space Dark
+                backgroundImage: mode === 'dark' 
+                  ? 'radial-gradient(circle at 50% 0%, #1e1e2f 0%, #0a0e17 80%)' 
+                  : 'none',
+              },
+              '*': {
+                scrollbarWidth: 'thin',
+                scrollbarColor: mode === 'dark'
+                  ? 'rgba(255,255,255,0.22) rgba(0,0,0,0)'
+                  : 'rgba(17,24,39,0.28) rgba(0,0,0,0)',
+              },
+              '*::-webkit-scrollbar': {
+                width: 8,
+                height: 8,
+              },
+              '*::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '*::-webkit-scrollbar-thumb': {
+                backgroundColor: mode === 'dark'
+                  ? 'rgba(255,255,255,0.18)'
+                  : 'rgba(17,24,39,0.22)',
+                borderRadius: 999,
+                border: '2px solid transparent',
+                backgroundClip: 'content-box',
+              },
+              '*::-webkit-scrollbar-thumb:hover': {
+                backgroundColor: mode === 'dark'
+                  ? 'rgba(255,255,255,0.28)'
+                  : 'rgba(17,24,39,0.32)',
+              },
+            },
           },
-          h2: {
-            fontSize: '1.5rem',
-            fontWeight: 600,
-            letterSpacing: '-0.00833em'
+          MuiPaper: {
+            rounded: {
+              borderRadius: '16px',
+            },
+            elevation1: {
+              boxShadow: mode === 'dark' ? '0 8px 32px 0 rgba(0, 0, 0, 0.37)' : '0 4px 20px 0 rgba(0,0,0,0.05)',
+            },
+            root: {
+              backgroundColor: mode === 'dark' ? 'rgba(30, 30, 47, 0.7)' : '#ffffff',
+              backdropFilter: mode === 'dark' ? 'blur(20px)' : 'none',
+              border: mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+            }
           },
-          h3: {
-            fontSize: '1.25rem',
-            fontWeight: 500,
-            letterSpacing: '0em'
-          },
-          h4: {
-            fontSize: '1.125rem',
-            fontWeight: 500,
-            letterSpacing: '0.00735em'
-          },
-          h5: {
-            fontSize: '1rem',
-            fontWeight: 500,
-            letterSpacing: '0em'
-          },
-          h6: {
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            letterSpacing: '0.0075em'
-          },
-          body1: {
-            fontSize: '1rem',
-            fontWeight: 400,
-            letterSpacing: '0.00938em',
-            lineHeight: 1.5
-          },
-          body2: {
-            fontSize: '0.875rem',
-            fontWeight: 400,
-            letterSpacing: '0.01071em',
-            lineHeight: 1.43
-          },
-          button: {
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            letterSpacing: '0.02857em',
-            textTransform: 'none' // Remove o uppercase padrão dos botões
-          },
-          caption: {
-            fontSize: '0.75rem',
-            fontWeight: 400,
-            letterSpacing: '0.03333em'
-          },
-          overline: {
-            fontSize: '0.625rem',
-            fontWeight: 400,
-            letterSpacing: '0.08333em',
-            textTransform: 'uppercase'
+          MuiButton: {
+            root: {
+              borderRadius: '12px',
+              padding: '10px 24px',
+            },
+            containedPrimary: {
+              background: `linear-gradient(45deg, ${primaryColorLight} 30%, #6a11cb 90%)`,
+              boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+              color: 'white',
+            }
           }
-        },
-        scrollbarStyles: {
-          "&::-webkit-scrollbar": {
-            width: "8px",
-            height: "8px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            boxShadow: "inset 0 0 6px rgba(0, 0, 0, 0.3)",
-            backgroundColor: mode === "light" ? primaryColorLight : primaryColorDark,
-          },
-        },
-        scrollbarStylesSoft: {
-          "&::-webkit-scrollbar": {
-            width: "8px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: mode === "light" ? "#F3F3F3" : "#333333",
-          },
         },
         palette: {
           type: mode,
-          primary: { main: mode === "light" ? primaryColorLight : primaryColorDark },
-          textPrimary: mode === "light" ? primaryColorLight : primaryColorDark,
-          borderPrimary: mode === "light" ? primaryColorLight : primaryColorDark,
+          primary: { main: mode === "light" ? primaryColorLight : "#00f2ff" }, // Neon Blue in Dark
+          secondary: { main: "#bd00ff" }, // Cyber Purple
+          background: {
+            default: mode === "light" ? "#F4F6F8" : "#0a0e17",
+            paper: mode === "light" ? "#ffffff" : "#1e1e2f",
+          },
+          textPrimary: mode === "light" ? "#1a1a1a" : "#ffffff",
+          borderPrimary: mode === "light" ? primaryColorLight : "rgba(255, 255, 255, 0.1)",
           dark: { main: mode === "light" ? "#333333" : "#F3F3F3" },
           light: { main: mode === "light" ? "#F3F3F3" : "#333333" },
-          fontColor: mode === "light" ? primaryColorLight : primaryColorDark,
-          tabHeaderBackground: mode === "light" ? "#EEE" : "#666",
-          optionsBackground: mode === "light" ? "#fafafa" : "#333",
-          fancyBackground: mode === "light" ? "#fafafa" : "#333",
+          tabHeaderBackground: mode === "light" ? "#EEE" : "#1e1e2f", // Match paper
+          optionsBackground: mode === "light" ? "#fafafa" : "#1e1e2f",
+          fancyBackground: mode === "light" ? "#fafafa" : "#0a0e17",
           total: mode === "light" ? "#fff" : "#222",
           messageIcons: mode === "light" ? "grey" : "#F3F3F3",
-          inputBackground: mode === "light" ? "#FFFFFF" : "#333",
-          barraSuperior: mode === "light" ? primaryColorLight : "#666",
+          inputBackground: mode === "light" ? "#FFFFFF" : "#2d2b42",
+          barraSuperior: mode === "light" ? primaryColorLight : "rgba(30, 30, 47, 0.7)", // Glass header
+        },
+        custom: {
+          glass: {
+            card: {
+              background: mode === "light" ? "rgba(255, 255, 255, 0.85)" : "rgba(17, 24, 39, 0.45)",
+              border: mode === "light" ? "1px solid rgba(0,0,0,0.06)" : "1px solid rgba(255,255,255,0.08)",
+              backdropFilter: "blur(16px)",
+              boxShadow: mode === "light" ? "0 6px 18px rgba(0,0,0,0.06)" : "0 12px 32px rgba(0,0,0,0.35)",
+            },
+            chip: {
+              background: mode === "light" ? "rgba(255, 255, 255, 0.7)" : "rgba(17, 24, 39, 0.25)",
+              border: mode === "light" ? "1px solid rgba(0,0,0,0.10)" : "1px solid rgba(255,255,255,0.10)",
+              activeBorder: "1px solid rgba(0, 242, 255, 0.35)",
+              activeBackground: "linear-gradient(90deg, #00f2ff 0%, #bd00ff 100%)",
+              activeShadow: "0 10px 28px rgba(0,0,0,0.18)",
+            },
+          },
+          gradients: {
+            primary: "linear-gradient(90deg, #00f2ff 0%, #bd00ff 100%)",
+          },
+        },
+        scrollbarStyles: {
+          scrollbarWidth: "thin",
+          scrollbarColor:
+            mode === "dark"
+              ? "rgba(255,255,255,0.22) transparent"
+              : "rgba(17,24,39,0.28) transparent",
+          "&::-webkit-scrollbar": { width: 8, height: 8 },
+          "&::-webkit-scrollbar-track": { background: "transparent" },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor:
+              mode === "dark" ? "rgba(255,255,255,0.18)" : "rgba(17,24,39,0.22)",
+            borderRadius: 999,
+            border: "2px solid transparent",
+            backgroundClip: "content-box",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor:
+              mode === "dark" ? "rgba(255,255,255,0.28)" : "rgba(17,24,39,0.32)",
+          },
+        },
+        scrollbarStylesSoft: {
+          scrollbarWidth: "thin",
+          scrollbarColor:
+            mode === "dark"
+              ? "rgba(255,255,255,0.16) transparent"
+              : "rgba(17,24,39,0.18) transparent",
+          "&::-webkit-scrollbar": { width: 6, height: 6 },
+          "&::-webkit-scrollbar-track": { background: "transparent" },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor:
+              mode === "dark" ? "rgba(255,255,255,0.14)" : "rgba(17,24,39,0.16)",
+            borderRadius: 999,
+            border: "2px solid transparent",
+            backgroundClip: "content-box",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor:
+              mode === "dark" ? "rgba(255,255,255,0.22)" : "rgba(17,24,39,0.24)",
+          },
+        },
+        scrollbarStylesSoftBig: {
+          scrollbarWidth: "thin",
+          scrollbarColor:
+            mode === "dark"
+              ? "rgba(255,255,255,0.18) transparent"
+              : "rgba(17,24,39,0.22) transparent",
+          "&::-webkit-scrollbar": { width: 10, height: 10 },
+          "&::-webkit-scrollbar-track": { background: "transparent" },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor:
+              mode === "dark" ? "rgba(255,255,255,0.16)" : "rgba(17,24,39,0.18)",
+            borderRadius: 999,
+            border: "3px solid transparent",
+            backgroundClip: "content-box",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor:
+              mode === "dark" ? "rgba(255,255,255,0.26)" : "rgba(17,24,39,0.28)",
+          },
         },
         mode,
         appLogoLight,

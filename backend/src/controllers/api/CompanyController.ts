@@ -123,7 +123,10 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(company);
 };
 
-export const showEmail = async (req: Request, res: Response): Promise<Response> => {
+export const showEmail = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { email } = req.params;
 
   const company = await ShowEmailCompanyService(email);

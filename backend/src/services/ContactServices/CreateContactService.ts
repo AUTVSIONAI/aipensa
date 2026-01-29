@@ -39,12 +39,10 @@ const CreateContactService = async ({
   remoteJid = "",
   wallets
 }: Request): Promise<Contact> => {
-
   const numberExists = await Contact.findOne({
     where: { number, companyId }
   });
   if (numberExists) {
-
     throw new AppError("ERR_DUPLICATED_CONTACT");
   }
 
@@ -52,7 +50,7 @@ const CreateContactService = async ({
     where: {
       companyId
     }
-  })
+  });
 
   const { acceptAudioMessageContact } = settings;
 
@@ -61,18 +59,21 @@ const CreateContactService = async ({
       name,
       number,
       email,
-      acceptAudioMessage: acceptAudioMessageContact === 'enabled' ? true : false,
+      acceptAudioMessage:
+        acceptAudioMessageContact === "enabled" ? true : false,
       active,
       extraInfo,
       companyId,
       remoteJid
     },
     {
-      include: ["extraInfo",
+      include: [
+        "extraInfo",
         {
           association: "wallets",
           attributes: ["id", "name"]
-        }]
+        }
+      ]
     }
   );
 
@@ -97,7 +98,6 @@ const CreateContactService = async ({
     await ContactWallet.bulkCreate(contactWallets);
   }
   return contact;
-
 };
 
 export default CreateContactService;

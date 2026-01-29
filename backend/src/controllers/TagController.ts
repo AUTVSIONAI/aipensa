@@ -36,11 +36,15 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
-  const { name, color, kanban,
+  const {
+    name,
+    color,
+    kanban,
     timeLane,
     nextLaneId,
     greetingMessageLane,
-    rollbackLaneId } = req.body;
+    rollbackLaneId
+  } = req.body;
   const { companyId } = req.user;
 
   const tag = await CreateService({
@@ -55,11 +59,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   });
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company${companyId}-tag`, {
-      action: "create",
-      tag
-    });
+  io.of(String(companyId)).emit(`company${companyId}-tag`, {
+    action: "create",
+    tag
+  });
 
   return res.status(200).json(tag);
 };
@@ -90,11 +93,10 @@ export const update = async (
   const tag = await UpdateService({ tagData, id: tagId });
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company${companyId}-tag`, {
-      action: "update",
-      tag
-    });
+  io.of(String(companyId)).emit(`company${companyId}-tag`, {
+    action: "update",
+    tag
+  });
 
   return res.status(200).json(tag);
 };
@@ -109,11 +111,10 @@ export const remove = async (
   await DeleteService(tagId);
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company${companyId}-tag`, {
-      action: "delete",
-      tagId
-    });
+  io.of(String(companyId)).emit(`company${companyId}-tag`, {
+    action: "delete",
+    tagId
+  });
 
   return res.status(200).json({ message: "Tag deleted" });
 };
@@ -127,7 +128,10 @@ export const list = async (req: Request, res: Response): Promise<Response> => {
   return res.json(tags);
 };
 
-export const kanban = async (req: Request, res: Response): Promise<Response> => {
+export const kanban = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { companyId } = req.user;
 
   const tags = await KanbanListService({ companyId });
@@ -154,7 +158,7 @@ export const removeContactTag = async (
   const { tagId, contactId } = req.params;
   const { companyId } = req.user;
 
-  console.log(tagId, contactId)
+  console.log(tagId, contactId);
 
   await ContactTag.destroy({
     where: {
@@ -166,11 +170,10 @@ export const removeContactTag = async (
   const tag = await ShowService(tagId);
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company${companyId}-tag`, {
-      action: "update",
-      tag
-    });
+  io.of(String(companyId)).emit(`company${companyId}-tag`, {
+    action: "update",
+    tag
+  });
 
   return res.status(200).json({ message: "Tag deleted" });
 };

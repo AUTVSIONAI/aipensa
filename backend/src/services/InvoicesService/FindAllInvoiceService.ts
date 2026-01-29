@@ -11,7 +11,7 @@ const FindAllPlanService = async (companyId: number): Promise<Invoices[]> => {
     where: {
       companyId
     },
-    order: [["id", "ASC"]],
+    order: [["id", "ASC"]]
   });
   return invoice;
 };

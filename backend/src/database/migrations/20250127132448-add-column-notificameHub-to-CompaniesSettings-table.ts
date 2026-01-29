@@ -2,7 +2,6 @@ import { QueryInterface, DataTypes } from "sequelize";
 // Adicionar a coluna notificameHub na tabela CompaniesSettings
 
 module.exports = {
-
   up: (queryInterface: QueryInterface) => {
     return queryInterface.addColumn("CompaniesSettings", "notificameHub", {
       type: DataTypes.STRING,
@@ -10,6 +9,5 @@ module.exports = {
       onDelete: "SET NULL",
       allowNull: true
     });
-  },
-
-}
+  }
+};

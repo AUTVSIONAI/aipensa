@@ -81,8 +81,10 @@ const HubMessageListener = async (
   medias: Express.Multer.File[]
 ) => {
   const ignoreEvent =
-   ( message?.message.visitor?.name === "" || !message?.message.visitor?.name)
-	 && (message?.message.visitor?.firstName === "" || !message?.message.visitor?.firstName);
+    (message?.message.visitor?.name === "" ||
+      !message?.message.visitor?.name) &&
+    (message?.message.visitor?.firstName === "" ||
+      !message?.message.visitor?.firstName);
   if (ignoreEvent || message.direction === "OUT") {
     return;
   }
@@ -136,9 +138,9 @@ const HubMessageListener = async (
       });
     } else {
       const media = await downloadFiles({
-				content: contents[0] as any,
-				connection: connection,
-			});
+        content: contents[0] as any,
+        connection: connection
+      });
 
       await CreateMessageService({
         contactId: contact.id,
@@ -151,7 +153,6 @@ const HubMessageListener = async (
         originalName: media.originalname
       });
     }
-
   } catch (error: any) {
     console.log(error);
   }

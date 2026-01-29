@@ -4,8 +4,7 @@ module.exports = {
   up: (queryInterface: QueryInterface) => {
     return queryInterface.addColumn("Tickets", "imported", {
       type: DataTypes.DATE,
-      allowNull: true,
-
+      allowNull: true
     });
   },
 

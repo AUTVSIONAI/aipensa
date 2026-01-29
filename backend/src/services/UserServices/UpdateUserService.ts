@@ -67,7 +67,7 @@ const UpdateUserService = async ({
   });
 
   const oldUserEmail = user.email;
-  
+
   const {
     email,
     password,
@@ -131,9 +131,9 @@ const UpdateUserService = async ({
     await company.update({
       email,
       password
-    })
+    });
   }
-  
+
   const serializedUser = {
     id: user.id,
     name: user.name,

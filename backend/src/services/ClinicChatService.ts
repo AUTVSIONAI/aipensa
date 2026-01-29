@@ -1,12 +1,26 @@
-import { getAppointments, createAppointment, getPatients, createPatient } from './imaginasoftApi';
+import {
+  getAppointments,
+  createAppointment,
+  getPatients,
+  createPatient
+} from "./imaginasoftApi";
 
 // Função para verificar disponibilidade
-export const checkAppointmentAvailability = async (medicId: string, date: string, time: string) => {
+export const checkAppointmentAvailability = async (
+  medicId: string,
+  date: string,
+  time: string
+) => {
   const appointments = await getAppointments({ medicId, date, time });
   return { available: appointments.length === 0, appointments };
 };
 
-export const handleAppointmentRequest = async (patientInfo, medicId, date, time) => {
+export const handleAppointmentRequest = async (
+  patientInfo,
+  medicId,
+  date,
+  time
+) => {
   // Primeiro, criar paciente na Imaginasoft (se ainda não existir)
   const patient = await createPatient(patientInfo);
 
@@ -23,6 +37,6 @@ export const handleAppointmentRequest = async (patientInfo, medicId, date, time)
     });
     return { success: true, appointment };
   } else {
-    return { success: false, message: 'Horário indisponível', availability };
+    return { success: false, message: "Horário indisponível", availability };
   }
 };

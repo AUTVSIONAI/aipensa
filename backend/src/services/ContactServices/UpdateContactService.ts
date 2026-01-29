@@ -37,16 +37,41 @@ const UpdateContactService = async ({
   contactId,
   companyId
 }: Request): Promise<Contact> => {
-  const { email, name, number, extraInfo, acceptAudioMessage, active, disableBot, remoteJid, wallets } = contactData;
+  const {
+    email,
+    name,
+    number,
+    extraInfo,
+    acceptAudioMessage,
+    active,
+    disableBot,
+    remoteJid,
+    wallets
+  } = contactData;
 
   const contact = await Contact.findOne({
     where: { id: contactId },
-    attributes: ["id", "name", "number", "channel", "email", "companyId", "acceptAudioMessage", "active", "profilePicUrl", "remoteJid", "urlPicture"],
-    include: ["extraInfo", "tags",
+    attributes: [
+      "id",
+      "name",
+      "number",
+      "channel",
+      "email",
+      "companyId",
+      "acceptAudioMessage",
+      "active",
+      "profilePicUrl",
+      "remoteJid",
+      "urlPicture"
+    ],
+    include: [
+      "extraInfo",
+      "tags",
       {
         association: "wallets",
         attributes: ["id", "name"]
-      }]
+      }
+    ]
   });
 
   if (contact?.companyId !== companyId) {
@@ -107,12 +132,27 @@ const UpdateContactService = async ({
   });
 
   await contact.reload({
-    attributes: ["id", "name", "number", "channel", "email", "companyId", "acceptAudioMessage", "active", "profilePicUrl", "remoteJid", "urlPicture"],
-    include: ["extraInfo", "tags",
+    attributes: [
+      "id",
+      "name",
+      "number",
+      "channel",
+      "email",
+      "companyId",
+      "acceptAudioMessage",
+      "active",
+      "profilePicUrl",
+      "remoteJid",
+      "urlPicture"
+    ],
+    include: [
+      "extraInfo",
+      "tags",
       {
         association: "wallets",
         attributes: ["id", "name"]
-      }]
+      }
+    ]
   });
 
   return contact;

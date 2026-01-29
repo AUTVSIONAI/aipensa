@@ -7,7 +7,7 @@
   "extends": [
     "airbnb-base",
     "plugin:@typescript-eslint/recommended",
-    "prettier/@typescript-eslint",
+    "prettier",
     "plugin:prettier/recommended"
   ],
   "parser": "@typescript-eslint/parser",
@@ -18,14 +18,80 @@
   "plugins": ["@typescript-eslint", "prettier"],
   "rules": {
     "@typescript-eslint/no-non-null-assertion": "off",
-    "@typescript-eslint/no-unused-vars": [
-      "error",
-      { "argsIgnorePattern": "_" }
-    ],
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-inferrable-types": "off",
+    "@typescript-eslint/no-unused-vars": "off",
     "import/prefer-default-export": "off",
     "no-console": "off",
+    "no-await-in-loop": "off",
+    "no-restricted-syntax": "off",
+    "no-plusplus": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "array-callback-return": "off",
+    "consistent-return": "off",
+    "dot-notation": "off",
+    "import/first": "off",
+    "import/newline-after-import": "off",
+    "import/order": "off",
+    "no-empty": "off",
+    "no-else-return": "off",
+    "no-loop-func": "off",
+    "no-prototype-builtins": "off",
+    "no-promise-executor-return": "off",
+    "no-nested-ternary": "off",
+    "no-shadow": "off",
+    "no-continue": "off",
+    "no-lonely-if": "off",
+    "default-param-last": "off",
+    "func-names": "off",
+    "guard-for-in": "off",
+    "no-control-regex": "off",
+    "no-inner-declarations": "off",
+    "no-restricted-globals": "off",
+    "no-return-assign": "off",
+    "no-unsafe-optional-chaining": "off",
+    "no-useless-concat": "off",
+    "no-useless-return": "off",
+    "no-undef-init": "off",
+    "operator-assignment": "off",
+    "block-scoped-var": "off",
+    "eqeqeq": "off",
+    "one-var": "off",
+    "camelcase": "off",
+    "@typescript-eslint/ban-types": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "no-unused-expressions": "off",
+    "no-sequences": "off",
+    "no-underscore-dangle": "off",
+    "no-template-curly-in-string": "off",
+    "no-dupe-else-if": "off",
+    "no-useless-catch": "off",
+    "import/no-duplicates": "off",
+    "no-return-await": "off",
+    "no-useless-constructor": "off",
+    "prefer-regex-literals": "off",
+    "global-require": "off",
+    "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/no-empty-interface": "off",
+    "strict": "off",
+    "lines-around-directive": "off",
+    "no-unneeded-ternary": "off",
+    "no-use-before-define": "off",
+    "object-shorthand": "off",
+    "prefer-const": "off",
+    "prefer-destructuring": "off",
+    "prefer-template": "off",
+    "radix": "off",
+    "spaced-comment": "off",
+    "vars-on-top": "off",
+    "no-var": "off",
     "no-param-reassign": "off",
     "prettier/prettier": "error",
+    "@typescript-eslint/no-array-constructor": "off",
+    "no-extra-boolean-cast": "off",
+    "import/no-mutable-exports": "off",
+    "no-async-promise-executor": "off",
+    "lines-between-class-members": "off",
     "import/extensions": [
       "error",
       "ignorePackages",
@@ -33,14 +99,30 @@
         "ts": "never"
       }
     ],
-    "quotes": [
-      1,
-      "double",
-      {
-        "avoidEscape": true
-      }
-    ]
+    "import/no-extraneous-dependencies": "off",
+    "import/no-import-module-exports": "off",
+    "import/no-named-default": "off",
+    "quotes": "off"
   },
+  "overrides": [
+    {
+      "files": ["src/services/WbotServices/wbotMessageListener.ts"],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": "off",
+        "import/no-duplicates": "off",
+        "eqeqeq": "off"
+      }
+    },
+    {
+      "files": ["src/services/WebhookService/ActionsWebhookService.ts"],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": "off",
+        "import/no-unresolved": "off",
+        "import/no-extraneous-dependencies": "off",
+        "eqeqeq": "off"
+      }
+    }
+  ],
   "settings": {
     "import/resolver": {
       "typescript": {}

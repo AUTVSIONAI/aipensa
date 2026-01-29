@@ -24,51 +24,83 @@ const maxTicketsManagerWidth = 700;
 const useStyles = makeStyles((theme) => ({
 	chatContainer: {
 		flex: 1,
-		padding: "2px",
-		height: `calc(100% - 48px)`,
+		padding: theme.spacing(1),
+		height: "100%",
+		minHeight: 0,
 		overflowY: "hidden",
+		background:
+			theme.palette.type === "dark"
+				? "radial-gradient(1200px 600px at 20% 10%, rgba(0, 242, 255, 0.15) 0%, rgba(0,0,0,0) 55%), radial-gradient(900px 500px at 80% 30%, rgba(189, 0, 255, 0.12) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(17, 24, 39, 0.75) 0%, rgba(17, 24, 39, 0.55) 100%)"
+				: "radial-gradient(1200px 600px at 20% 10%, rgba(37, 117, 252, 0.10) 0%, rgba(255,255,255,0) 55%), radial-gradient(900px 500px at 80% 30%, rgba(106, 17, 203, 0.10) 0%, rgba(255,255,255,0) 60%), linear-gradient(180deg, rgba(244, 246, 248, 1) 0%, rgba(255,255,255,1) 100%)",
 	},
 	chatPapper: {
 		display: "flex",
 		height: "100%",
+		borderRadius: 20,
+		overflow: "hidden",
+		boxShadow:
+			theme.palette.type === "dark"
+				? "0 18px 60px rgba(0, 0, 0, 0.55)"
+				: "0 12px 40px rgba(0,0,0,0.12)",
+		background:
+			theme.palette.type === "dark"
+				? "rgba(17, 24, 39, 0.55)"
+				: "rgba(255, 255, 255, 0.85)",
+		backdropFilter: "blur(18px)",
+		border:
+			theme.palette.type === "dark"
+				? "1px solid rgba(255, 255, 255, 0.08)"
+				: "1px solid rgba(0, 0, 0, 0.06)",
 	},
 	contactsWrapper: {
 		display: "flex",
 		height: "100%",
 		flexDirection: "column",
 		overflowY: "hidden",
+		minHeight: 0,
 		position: "relative",
+		borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+		background: "transparent",
 	},
 	messagesWrapper: {
 		display: "flex",
 		height: "100%",
 		flexDirection: "column",
 		flexGrow: 1,
+		minHeight: 0,
+		background: "transparent", // Transparent to show global background
 	},
 	welcomeMsg: {
-		background: theme.palette.tabHeaderBackground,
+		background: "transparent",
 		display: "flex",
 		justifyContent: "space-evenly",
 		alignItems: "center",
 		height: "100%",
 		textAlign: "center",
+		border: "none",
 	},
 	dragger: {
-		width: "5px",
+		width: "4px",
 		cursor: "ew-resize",
 		padding: "4px 0 0",
-		borderTop: "1px solid #ddd",
+		borderTop: "1px solid rgba(255,255,255,0.08)",
 		position: "absolute",
 		top: 0,
 		right: 0,
 		bottom: 0,
 		zIndex: 100,
-		backgroundColor: "#f4f7f9",
-		userSelect: "none", // Evita a seleção de texto no elemento de redimensionamento
+		backgroundColor: "transparent",
+		transition: "background 0.3s",
+		"&:hover": {
+			backgroundColor: theme.palette.primary.main,
+			boxShadow: `0 0 10px ${theme.palette.primary.main}`,
+		},
+		userSelect: "none",
 	},
 	logo: {
 		logo: theme.logo,
-		content: "url(" + (theme.mode === "light" ? theme.calculatedLogoLight() : theme.calculatedLogoDark()) + ")"
+		content: "url(" + (theme.mode === "light" ? theme.calculatedLogoLight() : theme.calculatedLogoDark()) + ")",
+		filter: theme.palette.type === 'dark' ? "drop-shadow(0 0 16px rgba(0, 242, 255, 0.35))" : "none",
 	},
 }));
 

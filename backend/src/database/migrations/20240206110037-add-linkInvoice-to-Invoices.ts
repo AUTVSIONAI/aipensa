@@ -6,10 +6,10 @@ module.exports = {
       type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: ""
-    })
+    });
   },
 
   down: (queryInterface: QueryInterface) => {
-    return queryInterface.removeColumn("Invoices", "linkInvoice")
+    return queryInterface.removeColumn("Invoices", "linkInvoice");
   }
 };

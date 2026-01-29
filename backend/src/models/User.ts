@@ -55,14 +55,14 @@ class User extends Model<User> {
   @Default(null)
   @Column
   profileImage: string;
-  
+
   @ForeignKey(() => Whatsapp)
   @Column
   whatsappId: number;
 
   @BelongsTo(() => Whatsapp)
   whatsapp: Whatsapp;
-  
+
   @Column
   super: boolean;
 
@@ -178,7 +178,10 @@ class User extends Model<User> {
   @BeforeDestroy
   static async updateChatbotsUsersReferences(user: User) {
     // Atualizar os registros na tabela Chatbots onde optQueueId é igual ao ID da fila que será excluída
-    await Chatbot.update({ optUserId: null }, { where: { optUserId: user.id } });
+    await Chatbot.update(
+      { optUserId: null },
+      { where: { optUserId: user.id } }
+    );
   }
 }
 

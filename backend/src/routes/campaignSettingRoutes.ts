@@ -14,5 +14,4 @@ routes.get("/campaign-settings", isAuth, CampaignSettingController.index);
 routes.post("/campaign-settings", isAuth, CampaignSettingController.store);
 // routes.put("/campaign-settings/:id", isAuth, CampaignSettingController.update);
 
-
 export default routes;

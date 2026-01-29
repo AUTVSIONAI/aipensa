@@ -26,15 +26,27 @@ apiCompanyRoutes.get("/companies", isAuthCompany, CompanyController.index);
 
 apiCompanyRoutes.get("/companies/:id", isAuthCompany, CompanyController.show);
 
-apiCompanyRoutes.get("/companiesEmail/:email", isAuthCompany, CompanyController.showEmail);
+apiCompanyRoutes.get(
+  "/companiesEmail/:email",
+  isAuthCompany,
+  CompanyController.showEmail
+);
 
 apiCompanyRoutes.post("/companies", isAuthCompany, CompanyController.store);
 
 apiCompanyRoutes.put("/companies/:id", isAuthCompany, CompanyController.update);
 
-apiCompanyRoutes.put("/companies/:id/schedules", isAuthCompany, CompanyController.updateSchedules);
+apiCompanyRoutes.put(
+  "/companies/:id/schedules",
+  isAuthCompany,
+  CompanyController.updateSchedules
+);
 
-apiCompanyRoutes.delete("/companies/:id", isAuthCompany, CompanyController.remove);
+apiCompanyRoutes.delete(
+  "/companies/:id",
+  isAuthCompany,
+  CompanyController.remove
+);
 
 // HELP
 apiCompanyRoutes.get("/helps", isAuthCompany, HelpController.index);
@@ -47,8 +59,10 @@ apiCompanyRoutes.put("/helps/:id", isAuthCompany, HelpController.update);
 
 apiCompanyRoutes.delete("/helps/:id", isAuthCompany, HelpController.remove);
 
-+// PARTNER
-apiCompanyRoutes.get("/partners", isAuthCompany, PartnerController.index);
++(
+  // PARTNER
+  apiCompanyRoutes.get("/partners", isAuthCompany, PartnerController.index)
+);
 
 apiCompanyRoutes.get("/partners/:id", isAuthCompany, PartnerController.show);
 
@@ -56,22 +70,32 @@ apiCompanyRoutes.post("/partners", isAuthCompany, PartnerController.store);
 
 apiCompanyRoutes.put("/partners/:id", isAuthCompany, PartnerController.update);
 
-apiCompanyRoutes.delete("/partners/:id", isAuthCompany, PartnerController.remove);
-
+apiCompanyRoutes.delete(
+  "/partners/:id",
+  isAuthCompany,
+  PartnerController.remove
+);
 
 // INVOICES
 apiCompanyRoutes.get("/invoices", isAuthCompany, InvoicesController.index);
 
 apiCompanyRoutes.get("/invoices/:id", isAuthCompany, InvoicesController.show);
 
-apiCompanyRoutes.get("/invoicesCompany/:companyId", isAuthCompany, InvoicesController.list);
+apiCompanyRoutes.get(
+  "/invoicesCompany/:companyId",
+  isAuthCompany,
+  InvoicesController.list
+);
 
 apiCompanyRoutes.post("/invoices", isAuthCompany, InvoicesController.store);
 
 apiCompanyRoutes.put("/invoices/:id", isAuthCompany, InvoicesController.update);
 
-apiCompanyRoutes.delete("/invoices/:id", isAuthCompany, InvoicesController.remove);
-
+apiCompanyRoutes.delete(
+  "/invoices/:id",
+  isAuthCompany,
+  InvoicesController.remove
+);
 
 // COMPANY
 // apiCompanyRoutes.get("/users", isAuthCompany, UserController.index);

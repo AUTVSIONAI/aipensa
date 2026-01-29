@@ -23,7 +23,6 @@ export interface Params {
   onlyRated: string;
 }
 
-
 export default async function ListTicketsServiceReport(
   companyId: string | number,
   params: Params,
@@ -34,9 +33,9 @@ export default async function ListTicketsServiceReport(
 
   const onlyRated = params.onlyRated === "true" ? true : false;
   let query = "";
-  console.log(params)
+  console.log(params);
   if (onlyRated) {
-   query = `
+    query = `
 
   select 
 	  t.id,
@@ -153,14 +152,13 @@ export default async function ListTicketsServiceReport(
 
   if (params.contactId !== undefined && params.contactId !== "") {
     where += ` and t."contactId" in (${params.contactId})`;
-  } 
+  }
 
   if (params.onlyRated === "true") {
     query += ` and coalesce(ur.rate, 0) > 0`;
   }
-  
-  const finalQuery = query.replace("-- filterPeriod", where);
 
+  const finalQuery = query.replace("-- filterPeriod", where);
 
   const totalTicketsQuery = `
     SELECT COUNT(*) as total FROM "Tickets" t

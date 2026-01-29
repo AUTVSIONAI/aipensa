@@ -27,7 +27,6 @@ import {
     Toolbar,
     CircularProgress,
     Fade,
-    useMediaQuery,
     useTheme,
     Drawer,
     List,
@@ -485,7 +484,7 @@ const SignupFormRenderer = (props) => {
         } else if (!selectedPlan && values.planId) {
             setFieldValue('planId', '');
         }
-    }, [selectedPlan]);
+    }, [selectedPlan, setFieldValue, values.planId]);
 
     const isSubmitDisabled = !agreeToTerms || isSubmitting || !selectedPlan || !values.planId;
 
@@ -767,7 +766,6 @@ const SignupFormRenderer = (props) => {
 
 const SignUp = () => {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const classes = useStyles();
     const history = useHistory();
     
@@ -820,7 +818,7 @@ const SignUp = () => {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [getPlanList]);
 
     const toggleShowPassword = () => {
         setShowPassword(prevShowPassword => !prevShowPassword);

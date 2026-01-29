@@ -12,5 +12,4 @@ invoiceRoutes.put("/invoices/:id", isAuth, InvoicesController.update);
 
 //external
 
-
 export default invoiceRoutes;

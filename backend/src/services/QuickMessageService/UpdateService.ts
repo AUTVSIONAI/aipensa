@@ -9,7 +9,6 @@ interface Data {
   geral: boolean;
   mediaPath?: string | null;
   visao: boolean;
-
 }
 
 const UpdateService = async (data: Data): Promise<QuickMessage> => {

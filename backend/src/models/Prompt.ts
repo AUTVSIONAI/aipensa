@@ -56,11 +56,11 @@ class Prompt extends Model<Prompt> {
 
   @AllowNull(true)
   @Column
-  voiceKey:string;
+  voiceKey: string;
 
   @AllowNull(true)
   @Column
-  voiceRegion:string;
+  voiceRegion: string;
 
   @AllowNull(true)
   @Column({ defaultValue: "openai" })

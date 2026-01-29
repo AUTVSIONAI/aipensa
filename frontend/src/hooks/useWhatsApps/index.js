@@ -64,6 +64,7 @@ const useWhatsApps = () => {
 
 
   useEffect(() => {
+    let isMounted = true;
     if (authLoading) {
       return;
     }
@@ -77,13 +78,18 @@ const useWhatsApps = () => {
     const fetchSession = async () => {
       try {
         const { data } = await api.get("/whatsapp/?session=0");
+        if (!isMounted) return;
         dispatch({ type: "LOAD_WHATSAPPS", payload: data });
         setLoading(false);
       } catch (_) {
+        if (!isMounted) return;
         setLoading(false);
       }
     };
     fetchSession();
+    return () => {
+      isMounted = false;
+    };
   }, [isAuth, authLoading]);
 
   useEffect(() => {

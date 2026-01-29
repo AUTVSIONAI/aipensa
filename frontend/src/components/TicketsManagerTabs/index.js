@@ -29,6 +29,8 @@ import {
   Add as AddIcon,
   TextRotateUp,
   TextRotationDown,
+  ViewAgenda,
+  ViewStream,
 } from "@material-ui/icons";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
@@ -64,16 +66,17 @@ const useStyles = makeStyles((theme) => ({
     overflow: "hidden",
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
+    background: "transparent",
+    border: "none",
+    boxShadow: "none",
   },
 
   tabsHeader: {
     minWidth: "auto",
     width: "auto",
-    borderRadius: 0,
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    marginLeft: theme.spacing(0.5),
-    marginRight: theme.spacing(0.5),
+    borderRadius: 14,
+    margin: theme.spacing(1, 1, 0.5, 1),
+    overflow: "hidden",
   },
 
   settingsIcon: {
@@ -86,13 +89,13 @@ const useStyles = makeStyles((theme) => ({
     minWidth: "auto",
     width: "auto",
     padding: theme.spacing(0.5, 1),
-    borderRadius: 0,
+    borderRadius: 12,
     transition: "0.3s",
-    borderColor: "#aaa",
+    borderColor: theme.palette.type === "dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
     borderWidth: "1px",
     borderStyle: "solid",
-    marginRight: theme.spacing(0.5),
-    marginLeft: theme.spacing(0.5),
+    marginRight: theme.spacing(0.75),
+    marginLeft: theme.spacing(0.75),
 
     [theme.breakpoints.down("lg")]: {
       fontSize: "0.9rem",
@@ -109,7 +112,7 @@ const useStyles = makeStyles((theme) => ({
     },
 
     "&:hover": {
-      backgroundColor: "rgba(0, 0, 0, 0.1)",
+      backgroundColor: theme.palette.type === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
     },
   },
 
@@ -120,54 +123,52 @@ const useStyles = makeStyles((theme) => ({
   },
 
   tabIndicator: {
-    height: 6,
+    height: 3,
     bottom: 0,
-    borderRadius: 0,
+    borderRadius: 3,
+    background: "linear-gradient(90deg, #00f2ff 0%, #bd00ff 100%)",
   },
   tabsBadge: {
-    top: "105%",
-    right: "55%",
-    transform: "translate(45%, 0)",
+    top: "110%",
+    right: "50%",
+    transform: "translate(50%, 0)",
     whiteSpace: "nowrap",
-    borderRadius: 0,
-    padding: "0 8px",
-    backgroundColor: "#FFA500",
+    borderRadius: 999,
+    padding: "2px 10px",
+    background: "linear-gradient(90deg, #2575fc 0%, #6a11cb 100%)",
     color: "white",
+    boxShadow: theme.palette.type === "dark" ? "0 10px 24px rgba(0,0,0,0.35)" : "0 10px 22px rgba(0,0,0,0.10)",
   },
   ticketOptionsBox: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f5f5f5", // Alterando a cor de fundo para cinza
-    borderRadius: 0,
-    borderColor: "#ffffff",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255,255,255,0.70)",
+    borderRadius: 16,
+    borderColor: theme.palette.type === "dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)",
     borderWidth: "1px",
     borderStyle: "solid",
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(1),
-    marginLeft: theme.spacing(1),
-    marginRight: theme.spacing(1),
-    padding: theme.spacing(0.5),
+    margin: theme.spacing(1),
+    padding: theme.spacing(1),
+    backdropFilter: "blur(18px)",
   },
 
   serachInputWrapper: {
     flex: 1,
-    height: 40,
-    background: theme.palette.total,
+    minHeight: 48,
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.35)" : "rgba(255,255,255,0.70)",
     display: "flex",
-    borderRadius: 0,
-    padding: 4,
-    borderColor: "#aaa",
+    borderRadius: 16,
+    padding: theme.spacing(0.5, 1),
+    borderColor: theme.palette.type === "dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)",
     borderWidth: "1px",
     borderStyle: "solid",
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    marginLeft: theme.spacing(0.5),
-    marginRight: theme.spacing(0.5),
+    margin: theme.spacing(1, 1, 0.5, 1),
+    backdropFilter: "blur(18px)",
   },
 
   searchIcon: {
-    color: "#FFA500",
+    color: theme.palette.type === "dark" ? "rgba(255,255,255,0.75)" : "rgba(0,0,0,0.55)",
     marginLeft: 6,
     marginRight: 6,
     alignSelf: "center",
@@ -176,7 +177,11 @@ const useStyles = makeStyles((theme) => ({
   searchInput: {
     flex: 1,
     border: "none",
-    borderRadius: 0,
+    borderRadius: 12,
+  },
+  filterIcon: {
+    borderRadius: 12,
+    padding: 10,
   },
 
   badge: {
@@ -224,12 +229,12 @@ const useStyles = makeStyles((theme) => ({
   },
 
   dialog: {
-    borderRadius: "12px",
-    backgroundColor: "#f5f5f5",
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)",
+    borderRadius: 18,
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.92)" : "rgba(255,255,255,0.98)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 60px rgba(0,0,0,0.65)" : "0 18px 60px rgba(0,0,0,0.18)",
   },
   dialogTitle: {
-    backgroundColor: "#3f51b5",
+    background: "linear-gradient(90deg, #00f2ff 0%, #bd00ff 100%)",
     color: "white",
     textAlign: "center",
     padding: theme.spacing(2),
@@ -272,19 +277,21 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   button: {
-    height: 40, // Aumentando a altura do botão
-    width: 40, // Aumentando a largura do botão
-    border: "1px solid #1e3a8a", // Alterando a cor da borda para azul escuro
-    borderRadius: 0,
+    height: 42,
+    width: 42,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(0,0,0,0.10)",
+    borderRadius: 14,
     marginRight: 8,
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.30)" : "rgba(255,255,255,0.70)",
+    backdropFilter: "blur(16px)",
     "&:hover": {
-      borderColor: "#1e3a8a", // Mantendo a cor da borda azul escuro ao passar o mouse
+      borderColor: theme.palette.primary.main,
     },
   },
   icon: {
-    color: "#1e3a8a", // Alterando a cor dos ícones para azul escuro
+    color: theme.palette.type === "dark" ? "rgba(255,255,255,0.85)" : "rgba(17, 24, 39, 0.85)",
     "&:hover": {
-      color: "#1e3a8a", // Mantendo a cor azul escuro ao passar o mouse
+      color: theme.palette.type === "dark" ? "white" : "rgba(17, 24, 39, 1)",
     },
   },
 }));
@@ -332,6 +339,19 @@ const TicketsManagerTabs = () => {
   const [isHoveredSort, setIsHoveredSort] = useState(false);
 
   const [isFilterActive, setIsFilterActive] = useState(false);
+  const [compactList, setCompactList] = useState(() => {
+    try {
+      return localStorage.getItem("zpTicketsListDensity") === "compact";
+    } catch (e) {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("zpTicketsListDensity", compactList ? "compact" : "comfortable");
+    } catch (e) {}
+  }, [compactList]);
 
   useEffect(() => {
     setSelectedQueuesMessage(selectedQueueIds);
@@ -849,6 +869,21 @@ const TicketsManagerTabs = () => {
                 </ToggleButton>
               </Badge>
             )}
+
+            <Tooltip title={compactList ? "Modo compacto" : "Modo confortável"} placement="top">
+              <ToggleButton
+                className={classes.button}
+                value="density"
+                selected={compactList}
+                onChange={() => setCompactList((prev) => !prev)}
+              >
+                {compactList ? (
+                  <ViewAgenda className={classes.icon} />
+                ) : (
+                  <ViewStream className={classes.icon} />
+                )}
+              </ToggleButton>
+            </Tooltip>
           </Grid>
           <Grid item>
             <TicketsQueueSelect
@@ -984,6 +1019,7 @@ const TicketsManagerTabs = () => {
             updateCount={(val) => setOpenCount(val)}
             style={applyPanelStyle("open")}
             setTabOpen={setTabOpen}
+            compact={compactList}
           />
           <TicketsList
             status="pending"
@@ -993,6 +1029,7 @@ const TicketsManagerTabs = () => {
             updateCount={(val) => setPendingCount(val)}
             style={applyPanelStyle("pending")}
             setTabOpen={setTabOpen}
+            compact={compactList}
           />
           {user.allowGroup && (
             <TicketsList
@@ -1003,6 +1040,7 @@ const TicketsManagerTabs = () => {
               updateCount={(val) => setGroupingCount(val)}
               style={applyPanelStyle("group")}
               setTabOpen={setTabOpen}
+              compact={compactList}
             />
           )}
         </Paper>
@@ -1013,6 +1051,7 @@ const TicketsManagerTabs = () => {
           showAll={showAllTickets}
           selectedQueueIds={selectedQueueIds}
           setTabOpen={setTabOpen}
+          compact={compactList}
         />
       </TabPanel>
       <TabPanel value={tab} name="search" className={classes.ticketsWrapper}>
@@ -1029,6 +1068,7 @@ const TicketsManagerTabs = () => {
               forceSearch={forceSearch}
               searchOnMessages={searchOnMessages}
               status="search"
+              compact={compactList}
             />
           </>
         )}
@@ -1044,6 +1084,7 @@ const TicketsManagerTabs = () => {
             forceSearch={forceSearch}
             searchOnMessages={searchOnMessages}
             status="search"
+            compact={compactList}
           />
         )}
       </TabPanel>

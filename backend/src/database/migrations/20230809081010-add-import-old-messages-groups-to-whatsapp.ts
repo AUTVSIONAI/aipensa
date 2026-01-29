@@ -4,8 +4,7 @@ module.exports = {
   up: (queryInterface: QueryInterface) => {
     return queryInterface.addColumn("Whatsapps", "importOldMessagesGroups", {
       type: DataTypes.BOOLEAN,
-      allowNull: true,
-
+      allowNull: true
     });
   },
 

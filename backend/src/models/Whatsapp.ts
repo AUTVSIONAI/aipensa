@@ -61,7 +61,7 @@ class Whatsapp extends Model<Whatsapp> {
   greetingMessage: string;
 
   @Column
-  greetingMediaAttachment: string
+  greetingMediaAttachment: string;
 
   @Default("")
   @Column(DataType.TEXT)
@@ -176,7 +176,7 @@ class Whatsapp extends Model<Whatsapp> {
   @Default("disabled")
   @Column
   groupAsTicket: string;
-  
+
   @Column
   importOldMessages: Date;
 
@@ -185,12 +185,12 @@ class Whatsapp extends Model<Whatsapp> {
 
   @Column
   statusImportMessages: string;
-  
-  @Column
-  closedTicketsPostImported:boolean;
 
   @Column
-  importOldMessagesGroups:boolean;
+  closedTicketsPostImported: boolean;
+
+  @Column
+  importOldMessagesGroups: boolean;
 
   @Column
   timeCreateNewTicket: number;
@@ -239,8 +239,8 @@ class Whatsapp extends Model<Whatsapp> {
   flowIdWelcome: number;
 
   @BelongsTo(() => FlowBuilderModel)
-  flowBuilder: FlowBuilderModel
-  
+  flowBuilder: FlowBuilderModel;
+
   // Adicionando a coluna wavoip
   @Column(DataType.TEXT)
   wavoip: string;

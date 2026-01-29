@@ -37,15 +37,18 @@ const FindOrCreateTicketService = async (
   // try {
   // let isCreated = false;
 
-  let openAsLGPD = false
-  if (settings.enableLGPD) { //adicionar lgpdMessage
+  let openAsLGPD = false;
+  if (settings.enableLGPD) {
+    //adicionar lgpdMessage
 
-    openAsLGPD = !isCampaign &&
+    openAsLGPD =
+      !isCampaign &&
       !isTransfered &&
       settings.enableLGPD === "enabled" &&
       settings.lgpdMessage !== "" &&
       (settings.lgpdConsent === "enabled" ||
-        (settings.lgpdConsent === "disabled" && isNil(contact?.lgpdAcceptedAt)))
+        (settings.lgpdConsent === "disabled" &&
+          isNil(contact?.lgpdAcceptedAt)));
   }
 
   const io = getIO();
@@ -68,8 +71,8 @@ const FindOrCreateTicketService = async (
     if (isCampaign) {
       await ticket.update({
         userId: userId !== ticket.userId ? ticket.userId : userId,
-        queueId: queueId !== ticket.queueId ? ticket.queueId : queueId,
-      })
+        queueId: queueId !== ticket.queueId ? ticket.queueId : queueId
+      });
     } else {
       await ticket.update({ unreadMessages, isBot: false });
     }
@@ -79,23 +82,36 @@ const FindOrCreateTicketService = async (
 
     if (!isCampaign && !isForward) {
       // @ts-ignore: Unreachable code error
-      if ((Number(ticket?.userId) !== Number(userId) && userId !== 0 && userId !== "" && userId !== "0" && !isNil(userId) && !ticket.isGroup)
-        // @ts-ignore: Unreachable code error 
-        || (queueId !== 0 && Number(ticket?.queueId) !== Number(queueId) && queueId !== "" && queueId !== "0" && !isNil(queueId))) {
-        throw new AppError(`Ticket em outro atendimento. ${"Atendente: " + ticket?.user?.name} - ${"Fila: " + ticket?.queue?.name}`);
+      if (
+        (Number(ticket?.userId) !== Number(userId) &&
+          userId !== 0 &&
+          userId !== "" &&
+          userId !== "0" &&
+          !isNil(userId) &&
+          !ticket.isGroup) ||
+        // @ts-ignore: Unreachable code error
+        (queueId !== 0 &&
+          Number(ticket?.queueId) !== Number(queueId) &&
+          queueId !== "" &&
+          queueId !== "0" &&
+          !isNil(queueId))
+      ) {
+        throw new AppError(
+          `Ticket em outro atendimento. ${
+            "Atendente: " + ticket?.user?.name
+          } - ${"Fila: " + ticket?.queue?.name}`
+        );
       }
     }
 
     // isCreated = true;
 
-    return ticket
-
+    return ticket;
   }
 
   const timeCreateNewTicket = whatsapp.timeCreateNewTicket;
 
   if (!ticket && timeCreateNewTicket !== 0) {
-
     // @ts-ignore: Unreachable code error
     if (timeCreateNewTicket !== 0 && timeCreateNewTicket !== "0") {
       ticket = await Ticket.findOne({
@@ -120,22 +136,24 @@ const FindOrCreateTicketService = async (
       await ticket.update({
         status: "pending",
         unreadMessages,
-        companyId,
+        companyId
         // queueId: timeCreateNewTicket === 0 ? null : ticket.queueId
       });
     }
   }
 
   if (!ticket) {
-
     const ticketData: any = {
       contactId: groupContact ? groupContact.id : contact.id,
-      status: (!isImported && !isNil(settings.enableLGPD)
-        && openAsLGPD && !groupContact) ? //verifica se lgpd está habilitada e não é grupo e se tem a mensagem e link da política
-        "lgpd" :  //abre como LGPD caso habilitado parâmetro
-        (whatsapp.groupAsTicket === "enabled" || !groupContact) ? // se lgpd estiver desabilitado, verifica se é para tratar ticket como grupo ou se é contato normal
-          "pending" : //caso  é para tratar grupo como ticket ou não é grupo, abre como pendente
-          "group", // se não é para tratar grupo como ticket, vai direto para grupos
+      status:
+        !isImported &&
+        !isNil(settings.enableLGPD) &&
+        openAsLGPD &&
+        !groupContact //verifica se lgpd está habilitada e não é grupo e se tem a mensagem e link da política
+          ? "lgpd" //abre como LGPD caso habilitado parâmetro
+          : whatsapp.groupAsTicket === "enabled" || !groupContact // se lgpd estiver desabilitado, verifica se é para tratar ticket como grupo ou se é contato normal
+          ? "pending" //caso  é para tratar grupo como ticket ou não é grupo, abre como pendente
+          : "group", // se não é para tratar grupo como ticket, vai direto para grupos
       isGroup: !!groupContact,
       unreadMessages,
       whatsappId: whatsapp.id,
@@ -150,19 +168,20 @@ const FindOrCreateTicketService = async (
       const wallet: any = contact;
       const wallets = await wallet.getWallets();
       if (wallets && wallets[0]?.id) {
-        ticketData.status = (!isImported && !isNil(settings.enableLGPD)
-          && openAsLGPD && !groupContact) ? //verifica se lgpd está habilitada e não é grupo e se tem a mensagem e link da política
-          "lgpd" :  //abre como LGPD caso habilitado parâmetro
-          (whatsapp.groupAsTicket === "enabled" || !groupContact) ? // se lgpd estiver desabilitado, verifica se é para tratar ticket como grupo ou se é contato normal
-            "open" : //caso  é para tratar grupo como ticket ou não é grupo, abre como pendente
-            "group", // se não é para tratar grupo como ticket, vai direto para grupos
-          ticketData.userId = wallets[0].id;
+        (ticketData.status =
+          !isImported &&
+          !isNil(settings.enableLGPD) &&
+          openAsLGPD &&
+          !groupContact //verifica se lgpd está habilitada e não é grupo e se tem a mensagem e link da política
+            ? "lgpd" //abre como LGPD caso habilitado parâmetro
+            : whatsapp.groupAsTicket === "enabled" || !groupContact // se lgpd estiver desabilitado, verifica se é para tratar ticket como grupo ou se é contato normal
+            ? "open" //caso  é para tratar grupo como ticket ou não é grupo, abre como pendente
+            : "group"), // se não é para tratar grupo como ticket, vai direto para grupos
+          (ticketData.userId = wallets[0].id);
       }
     }
 
-    ticket = await Ticket.create(
-      ticketData
-    );
+    ticket = await Ticket.create(ticketData);
 
     // await FindOrCreateATicketTrakingService({
     //   ticketId: ticket.id,
@@ -171,7 +190,6 @@ const FindOrCreateTicketService = async (
     //   userId: userId ? userId : ticket.userId
     // });
   }
-
 
   if (queueId != 0 && !isNil(queueId)) {
     //Determina qual a fila esse ticket pertence.
@@ -190,7 +208,6 @@ const FindOrCreateTicketService = async (
     type: openAsLGPD ? "lgpd" : "create"
   });
 
-  
   return ticket;
 };
 

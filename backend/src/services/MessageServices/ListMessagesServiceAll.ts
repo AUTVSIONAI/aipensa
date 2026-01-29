@@ -30,8 +30,7 @@ const ListMessagesServiceAll = async ({
   dateStart,
   dateEnd
 }: Request): Promise<Response> => {
-
-  let ticketsCounter: any
+  let ticketsCounter: any;
   if (dateStart && dateEnd) {
     if (fromMe) {
       ticketsCounter = await sequelize.query(
@@ -67,7 +66,7 @@ const ListMessagesServiceAll = async ({
   }
 
   return {
-    count: ticketsCounter,
+    count: ticketsCounter
   };
 };
 

@@ -5,7 +5,7 @@ import { parseISO, format, isSameDay } from "date-fns";
 import clsx from "clsx";
 
 import { makeStyles, useTheme } from "@material-ui/core/styles";
-import { green, grey } from "@material-ui/core/colors";
+import { grey } from "@material-ui/core/colors";
 import { i18n } from "../../translate/i18n";
 
 import api from "../../services/api";
@@ -40,7 +40,24 @@ import useCompanySettings from "../../hooks/useSettings/companySettings";
 const useStyles = makeStyles((theme) => ({
   ticket: {
     position: "relative",
-    borderBottom: "3px solid #d9d9d9",
+    margin: theme.spacing(0.75, 0),
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.32)" : "rgba(255,255,255,0.75)",
+    backdropFilter: "blur(16px)",
+    overflow: "hidden",
+    transition: "transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+    "&:hover": {
+      transform: "translateY(-1px)",
+      borderColor: theme.palette.type === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.10)",
+      boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 12px 32px rgba(0,0,0,0.10)",
+    },
+    "&.Mui-selected": {
+      borderColor: theme.palette.type === "dark" ? "rgba(0, 242, 255, 0.35)" : "rgba(37, 117, 252, 0.35)",
+      boxShadow: theme.palette.type === "dark"
+        ? "0 0 0 1px rgba(0, 242, 255, 0.18), 0 18px 44px rgba(0,0,0,0.55)"
+        : "0 0 0 1px rgba(37, 117, 252, 0.14), 0 12px 32px rgba(0,0,0,0.10)",
+    },
   },
 
   pendingTicket: {
@@ -50,11 +67,11 @@ const useStyles = makeStyles((theme) => ({
   // degradê suave da esquerda pra direita
   background:
     theme.mode === "light"
-      ? "linear-gradient(90deg, rgba(144,84,188,0.24) 0%, rgba(144,84,188,0.12) 45%, rgba(144,84,188,0) 80%)"
-      : "linear-gradient(90deg, rgba(144,84,188,0.35) 0%, rgba(144,84,188,0.20) 45%, rgba(144,84,188,0) 80%)",
+      ? "linear-gradient(90deg, rgba(37,117,252,0.20) 0%, rgba(106,17,203,0.12) 45%, rgba(255,255,255,0) 85%)"
+      : "linear-gradient(90deg, rgba(0,242,255,0.18) 0%, rgba(189,0,255,0.12) 45%, rgba(17,24,39,0) 85%)",
   // “barrinha” roxa à esquerda sem empurrar layout
-  boxShadow: "inset 3px 0 0 #9054BC",
-  borderRadius: 6,
+  boxShadow: "inset 3px 0 0 rgba(0, 242, 255, 0.85)",
+  borderRadius: 16,
 },
 
   queueTag: {
@@ -80,7 +97,7 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "right",
     position: "relative",
     top: 0,
-    color: "green",
+    color: theme.palette.type === "dark" ? "rgba(0,242,255,0.9)" : "#2575fc",
     fontWeight: "bold",
     marginRight: "10px",
     borderRadius: 0,
@@ -92,13 +109,18 @@ const useStyles = makeStyles((theme) => ({
     lineHeight: "1.4",
   },
   connectionTag: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     background: "green",
     color: "#FFF",
-    marginRight: 1,
-    padding: 1,
-    fontWeight: "bold",
-    borderRadius: 3,
-    fontSize: "0.6em",
+    padding: "4px 10px",
+    fontWeight: 800,
+    borderRadius: 999,
+    fontSize: "0.72em",
+    letterSpacing: 0.2,
+    lineHeight: 1,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.06)",
   },
   noTicketsTitle: {
     textAlign: "center",
@@ -119,15 +141,41 @@ const useStyles = makeStyles((theme) => ({
 
   // Avatar base + anel verde quando há notificação
   avatar: {
-    width: 50,
-    height: 50,
+    width: 44,
+    height: 44,
     borderRadius: "50%",
     transition: "border-color .2s ease",
     border: "3px solid transparent",
     boxSizing: "border-box",
   },
   avatarRing: {
-    borderColor: "#9054bc", // CORES ROXO anel circular verde
+    borderColor: theme.palette.type === "dark" ? "rgba(0, 242, 255, 0.85)" : "rgba(37, 117, 252, 0.85)",
+  },
+  avatarWrapper: {
+    marginLeft: 0,
+    minWidth: 56,
+  },
+  ticketCompact: {
+    margin: theme.spacing(0.5, 0),
+    borderRadius: 14,
+    "& $avatar": {
+      width: 38,
+      height: 38,
+    },
+    "& $avatarWrapper": {
+      minWidth: 50,
+    },
+    "& $listItemText": {
+      paddingRight: 138,
+    },
+    "& $actionBtn": {
+      minWidth: 36,
+      height: 36,
+      borderRadius: 12,
+    },
+    "& $actionBar": {
+      gap: 8,
+    },
   },
 
   lastMessageTime: {
@@ -165,7 +213,7 @@ const useStyles = makeStyles((theme) => ({
 
 contactLastMessageUnread: {
   paddingRight: 20,
-  color: theme.mode === "light" ? "#9054BC" : grey[200], // antes: "black"
+  color: theme.mode === "light" ? "#2575fc" : grey[200],
   width: "50%",
   fontWeight: 400,
 },
@@ -173,7 +221,7 @@ contactLastMessageUnread: {
 
   badgeStyle: {
   color: "#fff",
-  backgroundColor: "#9054bc", // CORES roxo
+  background: "linear-gradient(90deg, #00f2ff 0%, #bd00ff 100%)",
 },
 
   acceptButton: {
@@ -195,10 +243,11 @@ contactLastMessageUnread: {
   },
   secondaryContentSecond: {
     display: "flex",
-    alignItems: "flex-start",
-    flexWrap: "nowrap",
+    alignItems: "center",
+    flexWrap: "wrap",
     flexDirection: "row",
     alignContent: "flex-start",
+    gap: 6,
   },
   ticketInfo1: {
     position: "relative",
@@ -223,7 +272,7 @@ contactLastMessageUnread: {
 
   /*** reserva espaço pro bloco de ações à direita ***/
   listItemText: {
-    paddingRight: 70,
+    paddingRight: 156,
     boxSizing: "border-box",
     overflow: "hidden",
   },
@@ -231,8 +280,8 @@ contactLastMessageUnread: {
   /*** META (bolinha + horário) no topo direito, sem invadir botões ***/
   metaTopRight: {
     position: "absolute",
-    top: 6,
-    right: 18,
+    top: 10,
+    right: 14,
     display: "flex",
     alignItems: "center",
     gap: 8,
@@ -242,12 +291,12 @@ contactLastMessageUnread: {
 
   /*** Barra de ações à direita ***/
   actionBar: {
-    right: 16,
+    right: 12,
     display: "flex",
     gap: 10,
     alignItems: "center",
-    top: 30,
-    transform: "none",
+    top: "50%",
+    transform: "translateY(-50%)",
   },
   actionBtn: {
     padding: 8,
@@ -255,14 +304,15 @@ contactLastMessageUnread: {
     minWidth: 40,
     height: 40,
     color: "#fff",
-    boxShadow: "none",
+    boxShadow: theme.palette.type === "dark" ? "0 12px 24px rgba(0,0,0,0.35)" : "0 8px 18px rgba(0,0,0,0.12)",
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
   },
-  btnBlue: { backgroundColor: "#40BFFF" },
-  btnRed: { backgroundColor: "#FF6B6B" },
-  btnGreen: { backgroundColor: "#2ECC71" },
+  btnBlue: { background: "linear-gradient(90deg, #2575fc 0%, #6a11cb 100%)" },
+  btnGreen: { background: "linear-gradient(90deg, #22c55e 0%, #16a34a 100%)" },
+  btnRed: { background: "linear-gradient(90deg, #ef4444 0%, #b91c1c 100%)" },
 }));
 
-const TicketListItemCustom = ({ setTabOpen, ticket }) => {
+const TicketListItemCustom = ({ setTabOpen, ticket, compact }) => {
   const classes = useStyles();
   const theme = useTheme();
   const history = useHistory();
@@ -474,7 +524,7 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
 
       <ListItem
   button
-  dense
+  dense={!!compact}
   onClick={(e) => {
     const tag = e.target.tagName.toLowerCase();
     const isIconClick =
@@ -491,10 +541,11 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
   className={clsx(classes.ticket, {
     [classes.pendingTicket]: ticket.status === "pending",
     [classes.ticketUnread]: hasUnread,
+    [classes.ticketCompact]: !!compact,
   })}
 >
 
-        <ListItemAvatar style={{ marginLeft: "-15px" }}>
+        <ListItemAvatar className={classes.avatarWrapper}>
           <Avatar
             className={clsx(classes.avatar, { [classes.avatarRing]: hasUnread })}
             src={`${ticket?.contact?.urlPicture}`}
@@ -569,7 +620,7 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
 
                 <span className={classes.secondaryContentSecond}>
                   {ticket?.whatsapp ? (
-                    <Badge
+                    <span
                       className={classes.connectionTag}
                       style={{
                         backgroundColor:
@@ -581,11 +632,9 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                       }}
                     >
                       {ticket.whatsapp?.name.toUpperCase()}
-                    </Badge>
-                  ) : (
-                    <br />
-                  )}
-                  <Badge
+                    </span>
+                  ) : null}
+                  <span
                     style={{
                       backgroundColor: ticket.queue?.color || "#7c7c7c",
                     }}
@@ -596,14 +645,14 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                       : ticket.status === "lgpd"
                       ? "LGPD"
                       : "SEM FILA"}
-                  </Badge>
+                  </span>
                   {ticket?.user && (
-                    <Badge
+                    <span
                       style={{ backgroundColor: "#000000" }}
                       className={classes.connectionTag}
                     >
                       {ticket.user?.name.toUpperCase()}
-                    </Badge>
+                    </span>
                   )}
                 </span>
 

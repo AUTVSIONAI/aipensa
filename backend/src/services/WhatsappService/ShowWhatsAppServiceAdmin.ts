@@ -1,7 +1,6 @@
 import Whatsapp from "../../models/Whatsapp";
 import AppError from "../../errors/AppError";
 import Queue from "../../models/Queue";
-import QueueOption from "../../models/QueueOption";
 import { FindOptions } from "sequelize/types";
 import Chatbot from "../../models/Chatbot";
 import Prompt from "../../models/Prompt";
@@ -10,13 +9,20 @@ const ShowWhatsAppServiceAdmin = async (
   id: string | number,
   session?: any
 ): Promise<Whatsapp> => {
-
   const findOptions: FindOptions = {
     include: [
       {
         model: Queue,
         as: "queues",
-        attributes: ["id", "name", "color", "greetingMessage", "integrationId", "fileListId", "closeTicket"],
+        attributes: [
+          "id",
+          "name",
+          "color",
+          "greetingMessage",
+          "integrationId",
+          "fileListId",
+          "closeTicket"
+        ],
         include: [
           {
             model: Chatbot,
@@ -27,7 +33,7 @@ const ShowWhatsAppServiceAdmin = async (
       },
       {
         model: Prompt,
-        as: "prompt",
+        as: "prompt"
       }
     ],
     order: [
@@ -36,7 +42,7 @@ const ShowWhatsAppServiceAdmin = async (
     ]
   };
 
-  if (session !== undefined && session == 0) {
+  if (session !== undefined && Number(session) === 0) {
     findOptions.attributes = { exclude: ["session"] };
   }
 

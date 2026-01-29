@@ -1,17 +1,17 @@
-'use strict';
+"use strict";
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.changeColumn('Whatsapps', 'expiresInactiveMessage', {
+    await queryInterface.changeColumn("Whatsapps", "expiresInactiveMessage", {
       type: Sequelize.TEXT,
-      allowNull: true,
+      allowNull: true
     });
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.changeColumn('Whatsapps', 'expiresInactiveMessage', {
-      type: Sequelize.STRING, 
-      allowNull: true,
+    await queryInterface.changeColumn("Whatsapps", "expiresInactiveMessage", {
+      type: Sequelize.STRING,
+      allowNull: true
     });
-  },
+  }
 };

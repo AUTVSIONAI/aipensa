@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
-import DashboardDataService, { DashboardData, Params } from "../services/ReportService/DashbardDataService";
+import DashboardDataService, {
+  DashboardData,
+  Params
+} from "../services/ReportService/DashbardDataService";
 import { TicketsAttendance } from "../services/ReportService/TicketsAttendance";
 import { TicketsDayService } from "../services/ReportService/TicketsDayService";
 import TicketsQueuesService from "../services/TicketServices/TicketsQueuesService";
@@ -29,32 +32,43 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(dashboardData);
 };
 
-export const reportsUsers = async (req: Request, res: Response): Promise<Response> => {
+export const reportsUsers = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { initialDate, finalDate, companyId } = req.query as IndexQuery;
 
-  const { initialDate, finalDate, companyId } = req.query as IndexQuery
-
-  const { data } = await TicketsAttendance({ initialDate, finalDate, companyId });
+  const { data } = await TicketsAttendance({
+    initialDate,
+    finalDate,
+    companyId
+  });
 
   return res.json({ data });
+};
 
-}
+export const reportsDay = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { initialDate, finalDate, companyId } = req.query as IndexQuery;
 
-export const reportsDay = async (req: Request, res: Response): Promise<Response> => {
-
-  const { initialDate, finalDate, companyId } = req.query as IndexQuery
-
-  const { count, data } = await TicketsDayService({ initialDate, finalDate, companyId });
+  const { count, data } = await TicketsDayService({
+    initialDate,
+    finalDate,
+    companyId
+  });
 
   return res.json({ count, data });
-
-}
+};
 
 export const DashTicketsQueues = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
   const { companyId, profile, id: userId } = req.user;
-  const { dateStart, dateEnd, status, queuesIds, showAll } = req.query as IndexQueryPainel;
+  const { dateStart, dateEnd, status, queuesIds, showAll } =
+    req.query as IndexQueryPainel;
 
   const tickets = await TicketsQueuesService({
     showAll: profile === "admin" ? showAll : false,

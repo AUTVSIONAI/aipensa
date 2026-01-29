@@ -5,8 +5,7 @@ module.exports = {
     return queryInterface.addColumn("Tickets", "isActiveDemand", {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
-      allowNull: true,
-
+      allowNull: true
     });
   },
 

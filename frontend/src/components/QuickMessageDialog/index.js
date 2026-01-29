@@ -508,7 +508,8 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
     };
   }, []);
 
-  const handleClose = () => {
+  const handleClose = (event, reason) => {
+    if (reason === 'backdropClick') return;
     setQuickemessage(initialState);
     setAttachment(null);
     onClose();
@@ -631,7 +632,6 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
         PaperComponent={PaperComponent}
         TransitionComponent={Transition}
         aria-labelledby="draggable-dialog-title"
-        disableBackdropClick
         disableEscapeKeyDown
         PaperProps={{
           className: classes.paper,

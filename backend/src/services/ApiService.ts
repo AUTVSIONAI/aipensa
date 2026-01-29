@@ -1,7 +1,7 @@
-import axios from 'axios';
-import AuthService from './ApiAuthService'; // Serviço de autenticação para obter o token
+import axios from "axios";
+import AuthService from "./ApiAuthService"; // Serviço de autenticação para obter o token
 
-const API_BASE_URL = 'https://sandboxapicore.imaginasoft.pt/api/v1';
+const API_BASE_URL = "https://sandboxapicore.imaginasoft.pt/api/v1";
 
 class ApiService {
   private static async getAuthToken(): Promise<string> {
@@ -17,12 +17,12 @@ class ApiService {
     try {
       const response = await axios.get(`${API_BASE_URL}/users`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to fetch users: ' + error.message);
+      throw new Error("Failed to fetch users: " + error.message);
     }
   }
 
@@ -32,12 +32,12 @@ class ApiService {
     try {
       const response = await axios.get(`${API_BASE_URL}/users/${id}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to fetch user by ID: ' + error.message);
+      throw new Error("Failed to fetch user by ID: " + error.message);
     }
   }
 
@@ -47,13 +47,13 @@ class ApiService {
     try {
       const response = await axios.post(`${API_BASE_URL}/users`, userData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to create user: ' + error.message);
+      throw new Error("Failed to create user: " + error.message);
     }
   }
 
@@ -61,15 +61,19 @@ class ApiService {
   public static async updateUser(id: string, userData: any): Promise<any> {
     const token = await this.getAuthToken();
     try {
-      const response = await axios.put(`${API_BASE_URL}/users/${id}`, userData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.put(
+        `${API_BASE_URL}/users/${id}`,
+        userData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
       return response.data;
     } catch (error) {
-      throw new Error('Failed to update user: ' + error.message);
+      throw new Error("Failed to update user: " + error.message);
     }
   }
 
@@ -79,12 +83,12 @@ class ApiService {
     try {
       const response = await axios.delete(`${API_BASE_URL}/users/${id}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to delete user: ' + error.message);
+      throw new Error("Failed to delete user: " + error.message);
     }
   }
 
@@ -94,12 +98,12 @@ class ApiService {
     try {
       const response = await axios.get(`${API_BASE_URL}/products`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to fetch products: ' + error.message);
+      throw new Error("Failed to fetch products: " + error.message);
     }
   }
 
@@ -109,12 +113,12 @@ class ApiService {
     try {
       const response = await axios.get(`${API_BASE_URL}/products/${id}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to fetch product by ID: ' + error.message);
+      throw new Error("Failed to fetch product by ID: " + error.message);
     }
   }
 
@@ -122,31 +126,42 @@ class ApiService {
   public static async createProduct(productData: any): Promise<any> {
     const token = await this.getAuthToken();
     try {
-      const response = await axios.post(`${API_BASE_URL}/products`, productData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/products`,
+        productData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
       return response.data;
     } catch (error) {
-      throw new Error('Failed to create product: ' + error.message);
+      throw new Error("Failed to create product: " + error.message);
     }
   }
 
   // Endpoint para atualizar um produto
-  public static async updateProduct(id: string, productData: any): Promise<any> {
+  public static async updateProduct(
+    id: string,
+    productData: any
+  ): Promise<any> {
     const token = await this.getAuthToken();
     try {
-      const response = await axios.put(`${API_BASE_URL}/products/${id}`, productData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.put(
+        `${API_BASE_URL}/products/${id}`,
+        productData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
       return response.data;
     } catch (error) {
-      throw new Error('Failed to update product: ' + error.message);
+      throw new Error("Failed to update product: " + error.message);
     }
   }
 
@@ -156,12 +171,12 @@ class ApiService {
     try {
       const response = await axios.delete(`${API_BASE_URL}/products/${id}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to delete product: ' + error.message);
+      throw new Error("Failed to delete product: " + error.message);
     }
   }
 }

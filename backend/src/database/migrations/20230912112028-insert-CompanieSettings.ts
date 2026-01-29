@@ -1,6 +1,5 @@
 module.exports = {
-  up: async (queryInterface) => {
-
+  up: async queryInterface => {
     await queryInterface.sequelize.query(`
       do
         $$
@@ -68,11 +67,12 @@ module.exports = {
           );
         end loop;
       end;
-      $$`
-    );
+      $$`);
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.sequelize.query('DELETE FROM "CompaniesSettings" WHERE "companyId" <> 1');
+    await queryInterface.sequelize.query(
+      'DELETE FROM "CompaniesSettings" WHERE "companyId" <> 1'
+    );
   }
 };

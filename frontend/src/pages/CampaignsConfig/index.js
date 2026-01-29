@@ -34,8 +34,12 @@ const useStyles = makeStyles((theme) => ({
     flex: 1,
     padding: theme.spacing(1),
     // padding: theme.padding,
-    overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    overflowY: "visible",
+    borderRadius: 16,
+    border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.55)" : "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(14px)",
+    boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 8px 24px rgba(0,0,0,0.10)",
   },
   textRight: {
     textAlign: "right",
@@ -49,6 +53,17 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     alignItems: "center",
     marginBottom: 12,
+  },
+  primaryButton: {
+    color: "white",
+    backgroundColor: theme.palette.primary.main,
+    boxShadow: "none",
+    borderRadius: 12,
+    textTransform: "none",
+    "&:hover": {
+      backgroundColor: theme.palette.primary.dark,
+      boxShadow: "none",
+    },
   },
 
 }));
@@ -101,7 +116,6 @@ const CampaignsConfig = () => {
   useEffect(() => {
     api.get("/campaign-settings").then(({ data }) => {
       const settingsList = [];
-      console.log(data)
       if (Array.isArray(data) && data.length > 0) {
         data.forEach((item) => {
           settingsList.push([item.key, item.value]);
@@ -323,7 +337,7 @@ const CampaignsConfig = () => {
                         <MenuItem value={70}>60 segundos</MenuItem>
                         <MenuItem value={80}>80 segundos</MenuItem>
                         <MenuItem value={100}>100 segundos</MenuItem>
-                        <MenuItem value={120}>120 segundos</MenuItem>                                                `` ``
+                        <MenuItem value={120}>120 segundos</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
@@ -405,12 +419,7 @@ const CampaignsConfig = () => {
                     <Button
                       startIcon={<SaveIcon />}
                       onClick={saveSettings}
-                      style={{
-                      color: "white",
-                      backgroundColor: "#437db5",
-                      boxShadow: "none",
-                      borderRadius: "5px",
-                      }}
+                      className={classes.primaryButton}
                       variant="contained"
                     >
                       {i18n.t("campaigns.settings.save")}

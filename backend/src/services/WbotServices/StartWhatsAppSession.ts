@@ -13,15 +13,14 @@ export const StartWhatsAppSession = async (
   await whatsapp.update({ status: "OPENING" });
 
   const io = getIO();
-  io.of(String(companyId))
-    .emit(`company-${companyId}-whatsappSession`, {
-      action: "update",
-      session: whatsapp
-    });
+  io.of(String(companyId)).emit(`company-${companyId}-whatsappSession`, {
+    action: "update",
+    session: whatsapp
+  });
 
   try {
     const wbot = await initWASocket(whatsapp);
-   
+
     if (wbot.id) {
       wbotMessageListener(wbot, companyId);
       wbotMonitor(wbot, whatsapp, companyId);

@@ -112,7 +112,6 @@ const FindOrCreateTicketServiceMeta = async (
       whatsappId,
       userId: ticket.userId
     });
-
   } else {
     await ticket.update({ whatsappId });
   }

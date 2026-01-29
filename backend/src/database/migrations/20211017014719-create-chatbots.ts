@@ -11,7 +11,7 @@ module.exports = {
       },
       name: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: false
       },
       queueId: {
         type: DataTypes.INTEGER,

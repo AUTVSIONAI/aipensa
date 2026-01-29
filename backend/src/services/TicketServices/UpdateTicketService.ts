@@ -203,7 +203,7 @@ const UpdateTicketService = async ({
             type: "nps"
           });
         }
-        
+
         await ticket.update({
           status: "closed",
           unreadMessages: 0,
@@ -778,7 +778,7 @@ const UpdateTicketService = async ({
         status: status || "pending" // Usually back to pending or open
       });
 
-       await CreateLogTicketService({
+      await CreateLogTicketService({
         userId,
         queueId: ticket.queueId,
         ticketId,

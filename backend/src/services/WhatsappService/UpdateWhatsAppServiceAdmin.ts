@@ -3,7 +3,6 @@ import { Op } from "sequelize";
 
 import AppError from "../../errors/AppError";
 import Whatsapp from "../../models/Whatsapp";
-import ShowWhatsAppService from "./ShowWhatsAppService";
 import AssociateWhatsappQueue from "./AssociateWhatsappQueue";
 import ShowWhatsAppServiceAdmin from "./ShowWhatsAppServiceAdmin";
 
@@ -115,7 +114,7 @@ const UpdateWhatsAppServiceAdmin = async ({
     oldDefaultWhatsapp = await Whatsapp.findOne({
       where: {
         isDefault: true,
-        id: { [Op.not]: whatsappId },
+        id: { [Op.not]: whatsappId }
       }
     });
     if (oldDefaultWhatsapp) {
@@ -162,7 +161,7 @@ const UpdateWhatsAppServiceAdmin = async ({
   if (!requestQR) {
     await AssociateWhatsappQueue(whatsapp, queueIds);
   }
-  
+
   return { whatsapp, oldDefaultWhatsapp };
 };
 

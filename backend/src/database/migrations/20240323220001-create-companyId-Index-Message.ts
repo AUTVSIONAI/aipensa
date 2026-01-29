@@ -12,6 +12,6 @@ module.exports = {
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
       queryInterface.removeIndex("Messages", "idx_ms_company_id")
-      ]);
+    ]);
   }
 };

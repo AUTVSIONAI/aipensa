@@ -483,7 +483,9 @@ const handleOpenAiFacebook = async (
   token: Whatsapp,
   getSession: Whatsapp
 ): Promise<void> => {
-  console.log(`[handleOpenAiFacebook] Starting for ticket ${ticket.id} contact ${contact.id}`);
+  console.log(
+    `[handleOpenAiFacebook] Starting for ticket ${ticket.id} contact ${contact.id}`
+  );
 
   if (contact.disableBot) {
     return;
@@ -505,7 +507,7 @@ const handleOpenAiFacebook = async (
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
         "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
-        "X-Title": "AIPENSA.COM",
+        "X-Title": "AIPENSA.COM"
       }
     });
   } else {
@@ -522,14 +524,21 @@ const handleOpenAiFacebook = async (
 
   const promptSystem = `Nas respostas utilize o nome ${
     contact.name || "Amigo(a)"
-  } para identificar o cliente.\nData e Hora atual: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}\nSua resposta deve usar no máximo ${
-    openAiSettings.maxTokens
-  } tokens.\n${openAiSettings.prompt}\n`;
+  } para identificar o cliente.\nData e Hora atual: ${new Date().toLocaleString(
+    "pt-BR",
+    { timeZone: "America/Sao_Paulo" }
+  )}\nSua resposta deve usar no máximo ${openAiSettings.maxTokens} tokens.\n${
+    openAiSettings.prompt
+  }\n`;
 
   let messagesOpenAi = [];
   messagesOpenAi.push({ role: "system", content: promptSystem });
 
-  for (let i = 0; i < Math.min(openAiSettings.maxMessages, messages.length); i++) {
+  for (
+    let i = 0;
+    i < Math.min(openAiSettings.maxMessages, messages.length);
+    i++
+  ) {
     const message = messages[i];
     if (message.mediaType === "chat" || message.mediaType === "text") {
       if (message.fromMe) {
@@ -543,10 +552,11 @@ const handleOpenAiFacebook = async (
   messagesOpenAi.push({ role: "user", content: msgText });
 
   const FALLBACK_MODELS = [
-    "mistralai/devstral-2512:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "mistralai/mistral-small-3.1-24b-instruct:free",
     "google/gemini-2.0-flash-exp:free",
+    "google/gemini-2.0-flash-lite-preview-02-05:free",
+    "mistralai/mistral-7b-instruct:free",
+    "huggingfaceh4/zephyr-7b-beta:free",
+    "meta-llama/llama-3-8b-instruct:free",
     "openai/gpt-3.5-turbo"
   ];
 
@@ -562,6 +572,7 @@ const handleOpenAiFacebook = async (
   for (let i = 0; i < modelsToTry.length; i++) {
     const currentModel = modelsToTry[i];
     try {
+      console.log(`[handleOpenAiFacebook] Attempting model: ${currentModel}`);
       const chat = await aiClient.chat.completions.create({
         model: currentModel,
         messages: messagesOpenAi,
@@ -569,9 +580,13 @@ const handleOpenAiFacebook = async (
         temperature: openAiSettings.temperature
       });
       response = chat.choices[0].message?.content;
+      console.log(`[handleOpenAiFacebook] Success with model: ${currentModel}`);
       break;
     } catch (error) {
-      console.error(`[handleOpenAiFacebook] Error with model ${currentModel}:`, error.message);
+      console.error(
+        `[handleOpenAiFacebook] Error with model ${currentModel}:`,
+        error.message
+      );
       if (i === modelsToTry.length - 1) {
         console.error("All models failed");
       }
@@ -585,28 +600,30 @@ const handleOpenAiFacebook = async (
         ticketId: ticket.id,
         companyId: ticket.companyId
       });
-      response = response.replace("Ação: Transferir para o setor de atendimento", "").trim();
+      response = response
+        .replace("Ação: Transferir para o setor de atendimento", "")
+        .trim();
     }
 
     if (response) {
-        await sendFacebookMessage({
-            ticket,
-            body: response
-        });
-        
-        // Save bot message to DB
-        const messageData = {
-            wid: `AI-${new Date().getTime()}`,
-            ticketId: ticket.id,
-            contactId: undefined,
-            body: response,
-            fromMe: true,
-            read: true,
-            quotedMsgId: null,
-            ack: 2,
-            channel: ticket.channel
-        };
-        await CreateMessageService({ messageData, companyId: ticket.companyId });
+      await sendFacebookMessage({
+        ticket,
+        body: response
+      });
+
+      // Save bot message to DB
+      const messageData = {
+        wid: `AI-${new Date().getTime()}`,
+        ticketId: ticket.id,
+        contactId: undefined,
+        body: response,
+        fromMe: true,
+        read: true,
+        quotedMsgId: null,
+        ack: 2,
+        channel: ticket.channel
+      };
+      await CreateMessageService({ messageData, companyId: ticket.companyId });
     }
   }
 };
@@ -619,6 +636,9 @@ export const handleMessage = async (
 ): Promise<any> => {
   try {
     if (webhookEvent.message) {
+      console.log(
+        `[handleMessage] Received message from ${channel} for company ${companyId}`
+      );
       let msgContact: any;
 
       const senderPsid = webhookEvent.sender.id;
@@ -636,7 +656,22 @@ export const handleMessage = async (
         msgContact = await profilePsid(senderPsid, token.facebookUserToken);
       }
 
+      console.log(
+        `[handleMessage] msgContact retrieved: ${JSON.stringify(msgContact)}`
+      );
+
       const contact = await verifyContact(msgContact, token, companyId);
+
+      if (!contact) {
+        console.error(
+          `[handleMessage] Failed to verify/create contact for PSID: ${
+            fromMe ? recipientPsid : senderPsid
+          }`
+        );
+        return;
+      }
+
+      console.log(`[handleMessage] Contact verified: ${contact.id}`);
 
       const unreadCount = fromMe ? 0 : 1;
 
@@ -1060,14 +1095,11 @@ export const handleMessage = async (
         }
       }
 
-      if (
-        !ticket.queue &&
-        !fromMe &&
-        !ticket.userId &&
-        getSession.prompt
-      ) {
+      if (!ticket.queue && !fromMe && !ticket.userId && getSession.prompt) {
         const listSettings = await ListSettingsService({ companyId });
-        const userApiToken = listSettings?.find(s => s.key === "userApiToken")?.value;
+        const userApiToken = listSettings?.find(
+          s => s.key === "userApiToken"
+        )?.value;
 
         const promptWithFallback = {
           ...getSession.prompt.toJSON(),

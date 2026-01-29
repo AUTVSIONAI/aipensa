@@ -37,7 +37,14 @@ const TicketsQueuesService = async ({
     {
       model: Contact,
       as: "contact",
-      attributes: ["id", "name", "number", "profilePicUrl", "companyId", "urlPicture"]
+      attributes: [
+        "id",
+        "name",
+        "number",
+        "profilePicUrl",
+        "companyId",
+        "urlPicture"
+      ]
     },
     {
       model: User,
@@ -80,23 +87,27 @@ const TicketsQueuesService = async ({
   // }
 
   // eslint-disable-next-line eqeqeq
- 
-  if (status) {
 
+  if (status) {
     const maxTicketsFilter: any[] | null = [];
     const maxTicketIds = await Ticket.findAll({
-      where: {       
+      where: {
         status: "open"
       },
-      group: ['companyId','contactId','queueId', 'whatsappId'],
-      attributes: ['companyId','contactId','queueId', 'whatsappId', [fn('max', col('id')), 'id']],
+      group: ["companyId", "contactId", "queueId", "whatsappId"],
+      attributes: [
+        "companyId",
+        "contactId",
+        "queueId",
+        "whatsappId",
+        [fn("max", col("id")), "id"]
+      ]
     });
     if (maxTicketIds) {
       maxTicketsFilter.push(maxTicketIds.map(t => t.id));
     }
     // }
 
-    
     const contactsIntersection: number[] = intersection(...maxTicketsFilter);
 
     whereCondition = {
@@ -111,7 +122,7 @@ const TicketsQueuesService = async ({
     whereCondition = {
       ...whereCondition,
       userId
-    }
+    };
   }
 
   if (dateStart && dateEnd) {
@@ -125,7 +136,7 @@ const TicketsQueuesService = async ({
       }
     };
   }
-  
+
   const tickets = await Ticket.findAll({
     where: {
       ...whereCondition,

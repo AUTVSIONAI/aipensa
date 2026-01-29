@@ -33,8 +33,7 @@ export const sendFacebookMessageMedia = async ({
   try {
     const type = typeAttachment(media);
 
-    const domain = `${process.env.BACKEND_URL}/public/company${ticket.companyId}/${media.filename}`
-
+    const domain = `${process.env.BACKEND_URL}/public/company${ticket.companyId}/${media.filename}`;
 
     const sendMessage = await sendAttachmentFromUrl(
       ticket.contact.number,
@@ -59,7 +58,7 @@ export const sendFacebookMessageMediaExternal = async ({
   body
 }: Request): Promise<any> => {
   try {
-    const type = "image"
+    const type = "image";
 
     // const domain = `${process.env.BACKEND_URL}/public/${media.filename}`
 
@@ -72,7 +71,7 @@ export const sendFacebookMessageMediaExternal = async ({
 
     const randomName = Math.random().toString(36).substring(7);
 
-    await ticket.update({ lastMessage: body ||  `${randomName}.jpg}`});
+    await ticket.update({ lastMessage: body || `${randomName}.jpg}` });
 
     // fs.unlinkSync(media.path);
 
@@ -88,7 +87,7 @@ export const sendFacebookMessageFileExternal = async ({
   body
 }: Request): Promise<any> => {
   try {
-    const type = "file"
+    const type = "file";
 
     // const domain = `${process.env.BACKEND_URL}/public/${media.filename}`
 
@@ -101,7 +100,7 @@ export const sendFacebookMessageFileExternal = async ({
 
     const randomName = Math.random().toString(36).substring(7);
 
-    await ticket.update({ lastMessage: body ||  `${randomName}.pdf}`});
+    await ticket.update({ lastMessage: body || `${randomName}.pdf}` });
 
     // fs.unlinkSync(media.path);
 

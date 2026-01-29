@@ -37,11 +37,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
     whatsapp.status = "CONNECTED";
 
-    io.of(String(companyId))
-      .emit(`company-${companyId}-whatsapp`, {
-        action: "update",
-        whatsapp
-      });
+    io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
+      action: "update",
+      whatsapp
+    });
   });
 
   return res.status(200).json(whatsapps);

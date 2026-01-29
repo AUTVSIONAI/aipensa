@@ -24,12 +24,12 @@ const ListWhatsAppsService = async ({
       },
       {
         model: Prompt,
-        as: "prompt",
+        as: "prompt"
       }
     ]
   };
 
-  if (session !== undefined && session == 0) {
+  if (session !== undefined && Number(session) === 0) {
     options.attributes = { exclude: ["session"] };
   }
 
@@ -37,7 +37,5 @@ const ListWhatsAppsService = async ({
 
   return whatsapps;
 };
-
-
 
 export default ListWhatsAppsService;
