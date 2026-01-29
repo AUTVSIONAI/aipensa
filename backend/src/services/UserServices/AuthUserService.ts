@@ -57,13 +57,19 @@ const AuthUserService = async ({
   if (user) {
     console.log(`[AuthUserService] User found (simple query): ${user.id}`);
     // Now fetch with includes
-    user = await User.findOne({
-      where: { id: user.id },
-      include: [
-        "queues",
-        { model: Company, include: [{ model: CompaniesSettings }] }
-      ]
-    });
+    try {
+      user = await User.findOne({
+        where: { id: user.id },
+        include: [
+          "queues",
+          { model: Company, include: [{ model: CompaniesSettings }] }
+        ]
+      });
+    } catch (e: any) {
+      console.log(
+        `[AuthUserService] WARN: Failed to load associations for user ${user.id}. Continuing without includes. Err: ${e?.message}`
+      );
+    }
   } else {
     // Try case-insensitive if exact match failed
     console.log(
@@ -75,13 +81,19 @@ const AuthUserService = async ({
 
     if (user) {
       console.log(`[AuthUserService] User found (iLike query): ${user.id}`);
-      user = await User.findOne({
-        where: { id: user.id },
-        include: [
-          "queues",
-          { model: Company, include: [{ model: CompaniesSettings }] }
-        ]
-      });
+      try {
+        user = await User.findOne({
+          where: { id: user.id },
+          include: [
+            "queues",
+            { model: Company, include: [{ model: CompaniesSettings }] }
+          ]
+        });
+      } catch (e: any) {
+        console.log(
+          `[AuthUserService] WARN: Failed to load associations (iLike) for user ${user.id}. Continuing without includes. Err: ${e?.message}`
+        );
+      }
     }
   }
 
