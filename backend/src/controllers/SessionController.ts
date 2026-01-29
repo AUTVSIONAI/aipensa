@@ -64,19 +64,24 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       password
     });
     SendRefreshToken(res, refreshToken);
-    const io = getIO();
-    io.of(serializedUser.companyId.toString()).emit(
-      `company-${serializedUser.companyId}-auth`,
-      {
-        action: "update",
-        user: {
-          id: serializedUser.id,
-          email: serializedUser.email,
-          companyId: serializedUser.companyId,
-          token: serializedUser.token
+    let io: any;
+    try {
+      io = getIO();
+    } catch (_) {}
+    if (io) {
+      io.of(serializedUser.companyId.toString()).emit(
+        `company-${serializedUser.companyId}-auth`,
+        {
+          action: "update",
+          user: {
+            id: serializedUser.id,
+            email: serializedUser.email,
+            companyId: serializedUser.companyId,
+            token: serializedUser.token
+          }
         }
-      }
-    );
+      );
+    }
     return res.status(200).json({
       token,
       user: serializedUser
