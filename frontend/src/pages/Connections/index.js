@@ -730,6 +730,7 @@ const Connections = () => {
                               fields="name,email,picture"
                               version="13.0"
                               scope="public_profile,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management"
+                              redirectUri={window.location.origin}
                               callback={(response) => {
                                 responseFacebook(response);
                                 popupState.close();
@@ -762,6 +763,7 @@ const Connections = () => {
                               version="13.0"
                               scope="public_profile,instagram_basic,instagram_manage_messages,instagram_manage_comments,instagram_manage_insights,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management,ads_management,ads_read"
                               auth_type="reauthenticate"
+                              redirectUri={window.location.origin}
                               callback={(response) => {
                                 responseInstagram(response);
                                 popupState.close();
