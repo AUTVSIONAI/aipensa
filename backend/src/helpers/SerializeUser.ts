@@ -41,15 +41,24 @@ export const SerializeUser = async (user: User): Promise<SerializedUser> => {
     return token;
   };
 
+  let company: Company | null = user.company;
+  try {
+    if (!company && user.companyId) {
+      company = await Company.findByPk(user.companyId);
+    }
+  } catch (_) {}
+
+  const queues: Queue[] = Array.isArray(user.queues) ? user.queues : [];
+
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     profile: user.profile,
     companyId: user.companyId,
-    company: user.company,
+    company,
     super: user.super,
-    queues: user.queues,
+    queues,
     startWork: user.startWork,
     endWork: user.endWork,
     allTicket: user.allTicket,
