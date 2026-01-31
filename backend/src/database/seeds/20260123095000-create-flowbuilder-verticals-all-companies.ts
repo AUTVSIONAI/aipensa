@@ -19,7 +19,7 @@ module.exports = {
       name,
       company_id: companyId,
       active: true,
-      flow: {
+      flow: JSON.stringify({
         nodes: [
           { id: "start", type: "message", content: greeting },
           { id: "qualify", type: "questions", fields: qualify },
@@ -35,8 +35,8 @@ module.exports = {
           { from: "qualify", to: "cta" },
           { from: "cta", to: "confirm" }
         ]
-      },
-      variables,
+      }),
+      variables: JSON.stringify(variables),
       createdAt: now,
       updatedAt: now
     });
