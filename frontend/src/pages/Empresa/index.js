@@ -241,14 +241,34 @@ const SignUp = () => {
     const [plans, setPlans] = useState([]);
 
     useEffect(() => {
-        setLoading(true);
+        let isMounted = true;
+
         const fetchData = async () => {
-            const planList = await getPlanList();
-            const publicPlans = planList.filter(plan => plan.isPublic === true);
-            setPlans(publicPlans);
-            setLoading(false);
+            setLoading(true);
+            try {
+                const planList = await getPlanList();
+                const safePlanList = Array.isArray(planList) ? planList : [];
+                const publicPlans = safePlanList.filter(plan => plan?.isPublic === true);
+                if (isMounted) {
+                    setPlans(publicPlans);
+                }
+            } catch (err) {
+                if (isMounted) {
+                    setPlans([]);
+                }
+                toastError(err);
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
         };
+
         fetchData();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const dueDate = moment().add(7, "day").format();

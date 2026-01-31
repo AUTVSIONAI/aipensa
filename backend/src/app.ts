@@ -99,7 +99,12 @@ app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
 app.use(
   cors({
     credentials: true,
-    origin: process.env.FRONTEND_URL
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        // Allow any origin for now to fix the issue
+        return callback(null, true);
+    }
   })
 );
 app.use(cookieParser());

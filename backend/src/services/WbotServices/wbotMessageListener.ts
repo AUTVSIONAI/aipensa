@@ -5506,78 +5506,92 @@ const wbotMessageListener = (wbot: Session, companyId: number): void => {
       .filter(filterMessages)
       .map(msg => msg);
 
-    if (!messages) return;
+    if (!messages?.length) return;
 
-    // console.log("CIAAAAAAA WBOT " , companyId)
-    messages.forEach(async (message: proto.IWebMessageInfo) => {
-      if (
-        message?.messageStubParameters?.length &&
-        message.messageStubParameters[0].includes("absent")
-      ) {
-        const msg = {
-          companyId: companyId,
-          whatsappId: wbot.id,
-          message: message
-        };
-        logger.warn("MENSAGEM PERDIDA", JSON.stringify(msg));
-      }
-      const messageExists = await Message.count({
-        where: { wid: message.key.id!, companyId }
-      });
-
-      if (!messageExists) {
-        let isCampaign = false;
-        let body = await getBodyMessage(message);
-        const fromMe = message?.key?.fromMe;
-        if (fromMe) {
-          isCampaign = /\u200c/.test(body);
-        } else {
-          if (/\u200c/.test(body)) body = body.replace(/\u200c/, "");
-          logger.debug(
-            "Validação de mensagem de campanha enviada por terceiros: " + body
-          );
+    for (const message of messages) {
+      try {
+        if (
+          message?.messageStubParameters?.length &&
+          message.messageStubParameters[0].includes("absent")
+        ) {
+          const msg = {
+            companyId: companyId,
+            whatsappId: wbot.id,
+            message: message
+          };
+          logger.warn("MENSAGEM PERDIDA", JSON.stringify(msg));
         }
 
-        if (!isCampaign) {
+        const messageId = message?.key?.id;
+        if (!messageId) continue;
+
+        const messageExists = await Message.count({
+          where: { wid: messageId, companyId }
+        });
+
+        if (!messageExists) {
+          let isCampaign = false;
+          let body = await getBodyMessage(message);
+          const fromMe = message?.key?.fromMe;
+          if (fromMe) {
+            isCampaign = /\u200c/.test(body);
+          } else {
+            if (/\u200c/.test(body)) body = body.replace(/\u200c/, "");
+            logger.debug(
+              "Validação de mensagem de campanha enviada por terceiros: " + body
+            );
+          }
+
+          if (!isCampaign) {
+            if (REDIS_URI_MSG_CONN !== "") {
+              try {
+                await BullQueues.add(
+                  `${process.env.DB_NAME}-handleMessage`,
+                  { message, wbot: wbot.id, companyId },
+                  {
+                    priority: 1,
+                    jobId: `${wbot.id}-handleMessage-${messageId}`
+                  }
+                );
+              } catch (e) {
+                Sentry.captureException(e);
+                await handleMessage(message, wbot, companyId);
+              }
+            } else {
+              await handleMessage(message, wbot, companyId);
+            }
+          }
+
+          await verifyRecentCampaign(message, companyId);
+          await verifyCampaignMessageAndCloseTicket(message, companyId, wbot);
+        }
+
+        if (message.key.remoteJid?.endsWith("@g.us")) {
           if (REDIS_URI_MSG_CONN !== "") {
-            //} && (!message.key.fromMe || (message.key.fromMe && !message.key.id.startsWith('BAE')))) {
             try {
               await BullQueues.add(
-                `${process.env.DB_NAME}-handleMessage`,
-                { message, wbot: wbot.id, companyId },
+                `${process.env.DB_NAME}-handleMessageAck`,
+                { msg: message, chat: 2 },
                 {
                   priority: 1,
-                  jobId: `${wbot.id}-handleMessage-${message.key.id}`
+                  jobId: `${wbot.id}-handleMessageAck-${messageId}`
                 }
               );
             } catch (e) {
               Sentry.captureException(e);
+              handleMsgAck(message, 2);
             }
           } else {
-            console.log("log... 3970");
-            await handleMessage(message, wbot, companyId);
+            handleMsgAck(message, 2);
           }
         }
-
-        await verifyRecentCampaign(message, companyId);
-        await verifyCampaignMessageAndCloseTicket(message, companyId, wbot);
+      } catch (e) {
+        Sentry.captureException(e);
+        logger.error(
+          `Erro no processamento de messages.upsert (companyId=${companyId}, whatsappId=${wbot.id}): ${e}`
+        );
       }
-
-      if (message.key.remoteJid?.endsWith("@g.us")) {
-        if (REDIS_URI_MSG_CONN !== "") {
-          BullQueues.add(
-            `${process.env.DB_NAME}-handleMessageAck`,
-            { msg: message, chat: 2 },
-            {
-              priority: 1,
-              jobId: `${wbot.id}-handleMessageAck-${message.key.id}`
-            }
-          );
-        } else {
-          handleMsgAck(message, 2);
-        }
-      }
-    });
+    }
 
     // messages.forEach(async (message: proto.IWebMessageInfo) => {
     //   const messageExists = await Message.count({
@@ -5595,40 +5609,53 @@ const wbotMessageListener = (wbot: Session, companyId: number): void => {
   wbot.ev.on("messages.update", (messageUpdate: WAMessageUpdate[]) => {
     if (messageUpdate.length === 0) return;
     messageUpdate.forEach(async (message: WAMessageUpdate) => {
-      (wbot as WASocket)!.readMessages([message.key]);
+      try {
+        (wbot as WASocket)!.readMessages([message.key]);
 
-      const msgUp = { ...messageUpdate };
+        const msgUp = { ...messageUpdate };
 
-      if (
-        msgUp["0"]?.update.messageStubType === 1 &&
-        msgUp["0"]?.key.remoteJid !== "status@broadcast"
-      ) {
-        MarkDeleteWhatsAppMessage(
-          msgUp["0"]?.key.remoteJid,
-          null,
-          msgUp["0"]?.key.id,
-          companyId
-        );
-      }
+        if (
+          msgUp["0"]?.update.messageStubType === 1 &&
+          msgUp["0"]?.key.remoteJid !== "status@broadcast"
+        ) {
+          MarkDeleteWhatsAppMessage(
+            msgUp["0"]?.key.remoteJid,
+            null,
+            msgUp["0"]?.key.id,
+            companyId
+          );
+        }
 
-      let ack;
-      if (message.update.status === 3 && message?.key?.fromMe) {
-        ack = 2;
-      } else {
-        ack = message.update.status;
-      }
+        let ack;
+        if (message.update.status === 3 && message?.key?.fromMe) {
+          ack = 2;
+        } else {
+          ack = message.update.status;
+        }
 
-      if (REDIS_URI_MSG_CONN !== "") {
-        BullQueues.add(
-          `${process.env.DB_NAME}-handleMessageAck`,
-          { msg: message, chat: ack },
-          {
-            priority: 1,
-            jobId: `${wbot.id}-handleMessageAck-${message.key.id}`
+        const messageId = message?.key?.id;
+        if (REDIS_URI_MSG_CONN !== "") {
+          try {
+            await BullQueues.add(
+              `${process.env.DB_NAME}-handleMessageAck`,
+              { msg: message, chat: ack },
+              {
+                priority: 1,
+                jobId: `${wbot.id}-handleMessageAck-${messageId}`
+              }
+            );
+          } catch (e) {
+            Sentry.captureException(e);
+            handleMsgAck(message, ack);
           }
+        } else {
+          handleMsgAck(message, ack);
+        }
+      } catch (e) {
+        Sentry.captureException(e);
+        logger.error(
+          `Erro no processamento de messages.update (companyId=${companyId}, whatsappId=${wbot.id}): ${e}`
         );
-      } else {
-        handleMsgAck(message, ack);
       }
     });
   });

@@ -122,25 +122,31 @@ const useStyles = makeStyles((theme) => ({
   },
   input: {
     "& .MuiOutlinedInput-root": {
-      color: "#fff",
+      color: theme.palette.text.primary,
       "& fieldset": {
-        borderColor: "rgba(255, 255, 255, 0.23)",
+        borderColor:
+          theme.palette.type === "dark"
+            ? "rgba(255, 255, 255, 0.23)"
+            : "rgba(0, 0, 0, 0.23)",
       },
       "&:hover fieldset": {
-        borderColor: "rgba(255, 255, 255, 0.5)",
+        borderColor:
+          theme.palette.type === "dark"
+            ? "rgba(255, 255, 255, 0.5)"
+            : "rgba(0, 0, 0, 0.5)",
       },
       "&.Mui-focused fieldset": {
         borderColor: "#60a5fa",
       },
     },
     "& .MuiInputLabel-root": {
-      color: "rgba(255, 255, 255, 0.7)",
+      color: theme.palette.text.secondary,
       "&.Mui-focused": {
         color: "#60a5fa",
       },
     },
     "& .MuiInputBase-input": {
-        color: "#fff"
+        color: theme.palette.text.primary
     }
   },
   button: {
@@ -710,7 +716,7 @@ const Marketing = () => {
           </Paper>
         )}
 
-        <TabPanel value={tab} index={0}>
+        <TabPanel value={tab} name={0}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
                 <Card className={classes.card}>
@@ -749,7 +755,7 @@ const Marketing = () => {
             </Grid>
             <Grid item xs={12} md={8}>
               <Card className={classes.card}>
-                <Section icon={<PublicIcon style={{ color: "white" }} />} title="Visão Geral da Conta">
+                <Section icon={<PublicIcon style={{ color: theme.palette.text.primary }} />} title="Visão Geral da Conta">
                 {!statusError ? (
                   <>
                     {statusLoading ? (
@@ -761,19 +767,19 @@ const Marketing = () => {
                       <Box>
                         <Grid container spacing={3}>
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Usuário Conectado</Typography>
+                            <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Usuário Conectado</Typography>
                             <Typography variant="h6">{status?.me?.name || "-"}</Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Ad Account ID</Typography>
+                             <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Ad Account ID</Typography>
                              <Typography variant="h6">{status?.adAccountId || "-"}</Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Business Manager ID</Typography>
+                             <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Business Manager ID</Typography>
                              <Typography variant="h6">{status?.businessId || "-"}</Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Status da API</Typography>
+                             <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Status da API</Typography>
                              <Typography variant="h6" style={{ color: "#10b981" }}>Ativo</Typography>
                           </Grid>
                         </Grid>
@@ -802,7 +808,7 @@ const Marketing = () => {
                     <Typography variant="h6" gutterBottom>
                        {statusErrorMsg ? "Erro de Conexão" : "Conexão Necessária"}
                     </Typography>
-                    <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
+                    <Typography variant="body2" style={{ color: theme.palette.text.secondary, marginBottom: 16 }}>
                       {statusErrorMsg || "Para utilizar as ferramentas de marketing, você precisa conectar sua conta do Facebook/Instagram."}
                     </Typography>
                     <Button
@@ -833,7 +839,7 @@ const Marketing = () => {
               <Grid container spacing={3} direction="column">
                  <Grid item>
                     <Card className={classes.card}>
-                      <Section icon={<InfoOutlinedIcon style={{ color: "white" }} />} title="Plano Atual">
+                      <Section icon={<InfoOutlinedIcon style={{ color: theme.palette.text.primary }} />} title="Plano Atual">
                         <Box>
                           <Typography variant="subtitle2" gutterBottom style={{ fontWeight: 600 }}>Limites do Plano</Typography>
                           <List dense>
@@ -841,8 +847,8 @@ const Marketing = () => {
                               <ListItemText 
                                 primary="Postagens e Feed" 
                                 secondary="ILIMITADO" 
-                                primaryTypographyProps={{ style: { fontWeight: 500, color: "#fff" } }}
-                                secondaryTypographyProps={{ style: { color: "rgba(255, 255, 255, 0.7)" } }}
+                                primaryTypographyProps={{ style: { fontWeight: 500, color: theme.palette.text.primary } }}
+                                secondaryTypographyProps={{ style: { color: theme.palette.text.secondary } }}
                               />
                             </ListItem>
                             <Divider component="li" style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }} />
@@ -850,8 +856,8 @@ const Marketing = () => {
                               <ListItemText 
                                 primary="Contas Conectadas" 
                                 secondary="De acordo com seu plano" 
-                                primaryTypographyProps={{ style: { fontWeight: 500, color: "#fff" } }}
-                                secondaryTypographyProps={{ style: { color: "rgba(255, 255, 255, 0.7)" } }}
+                                primaryTypographyProps={{ style: { fontWeight: 500, color: theme.palette.text.primary } }}
+                                secondaryTypographyProps={{ style: { color: theme.palette.text.secondary } }}
                               />
                             </ListItem>
                             <Divider component="li" style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }} />
@@ -859,7 +865,7 @@ const Marketing = () => {
                               <ListItemText 
                                 primary="Agendamento" 
                                 secondary="Disponível" 
-                                primaryTypographyProps={{ style: { fontWeight: 500, color: "#fff" } }}
+                                primaryTypographyProps={{ style: { fontWeight: 500, color: theme.palette.text.primary } }}
                                 secondaryTypographyProps={{ style: { color: "rgba(255, 255, 255, 0.7)" } }}
                               />
                             </ListItem>
@@ -889,11 +895,11 @@ const Marketing = () => {
           </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} index={1}>
+        <TabPanel value={tab} name={1}>
           <Grid container spacing={3} justifyContent="center">
             <Grid item xs={12} md={8}>
               <Card className={classes.card}>
-                <Section icon={<CampaignIcon style={{ color: "white" }} />} title="1. Criar Nova Campanha">
+                <Section icon={<CampaignIcon style={{ color: theme.palette.text.primary }} />} title="1. Criar Nova Campanha">
                   <Typography variant="body2" paragraph style={{ color: "rgba(255, 255, 255, 0.7)" }}>
                     A campanha é o primeiro nível da estrutura de anúncios. Defina o nome e o objetivo principal.
                   </Typography>
@@ -909,7 +915,7 @@ const Marketing = () => {
                       <ThumbUpIcon style={{ color: "#10b981" }} />
                       <Box>
                          <Typography variant="subtitle2" style={{ color: "#10b981" }}>Campanha Criada com Sucesso!</Typography>
-                         <Typography variant="body2" style={{ color: "#fff" }}>ID da Campanha: <strong>{campaignId}</strong></Typography>
+                         <Typography variant="body2" style={{ color: theme.palette.text.primary }}>ID da Campanha: <strong>{campaignId}</strong></Typography>
                       </Box>
                     </Box>
                   )}
@@ -919,11 +925,11 @@ const Marketing = () => {
           </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} index={2}>
+        <TabPanel value={tab} name={2}>
           <Grid container spacing={3} justifyContent="center">
             <Grid item xs={12} md={8}>
               <Card className={classes.card}>
-                <Section icon={<AutoGraphIcon style={{ color: "white" }} />} title="2. Configurar Conjunto de Anúncios (AdSet)">
+                <Section icon={<AutoGraphIcon style={{ color: theme.palette.text.primary }} />} title="2. Configurar Conjunto de Anúncios (AdSet)">
                   <TextField fullWidth label="Campaign ID" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} variant="outlined" margin="normal" required helperText="ID da campanha criada no passo anterior" className={classes.input} />
                   <TextField fullWidth label="Nome do AdSet" value={adsetName} onChange={(e) => setAdsetName(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
                   <TextField fullWidth label="Orçamento Diário (centavos)" value={dailyBudget} onChange={(e) => setDailyBudget(e.target.value)} variant="outlined" margin="normal" helperText="Ex: 1000 = R$ 10,00. O mínimo geralmente é R$ 5,50." className={classes.input} />
@@ -943,7 +949,7 @@ const Marketing = () => {
                   {adsetId && (
                     <Box mt={3} p={2} bgcolor="rgba(16, 185, 129, 0.1)" borderRadius={4} border="1px solid #10b981">
                       <Typography variant="subtitle2" style={{ color: "#10b981" }}>AdSet Criado!</Typography>
-                      <Typography variant="body2" style={{ color: "#fff" }}>ID: {adsetId}</Typography>
+                      <Typography variant="body2" style={{ color: theme.palette.text.primary }}>ID: {adsetId}</Typography>
                     </Box>
                   )}
                 </Section>
@@ -952,12 +958,12 @@ const Marketing = () => {
           </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} index={3}>
+        <TabPanel value={tab} name={3}>
           <Box pb={8}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Card className={classes.card}>
-                <Section icon={<WidgetsIcon style={{ color: "white" }} />} title="3.1 Upload de Mídia">
+                <Section icon={<WidgetsIcon style={{ color: theme.palette.text.primary }} />} title="3.1 Upload de Mídia">
                   <Box p={4} border="2px dashed rgba(255, 255, 255, 0.2)" borderRadius={8} textAlign="center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
                     <input
                       accept="image/*"
@@ -988,7 +994,7 @@ const Marketing = () => {
                     {imageHash && (
                         <Box mt={2} p={1} bgcolor="rgba(255, 255, 255, 0.1)" borderRadius={4}>
                              <Typography variant="caption" display="block" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Hash Gerado:</Typography>
-                             <Typography variant="body2" style={{ wordBreak: "break-all", fontWeight: "bold", color: "#fff" }}>{imageHash}</Typography>
+                             <Typography variant="body2" style={{ wordBreak: "break-all", fontWeight: "bold", color: theme.palette.text.primary }}>{imageHash}</Typography>
                         </Box>
                     )}
                   </Box>
@@ -996,7 +1002,7 @@ const Marketing = () => {
               </Card>
               <Box mt={3}>
                  <Card className={classes.card}>
-                  <Section icon={<SettingsSuggestIcon style={{ color: "white" }} />} title="3.2 Criar Criativo (Creative)">
+                  <Section icon={<SettingsSuggestIcon style={{ color: theme.palette.text.primary }} />} title="3.2 Criar Criativo (Creative)">
                     <TextField
                       select
                       fullWidth
@@ -1034,7 +1040,7 @@ const Marketing = () => {
             </Grid>
             <Grid item xs={12} md={6}>
               <Card className={classes.card}>
-                <Section icon={<CampaignIcon style={{ color: "white" }} />} title="3.3 Publicar Anúncio (Ad)">
+                <Section icon={<CampaignIcon style={{ color: theme.palette.text.primary }} />} title="3.3 Publicar Anúncio (Ad)">
                    <TextField fullWidth label="Nome do Anúncio" value={adName} onChange={(e) => setAdName(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
                    <TextField fullWidth label="AdSet ID" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
                    <TextField fullWidth label="Creative ID" value={creativeId} onChange={(e) => setCreativeId(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
@@ -1050,7 +1056,7 @@ const Marketing = () => {
               </Card>
                <Box mt={3}>
                 <Card className={classes.card}>
-                  <Section icon={<SendIcon style={{ color: "white" }} />} title="Teste de DM (Instagram)">
+                  <Section icon={<SendIcon style={{ color: theme.palette.text.primary }} />} title="Teste de DM (Instagram)">
                     <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }} paragraph>
                        Envie uma mensagem direta de teste para um ticket aberto no sistema.
                     </Typography>
@@ -1070,21 +1076,21 @@ const Marketing = () => {
           </Box>
         </TabPanel>
 
-        <TabPanel value={tab} index={4}>
+        <TabPanel value={tab} name={4}>
           <Grid container spacing={3}>
              <Grid item xs={12}>
                 <Card className={classes.card}>
-                  <Section icon={<LinkIcon style={{ color: "white" }} />} title="Fluxo Rápido: Anúncio Click-to-WhatsApp">
+                  <Section icon={<LinkIcon style={{ color: theme.palette.text.primary }} />} title="Fluxo Rápido: Anúncio Click-to-WhatsApp">
                      <Box py={2}>
                         <Stepper activeStep={flowStep} alternativeLabel style={{ backgroundColor: 'transparent', padding: 0 }}>
-                          <Step><StepLabel style={{ color: '#fff' }}>Campanha</StepLabel></Step>
-                          <Step><StepLabel style={{ color: '#fff' }}>AdSet</StepLabel></Step>
-                          <Step><StepLabel style={{ color: '#fff' }}>Creative</StepLabel></Step>
-                          <Step><StepLabel style={{ color: '#fff' }}>Publicação</StepLabel></Step>
+                          <Step><StepLabel style={{ color: theme.palette.text.primary }}>Campanha</StepLabel></Step>
+                          <Step><StepLabel style={{ color: theme.palette.text.primary }}>AdSet</StepLabel></Step>
+                          <Step><StepLabel style={{ color: theme.palette.text.primary }}>Creative</StepLabel></Step>
+                          <Step><StepLabel style={{ color: theme.palette.text.primary }}>Publicação</StepLabel></Step>
                         </Stepper>
                      </Box>
                      <Box maxWidth={700} mx="auto" mt={4} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
-                        <Typography variant="h6" gutterBottom align="center" style={{ color: "#fff" }}>Configuração Expressa</Typography>
+                        <Typography variant="h6" gutterBottom align="center" style={{ color: theme.palette.text.primary }}>Configuração Expressa</Typography>
                         <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }} align="center" paragraph>
                            Crie toda a estrutura de campanha para WhatsApp em um clique.
                         </Typography>
@@ -1192,15 +1198,15 @@ const Marketing = () => {
           </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} index={5}>
+        <TabPanel value={tab} name={5}>
           <Grid container spacing={3}>
              <Grid item xs={12}>
                 <Card className={classes.card}>
-                  <Section icon={<SettingsSuggestIcon style={{ color: "white" }} />} title="Gerenciamento de Status">
+                  <Section icon={<SettingsSuggestIcon style={{ color: theme.palette.text.primary }} />} title="Gerenciamento de Status">
                     <Grid container spacing={4}>
                        <Grid item xs={12} md={6}>
                           <Paper elevation={0} style={{ padding: 16, border: "1px solid rgba(255, 255, 255, 0.1)", backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
-                            <Typography variant="h6" gutterBottom style={{ display: 'flex', alignItems: 'center', gap: 8, color: "#fff" }}>
+                            <Typography variant="h6" gutterBottom style={{ display: 'flex', alignItems: 'center', gap: 8, color: theme.palette.text.primary }}>
                                <CampaignIcon color="primary" /> Campanha
                             </Typography>
                             <TextField fullWidth label="ID da Campanha" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} variant="outlined" size="small" margin="normal" className={classes.input} />
@@ -1216,7 +1222,7 @@ const Marketing = () => {
                        </Grid>
                        <Grid item xs={12} md={6}>
                           <Paper elevation={0} style={{ padding: 16, border: "1px solid rgba(255, 255, 255, 0.1)", backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
-                            <Typography variant="h6" gutterBottom style={{ display: 'flex', alignItems: 'center', gap: 8, color: "#fff" }}>
+                            <Typography variant="h6" gutterBottom style={{ display: 'flex', alignItems: 'center', gap: 8, color: theme.palette.text.primary }}>
                                <AutoGraphIcon color="primary" /> Conjunto de Anúncios (AdSet)
                             </Typography>
                             <TextField fullWidth label="ID do AdSet" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} variant="outlined" size="small" margin="normal" className={classes.input} />
@@ -1237,11 +1243,11 @@ const Marketing = () => {
           </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} index={6}>
+        <TabPanel value={tab} name={6}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
                <Card className={classes.card}>
-                  <Section icon={<AutoGraphIcon style={{ color: "white" }} />} title="Relatórios de Desempenho">
+                  <Section icon={<AutoGraphIcon style={{ color: theme.palette.text.primary }} />} title="Relatórios de Desempenho">
                       <Box mb={4} display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
                          <TextField
                             select
@@ -1287,23 +1293,23 @@ const Marketing = () => {
                          <Table size="small">
                             <TableHead>
                               <TableRow style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
-                                 <TableCell style={{ color: "#fff" }}>Impressões</TableCell>
-                                 <TableCell style={{ color: "#fff" }}>Alcance</TableCell>
-                                 <TableCell style={{ color: "#fff" }}>Cliques</TableCell>
-                                 <TableCell style={{ color: "#fff" }}>Gasto</TableCell>
-                                 <TableCell style={{ color: "#fff" }}>CPM</TableCell>
-                                 <TableCell style={{ color: "#fff" }}>CTR</TableCell>
+                                 <TableCell style={{ color: theme.palette.text.primary }}>Impressões</TableCell>
+                                 <TableCell style={{ color: theme.palette.text.primary }}>Alcance</TableCell>
+                                 <TableCell style={{ color: theme.palette.text.primary }}>Cliques</TableCell>
+                                 <TableCell style={{ color: theme.palette.text.primary }}>Gasto</TableCell>
+                                 <TableCell style={{ color: theme.palette.text.primary }}>CPM</TableCell>
+                                 <TableCell style={{ color: theme.palette.text.primary }}>CTR</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
                                {insights.map((row, idx) => (
                                  <TableRow key={idx} hover>
-                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{row.impressions}</TableCell>
-                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{row.reach}</TableCell>
-                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{row.clicks}</TableCell>
-                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(row.spend || 0)}</TableCell>
-                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{Number(row.cpm || 0).toFixed(2)}</TableCell>
-                                    <TableCell style={{ color: "rgba(255, 255, 255, 0.7)" }}>{Number(row.ctr || 0).toFixed(2)}%</TableCell>
+                                    <TableCell style={{ color: theme.palette.text.secondary }}>{row.impressions}</TableCell>
+                                    <TableCell style={{ color: theme.palette.text.secondary }}>{row.reach}</TableCell>
+                                    <TableCell style={{ color: theme.palette.text.secondary }}>{row.clicks}</TableCell>
+                                    <TableCell style={{ color: theme.palette.text.secondary }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(row.spend || 0)}</TableCell>
+                                    <TableCell style={{ color: theme.palette.text.secondary }}>{Number(row.cpm || 0).toFixed(2)}</TableCell>
+                                    <TableCell style={{ color: theme.palette.text.secondary }}>{Number(row.ctr || 0).toFixed(2)}%</TableCell>
                                  </TableRow>
                                ))}
                             </TableBody>
@@ -1316,12 +1322,12 @@ const Marketing = () => {
           </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} index={7}>
+        <TabPanel value={tab} name={7}>
            <Grid container spacing={3} justifyContent="center">
               <Grid item xs={12} md={8}>
                  <Card className={classes.card}>
-                    <Section icon={<PostAddIcon style={{ color: "white" }} />} title="Publicar Conteúdo">
-                       <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }} paragraph>
+                    <Section icon={<PostAddIcon style={{ color: theme.palette.text.primary }} />} title="Publicar Conteúdo">
+                       <Typography variant="body2" style={{ color: theme.palette.text.secondary }} paragraph>
                           Publique ou agende posts para seu Feed do Instagram e Facebook.
                        </Typography>
                        <Grid container spacing={3}>
@@ -1339,12 +1345,12 @@ const Marketing = () => {
                                 <FormControlLabel
                                   control={<Checkbox checked={selectedPlatforms.facebook} onChange={(e) => setSelectedPlatforms({...selectedPlatforms, facebook: e.target.checked})} name="facebook" style={{color: '#1877F2'}} />}
                                   label="Facebook"
-                                  style={{color: '#fff'}}
+                                  style={{ color: theme.palette.text.primary }}
                                 />
                                 <FormControlLabel
                                   control={<Checkbox checked={selectedPlatforms.instagram} onChange={(e) => setSelectedPlatforms({...selectedPlatforms, instagram: e.target.checked})} name="instagram" style={{color: '#E1306C'}} />}
                                   label="Instagram"
-                                  style={{color: '#fff'}}
+                                  style={{ color: theme.palette.text.primary }}
                                 />
                              </Box>
                           </Grid>
@@ -1395,11 +1401,11 @@ const Marketing = () => {
                                      </Box>
                                  ) : (
                                      <Box py={4}>
-                                        <PublicIcon style={{ fontSize: 64, color: "rgba(255,255,255,0.5)", marginBottom: 16 }} />
-                                        <Typography variant="h6" style={{ color: "#fff", marginBottom: 8 }}>
+                                       <PublicIcon style={{ fontSize: 64, color: theme.palette.text.secondary, marginBottom: 16 }} />
+                                        <Typography variant="h6" style={{ color: theme.palette.text.primary, marginBottom: 8 }}>
                                             Clique para fazer Upload de Foto ou Vídeo
                                         </Typography>
-                                        <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.5)" }}>
+                                        <Typography variant="body2" style={{ color: theme.palette.text.secondary }}>
                                             Suporta JPG, PNG, MP4, MOV
                                         </Typography>
                                         <Button variant="contained" component="span" startIcon={<PublicIcon />} className={classes.button} style={{ marginTop: 24 }}>
@@ -1430,13 +1436,13 @@ const Marketing = () => {
            </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} index={8}>
+        <TabPanel value={tab} name={8}>
            <Grid container spacing={3} justifyContent="center">
               <Grid item xs={12} md={10}>
                  <Paper elevation={0} style={{ padding: 24, marginBottom: 24, borderRadius: 16, backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", backdropFilter: "blur(10px)" }}>
                     <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
                        <Box flexGrow={1}>
-                          <Typography variant="h6" gutterBottom style={{ color: "#fff" }}>Feed do Facebook/Instagram</Typography>
+                          <Typography variant="h6" gutterBottom style={{ color: theme.palette.text.primary }}>Feed do Facebook/Instagram</Typography>
                           <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Selecione uma página para visualizar e interagir com as postagens recentes.</Typography>
                        </Box>
                        <Box display="flex" gap={2} alignItems="center">
@@ -1514,7 +1520,7 @@ const Marketing = () => {
                                <Box p={2} display="flex" alignItems="center" borderBottom="1px solid rgba(255, 255, 255, 0.1)">
                                   <Avatar src={post.from?.picture?.data?.url} style={{ border: "2px solid #3b82f6" }}>{post.from?.name?.[0]}</Avatar>
                                   <Box ml={2}>
-                                     <Typography variant="subtitle2" style={{ fontWeight: 700, color: "#fff" }}>{post.from?.name}</Typography>
+                                     <Typography variant="subtitle2" style={{ fontWeight: 700, color: theme.palette.text.primary }}>{post.from?.name}</Typography>
                                      <Typography variant="caption" style={{ display: "flex", alignItems: "center", gap: 4, color: "rgba(255, 255, 255, 0.7)" }}>
                                         {new Date(post.created_time).toLocaleDateString()} às {new Date(post.created_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                         <PublicIcon style={{ fontSize: 12 }} />
@@ -1569,7 +1575,7 @@ const Marketing = () => {
                                              <Box key={c.id} mb={2} display="flex" alignItems="flex-start">
                                                 <Avatar style={{ width: 32, height: 32, marginRight: 12, fontSize: 14 }}>{c.from?.name?.[0]}</Avatar>
                                                 <Box bgcolor="rgba(255, 255, 255, 0.1)" p={2} borderRadius="0 12px 12px 12px" border="1px solid rgba(255, 255, 255, 0.1)" flexGrow={1}>
-                                                   <Typography variant="subtitle2" style={{ fontSize: "0.85rem", fontWeight: "bold", color: "#fff" }}>{c.from?.name}</Typography>
+                                                   <Typography variant="subtitle2" style={{ fontSize: "0.85rem", fontWeight: "bold", color: theme.palette.text.primary }}>{c.from?.name}</Typography>
                                                    <Typography variant="body2" style={{ fontSize: "0.9rem", color: "#d1d5db" }}>{c.message}</Typography>
                                                 </Box>
                                              </Box>
@@ -1590,7 +1596,7 @@ const Marketing = () => {
                                            className={classes.input}
                                            id={`comment-${post.id}`} 
                                            InputProps={{ 
-                                              style: { backgroundColor: "rgba(255, 255, 255, 0.05)", borderRadius: 20, color: "#fff" },
+                                              style: { backgroundColor: "rgba(255, 255, 255, 0.05)", borderRadius: 20, color: theme.palette.text.primary },
                                               endAdornment: (
                                                 <InputAdornment position="end">
                                                   <IconButton size="small" edge="end" color="primary" onClick={() => {
@@ -1615,7 +1621,7 @@ const Marketing = () => {
            </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} index={9}>
+        <TabPanel value={tab} name={9}>
            <Grid container spacing={3} justifyContent="center">
               <Grid item xs={12} md={8}>
                  <Card className={classes.card}>
@@ -1625,13 +1631,13 @@ const Marketing = () => {
                        </Typography>
                        
                        <Box mb={4} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
-                          <Typography variant="h6" gutterBottom style={{ color: "#fff" }}>Meta (Facebook & Instagram)</Typography>
+                          <Typography variant="h6" gutterBottom style={{ color: theme.palette.text.primary }}>Meta (Facebook & Instagram)</Typography>
                           
                           {status?.adAccountId ? (
                              <Box>
                                 <Box display="flex" alignItems="center" gap={2} mb={2}>
                                    <CheckCircleIcon style={{ color: "#10b981" }} />
-                                   <Typography variant="body1" style={{ color: "#fff" }}>Conectado como <strong>{status.me?.name}</strong></Typography>
+                                   <Typography variant="body1" style={{ color: theme.palette.text.primary }}>Conectado como <strong>{status.me?.name}</strong></Typography>
                                 </Box>
                                 <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Ad Account ID: {status.adAccountId}</Typography>
                                 <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Business Manager ID: {status.businessId}</Typography>
@@ -1655,7 +1661,7 @@ const Marketing = () => {
                        </Box>
                        
                        <Box mb={4} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
-                          <Typography variant="h6" gutterBottom style={{ color: "#fff" }}>OpenAI / LLM</Typography>
+                          <Typography variant="h6" gutterBottom style={{ color: theme.palette.text.primary }}>OpenAI / LLM</Typography>
                           <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
                              A configuração da IA é feita no menu "OpenAI" ou "Integrações".
                           </Typography>

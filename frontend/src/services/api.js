@@ -81,7 +81,19 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (_) {
         localStorage.removeItem("token");
+        localStorage.removeItem("companyId");
+        localStorage.removeItem("userId");
+        api.defaults.headers.Authorization = undefined;
+        window.dispatchEvent(new Event("auth:logout"));
       }
+    }
+
+    if (status === 401) {
+       localStorage.removeItem("token");
+       localStorage.removeItem("companyId");
+       localStorage.removeItem("userId");
+       api.defaults.headers.Authorization = undefined;
+       window.dispatchEvent(new Event("auth:logout"));
     }
 
     return Promise.reject(error);

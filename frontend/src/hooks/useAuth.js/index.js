@@ -21,83 +21,20 @@ const useAuth = () => {
   const isMountedRef = useRef(true);
 
   useEffect(() => {
-    isMountedRef.current = true;
-
-    const requestId = api.interceptors.request.use(
-      (config) => {
-        const rawToken = localStorage.getItem("token");
-        if (rawToken) {
-          let token = rawToken;
-          try {
-            token = JSON.parse(rawToken);
-          } catch (_) {}
-          config.headers["Authorization"] = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    const responseId = api.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        const originalRequest = error.config;
-        const status = error?.response?.status;
-        const requestUrl = originalRequest?.url || "";
-        const errorMsg = error?.response?.data?.error;
-
-        if (status === 403 && errorMsg === "ERR_PLAN_LIMIT") {
-             return Promise.reject(error);
-        }
-
-        if (
-          (status === 401 || status === 403) &&
-          originalRequest &&
-          !originalRequest._retry &&
-          !requestUrl.includes("/auth/login") &&
-          !requestUrl.includes("/auth/refresh_token") &&
-          !requestUrl.includes("/auth/logout")
-        ) {
-          originalRequest._retry = true;
-
-          try {
-            const { data } = await api.post("/auth/refresh_token");
-            if (data) {
-              localStorage.setItem("token", JSON.stringify(data.token));
-              api.defaults.headers.Authorization = `Bearer ${data.token}`;
-            }
-            return api(originalRequest);
-          } catch (refreshError) {
-            localStorage.removeItem("token");
-            api.defaults.headers.Authorization = undefined;
-            if (isMountedRef.current) {
-              setIsAuth(false);
-              setUser({});
-              history.push("/login");
-            }
-            return Promise.reject(refreshError);
-          }
-        }
-
-        if (status === 401) {
-          localStorage.removeItem("token");
-          api.defaults.headers.Authorization = undefined;
-          if (isMountedRef.current) {
-            setIsAuth(false);
-            history.push("/login");
-          }
-        }
-
-        return Promise.reject(error);
+    const handleLogout = () => {
+      if (isMountedRef.current) {
+        setIsAuth(false);
+        setUser({});
+        history.push("/login");
       }
-    );
+    };
+
+    window.addEventListener("auth:logout", handleLogout);
 
     return () => {
-      isMountedRef.current = false;
-      api.interceptors.request.eject(requestId);
-      api.interceptors.response.eject(responseId);
+      window.removeEventListener("auth:logout", handleLogout);
     };
-  }, []);
+  }, [history]);
 
   useEffect(() => {
     let isMounted = true;

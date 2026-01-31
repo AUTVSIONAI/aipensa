@@ -278,6 +278,21 @@ const openRouterModels = [
     { value: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B (Free)", free: true }
 ];
 
+const initialState = {
+    name: "",
+    prompt: "",
+    voice: "texto",
+    voiceKey: "",
+    voiceRegion: "",
+    maxTokens: 100,
+    temperature: 1,
+    apiKey: "",
+    queueId: null,
+    maxMessages: 10,
+    provider: "openai",
+    model: ""
+};
+
 const PromptModal = ({ open, onClose, promptId }) => {
     const classes = useStyles();
     const [selectedVoice, setSelectedVoice] = useState("texto");
@@ -290,24 +305,10 @@ const PromptModal = ({ open, onClose, promptId }) => {
         setShowApiKey(!showApiKey);
     };
 
-    const initialState = {
-        name: "",
-        prompt: "",
-        voice: "texto",
-        voiceKey: "",
-        voiceRegion: "",
-        maxTokens: 100,
-        temperature: 1,
-        apiKey: "",
-        queueId: null,
-        maxMessages: 10,
-        provider: "openai",
-        model: ""
-    };
-
     const [prompt, setPrompt] = useState(initialState);
 
     useEffect(() => {
+        if (!open) return;
         const fetchPrompt = async () => {
             if (!promptId) {
                 setPrompt(initialState);
@@ -336,7 +337,7 @@ const PromptModal = ({ open, onClose, promptId }) => {
         };
 
         fetchPrompt();
-    }, [promptId, open, initialState]);
+    }, [promptId, open]);
 
     const handleClose = () => {
         setPrompt(initialState);

@@ -797,11 +797,13 @@ const SignUp = () => {
             try {
                 setLoading(true);
                 const planList = await getPlanList();
+                console.log("[DEBUG] SignUp loaded plans:", planList);
                 
                 if (isMounted) {
                     setPlans(planList);
                 }
             } catch (error) {
+                console.error("[DEBUG] SignUp plan fetch error:", error);
                 if (isMounted) {
                     toastError("Erro ao carregar planos. Tente novamente.");
                     console.error("Plan fetch error:", error);

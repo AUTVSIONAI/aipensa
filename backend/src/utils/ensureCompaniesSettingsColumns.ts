@@ -48,6 +48,14 @@ export const ensureCompaniesSettingsColumns = async () => {
         allowNull: true
       });
     }
+
+    if (!tableInfo["enableAutoStatus"]) {
+      await qi.addColumn("CompaniesSettings", "enableAutoStatus", {
+        type: "VARCHAR(255)",
+        allowNull: true,
+        defaultValue: "disabled"
+      });
+    }
   } catch (err) {
     // silencioso para não travar o boot; logs mínimos
     // eslint-disable-next-line no-console

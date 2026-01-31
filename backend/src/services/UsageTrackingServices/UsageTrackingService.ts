@@ -60,14 +60,13 @@ export const checkPlanLimit = async (
     include: [{ model: Plan, as: "plan" }]
   });
 
-  if (!company || !company.plan) return false;
+  if (!company || !company.plan) return true;
 
   const limit = company.plan[featureLimitColumn];
 
-  // If limit is -1 or 0 (depending on logic), maybe it means unlimited?
-  // User requirement: "Conversas excedentes cobradas à parte" (Enterprise).
-  // For now, assume strict limit.
-  // Note: limitVoiceMinutes is in minutes, usageType 'VOICE_SECONDS' is in seconds.
+  if (limit === undefined || limit === null) return true;
+  if (typeof limit !== "number") return true;
+  if (limit <= 0) return true;
 
   let currentUsage = await getUsage(companyId, usageType);
 

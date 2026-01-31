@@ -27,7 +27,6 @@ import QueueIntegration from "../QueueIntegration"; // Integrations
 import Files from "../Files";
 import Financeiro from "../Financeiro";
 import Annoucements from "../Annoucements";
-import Marketing from "../Marketing";
 
 import { i18n } from "../../translate/i18n.js";
 import { toast } from "react-toastify";
@@ -1204,12 +1203,6 @@ const SettingsCustom = () => {
 
                 <TabPanel value={tab} name="users" className={classes.embeddedContainer}>
                     <Users />
-                </TabPanel>
-
-                <TabPanel value={tab} name="marketing" className={classes.embeddedContainer}>
-                    <GlassCard>
-                        <Marketing />
-                    </GlassCard>
                 </TabPanel>
 
                 <TabPanel value={tab} name="studio" className={classes.embeddedContainer}>
