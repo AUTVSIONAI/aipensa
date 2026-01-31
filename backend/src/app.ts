@@ -99,10 +99,10 @@ app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
 app.use(
   cors({
     credentials: true,
-    origin: process.env.NODE_ENV === "production" ? false : (origin, callback) => {
+    origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-
+      
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
