@@ -18,7 +18,7 @@ ARG REACT_APP_FACEBOOK_APP_ID
 ENV REACT_APP_FACEBOOK_APP_ID=$REACT_APP_FACEBOOK_APP_ID
 
 # Build do React
-RUN npm run build
+RUN npm run build:docker
 
 # --- Estágio de Produção ---
 FROM nginx:stable-alpine
