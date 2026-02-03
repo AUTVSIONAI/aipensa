@@ -181,11 +181,12 @@ export const createSubscription = async (
   //console.log(asaasURL);
 
   if (key_STRIPE_PRIVATE) {
-    const stripe = new Stripe(key_STRIPE_PRIVATE, {
-      apiVersion: "2022-11-15"
-    });
+    try {
+      const stripe = new Stripe(key_STRIPE_PRIVATE, {
+        apiVersion: "2022-11-15"
+      });
 
-    const sessionStripe = await stripe.checkout.sessions.create({
+      const sessionStripe = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
@@ -213,6 +214,9 @@ export const createSubscription = async (
     //console.log(sessionStripe);
 
     stripeURL = sessionStripe.url;
+    } catch (error) {
+      console.error("Error creating Stripe session:", error);
+    }
   }
 
   if (key_GERENCIANET_PIX_KEY) {
