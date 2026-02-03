@@ -303,15 +303,19 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const DraggablePaper = (props) => (
-  <Draggable
-    handle="#draggable-dialog-title"
-    cancel={'[class*="MuiDialogContent-root"], [class*="MuiDialogActions-root"]'}
-    bounds="parent"
-  >
-    <Paper {...props} />
-  </Draggable>
-);
+const DraggablePaper = (props) => {
+  const nodeRef = React.useRef(null);
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      handle="#draggable-dialog-title"
+      cancel={'[class*="MuiDialogContent-root"], [class*="MuiDialogActions-root"]'}
+      bounds="parent"
+    >
+      <Paper {...props} ref={nodeRef} />
+    </Draggable>
+  );
+};
 
 const TagModal = ({ open, onClose, tagId, kanban }) => {
   const theme = useTheme();

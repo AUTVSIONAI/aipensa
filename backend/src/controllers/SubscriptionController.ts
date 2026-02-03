@@ -44,26 +44,20 @@ export const createSubscription = async (
   let key_ASAAS_TOKEN = null;
 
   const buscacompanyId = req.user?.companyId ?? 1;
+
+  const getSettingValue = async (key: string, companyId: number): Promise<string | null> => {
+    let setting = await Setting.findOne({ where: { companyId, key } });
+    if (!setting && companyId !== 1) {
+      setting = await Setting.findOne({ where: { companyId: 1, key } });
+    }
+    return setting?.value || null;
+  };
+
   try {
-    const getasaastoken = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "asaastoken" }
-    });
-    key_ASAAS_TOKEN = getasaastoken?.value;
-
-    const getmptoken = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "mpaccesstoken" }
-    });
-    key_MP_ACCESS_TOKEN = getmptoken?.value;
-
-    const getstripetoken = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "stripeprivatekey" }
-    });
-    key_STRIPE_PRIVATE = getstripetoken?.value;
-
-    const getpixchave = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "efichavepix" }
-    });
-    key_GERENCIANET_PIX_KEY = getpixchave?.value;
+    key_ASAAS_TOKEN = await getSettingValue("asaastoken", buscacompanyId) || process.env.ASAAS_TOKEN || null;
+    key_MP_ACCESS_TOKEN = await getSettingValue("mpaccesstoken", buscacompanyId) || process.env.MP_ACCESS_TOKEN || null;
+    key_STRIPE_PRIVATE = await getSettingValue("stripeprivatekey", buscacompanyId) || process.env.STRIPE_PRIVATE || process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY || null;
+    key_GERENCIANET_PIX_KEY = await getSettingValue("efichavepix", buscacompanyId) || process.env.GERENCIANET_PIX_KEY || null;
   } catch (error) {
     console.error("Error retrieving settings:", error);
   }

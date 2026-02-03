@@ -2,7 +2,9 @@
 <html lang="pt">
   <head>
     <script>
-      window.process = window.process || { env: { NODE_ENV: 'development' } };
+      window.process = window.process || {};
+      window.process.env = window.process.env || {};
+      window.process.env.NODE_ENV = window.process.env.NODE_ENV || 'development';
     </script>
     <script>
       if ('serviceWorker' in navigator) {

@@ -258,42 +258,18 @@ export const publishContent = async (
     // 1. Publicar no Facebook
     if (facebookPageId) {
       try {
-        const pageResp = await axios.get(
-          `https://graph.facebook.com/${GRAPH_VERSION}/${facebookPageId}`,
-          {
-            params: { fields: "access_token", access_token: accessToken }
-          }
+        const result = await SocialMediaService.publishToFacebook(
+          companyId,
+          facebookPageId,
+          message,
+          imageUrl,
+          scheduledTime
         );
-        const pageAccessToken = pageResp.data.access_token;
-
-        const endpoint = imageUrl
-          ? `https://graph.facebook.com/${GRAPH_VERSION}/${facebookPageId}/photos`
-          : `https://graph.facebook.com/${GRAPH_VERSION}/${facebookPageId}/feed`;
-
-        const body: any = {
-          access_token: pageAccessToken,
-          message: message
-        };
-
-        if (imageUrl) {
-          body.url = imageUrl;
-          body.caption = message;
-          delete body.message;
-        }
-
-        if (scheduledTime) {
-          body.published = false;
-          body.scheduled_publish_time = Math.floor(
-            new Date(scheduledTime).getTime() / 1000
-          );
-        }
-
-        const resp = await axios.post(endpoint, body);
-        results.facebook = resp.data;
-        await incrementUsage(companyId, "POST", 1, `FB-${resp.data.id}`);
+        results.facebook = result;
+        await incrementUsage(companyId, "POST", 1, `FB-${result.id}`);
       } catch (err: any) {
         console.error("Erro Facebook Publish:", err.message);
-        results.facebook = { error: err.response?.data || err.message };
+        results.facebook = { error: err.message };
       }
     }
 
@@ -303,42 +279,18 @@ export const publishContent = async (
         if (!imageUrl) {
           results.instagram = { error: "Instagram requer uma imagem" };
         } else {
-          const containerParams: any = {
-            access_token: accessToken,
-            image_url: imageUrl,
-            caption: message
-          };
-
-          const createContainer = await axios.post(
-            `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-            null,
-            { params: containerParams }
-          );
-
-          const creationId = createContainer.data.id;
-
-          const publishParams: any = {
-            access_token: accessToken,
-            creation_id: creationId
-          };
-
-          const publishResp = await axios.post(
-            `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-            null,
-            { params: publishParams }
-          );
-
-          results.instagram = publishResp.data;
-          await incrementUsage(
+          const result = await SocialMediaService.publishToInstagram(
             companyId,
-            "POST",
-            1,
-            `IG-${publishResp.data.id}`
+            instagramId,
+            imageUrl,
+            message
           );
+          results.instagram = result;
+          await incrementUsage(companyId, "POST", 1, `IG-${result.id}`);
         }
       } catch (err: any) {
         console.error("Erro Instagram Publish:", err.message);
-        results.instagram = { error: err.response?.data || err.message };
+        results.instagram = { error: err.message };
       }
     }
 
@@ -822,6 +774,13 @@ export const createWhatsappAdFlow = async (
       ad_name = "Anúncio WhatsApp"
     } = req.body || {};
 
+    if (!page_id || !phone_number_e164 || !image_hash) {
+      return res.status(400).json({
+        error:
+          "Faltando parâmetros obrigatórios: page_id, phone_number_e164 ou image_hash."
+      });
+    }
+
     console.log("[Marketing] createWhatsappAdFlow params:", {
       adAccountId,
       page_id,
@@ -907,6 +866,35 @@ export const createWhatsappAdFlow = async (
     }
 
     return res.status(400).json({ error: errorMessage });
+  }
+};
+
+export const sendInstagramMessage = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+    const { instagramId, recipientId, message } = req.body;
+
+    if (!instagramId || !recipientId || !message) {
+      return res.status(400).json({
+        error: "Faltando parâmetros: instagramId, recipientId ou message."
+      });
+    }
+
+    const result = await SocialMediaService.sendInstagramDM(
+      companyId,
+      instagramId,
+      recipientId,
+      message
+    );
+
+    return res.json(result);
+  } catch (error: any) {
+    const errorMsg = error?.message || "Erro desconhecido ao enviar DM";
+    console.error("[Marketing] sendInstagramMessage Error:", errorMsg);
+    return res.status(400).json({ error: errorMsg });
   }
 };
 

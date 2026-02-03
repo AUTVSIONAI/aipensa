@@ -45,5 +45,10 @@ routes.post("/marketing/publish", isAuth, MarketingController.publishContent);
 routes.get("/marketing/feed", isAuth, MarketingController.getFeed);
 routes.post("/marketing/like", isAuth, MarketingController.likePost);
 routes.post("/marketing/comment", isAuth, MarketingController.commentPost);
+routes.post(
+  "/marketing/send-dm",
+  isAuth,
+  MarketingController.sendInstagramMessage
+);
 
 export default routes;

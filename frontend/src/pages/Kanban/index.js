@@ -236,7 +236,8 @@ const Kanban = () => {
   };
 
   const popularCards = () => {
-    const filteredTickets = tickets.filter(ticket => ticket.tags.length === 0);
+    if (!tickets) return;
+    const filteredTickets = tickets.filter(ticket => (ticket.tags || []).length === 0);
 
     const laneStyle = {
       backgroundColor: theme.palette.type === 'dark' ? "#2d2b42" : "#f4f5f7",
@@ -297,7 +298,7 @@ const Kanban = () => {
       },
       ...tags.map(tag => {
         const filteredTickets = tickets.filter(ticket => {
-          const tagIds = ticket.tags.map(tag => tag.id);
+          const tagIds = (ticket.tags || []).map(tag => tag.id);
           return tagIds.includes(tag.id);
         });
 
@@ -352,12 +353,14 @@ const Kanban = () => {
     popularCards();
   }, [tags, tickets]);
 
-  const handleCardMove = async (cardId, sourceLaneId, targetLaneId) => {
+  const handleCardMove = async (fromLaneId, toLaneId, cardId, index) => {
     try {
-      await api.delete(`/ticket-tags/${targetLaneId}`);
+      await api.delete(`/ticket-tags/${cardId}`);
       toast.success('Ticket Tag Removido!');
-      await api.put(`/ticket-tags/${targetLaneId}/${sourceLaneId}`);
-      toast.success('Ticket Tag Adicionado com Sucesso!');
+      if(toLaneId !== "lane0") {
+        await api.put(`/ticket-tags/${cardId}/${toLaneId}`);
+        toast.success('Ticket Tag Adicionado com Sucesso!');
+      }
       await fetchTickets();
       popularCards();
     } catch (err) {

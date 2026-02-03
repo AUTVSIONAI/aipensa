@@ -195,41 +195,51 @@ export const publishVideoToInstagram = async (
   videoUrl: string,
   caption: string
 ): Promise<any> => {
-  const { accessToken } = await getFbConfig(companyId);
-  if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+  try {
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
-  // 1. Create Container
-  const containerParams: any = {
-    access_token: accessToken,
-    video_url: videoUrl,
-    media_type: "VIDEO",
-    caption: caption
-  };
+    // 1. Create Container
+    const containerParams: any = {
+      access_token: accessToken,
+      video_url: videoUrl,
+      media_type: "VIDEO",
+      caption: caption
+    };
 
-  const createContainer = await axios.post(
-    `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-    null,
-    { params: containerParams }
-  );
+    const createContainer = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
+      null,
+      { params: containerParams }
+    );
 
-  const creationId = createContainer.data.id;
+    const creationId = createContainer.data.id;
 
-  // Wait for processing
-  await waitForInstagramMedia(creationId, accessToken);
+    // Wait for processing
+    await waitForInstagramMedia(creationId, accessToken);
 
-  // 2. Publish Container
-  const publishParams: any = {
-    access_token: accessToken,
-    creation_id: creationId
-  };
+    // 2. Publish Container
+    const publishParams: any = {
+      access_token: accessToken,
+      creation_id: creationId
+    };
 
-  const publishResp = await axios.post(
-    `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-    null,
-    { params: publishParams }
-  );
+    const publishResp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
+      null,
+      { params: publishParams }
+    );
 
-  return publishResp.data;
+    return publishResp.data;
+  } catch (error: any) {
+    const errorData = error.response?.data?.error || {};
+    if (JSON.stringify(errorData).includes("pages_read_engagement")) {
+      throw new Error(
+        "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
+      );
+    }
+    throw error;
+  }
 };
 
 export const publishToInstagram = async (
@@ -238,37 +248,85 @@ export const publishToInstagram = async (
   imageUrl: string,
   caption: string
 ): Promise<any> => {
-  const { accessToken } = await getFbConfig(companyId);
-  if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+  try {
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
-  // 1. Create Container
-  const containerParams: any = {
-    access_token: accessToken,
-    image_url: imageUrl,
-    caption: caption
-  };
+    // 1. Create Container
+    const containerParams: any = {
+      access_token: accessToken,
+      image_url: imageUrl,
+      caption: caption
+    };
 
-  const createContainer = await axios.post(
-    `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-    null,
-    { params: containerParams }
-  );
+    const createContainer = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
+      null,
+      { params: containerParams }
+    );
 
-  const creationId = createContainer.data.id;
+    const creationId = createContainer.data.id;
 
-  // 2. Publish Container
-  const publishParams: any = {
-    access_token: accessToken,
-    creation_id: creationId
-  };
+    // 2. Publish Container
+    const publishParams: any = {
+      access_token: accessToken,
+      creation_id: creationId
+    };
 
-  const publishResp = await axios.post(
-    `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-    null,
-    { params: publishParams }
-  );
+    const publishResp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
+      null,
+      { params: publishParams }
+    );
 
-  return publishResp.data;
+    return publishResp.data;
+  } catch (error: any) {
+    const errorData = error.response?.data?.error || {};
+    if (JSON.stringify(errorData).includes("pages_read_engagement")) {
+      throw new Error(
+        "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
+      );
+    }
+    throw error;
+  }
+};
+
+export const sendInstagramDM = async (
+  companyId: number,
+  instagramId: string,
+  recipientId: string,
+  text: string
+): Promise<any> => {
+  try {
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+
+    const params = {
+      recipient: { id: recipientId },
+      message: { text: text },
+      access_token: accessToken
+    };
+
+    const resp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/messages`,
+      params
+    );
+
+    return resp.data;
+  } catch (error: any) {
+    const errorData = error.response?.data?.error || {};
+    if (JSON.stringify(errorData).includes("pages_read_engagement")) {
+      throw new Error(
+        "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
+      );
+    }
+     if (JSON.stringify(errorData).includes("instagram_manage_messages")) {
+      throw new Error(
+        "Erro de permissão: Faltando permissão 'instagram_manage_messages'. Reconecte a página."
+      );
+    }
+    throw error;
+  }
 };
 
 export const getConnectedPages = async (companyId: number): Promise<any[]> => {

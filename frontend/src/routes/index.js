@@ -8,6 +8,7 @@ import TicketResponsiveContainer from "../pages/TicketResponsiveContainer";
 import Signup from "../pages/Signup";
 import Login from "../pages/Login";
 import Connections from "../pages/Connections";
+import AgentSetup from "../pages/AgentSetup";
 import SettingsCustom from "../pages/SettingsCustom";
 import Financeiro from "../pages/Financeiro";
 import Users from "../pages/Users";
@@ -95,6 +96,7 @@ const Routes = () => {
                 <Route exact path="/companies" component={Companies} isPrivate roles={["admin"]} />
                 <Route exact path="/tickets/:ticketId?" component={TicketResponsiveContainer} isPrivate />
                 <Route exact path="/connections" component={Connections} isPrivate roles={["admin"]} />
+                <Route exact path="/agent-setup" component={AgentSetup} isPrivate roles={["admin"]} />
                 <Route exact path="/quick-messages" component={QuickMessages} isPrivate />
                 <Route exact path="/todolist" component={ToDoList} isPrivate />
                 <Route exact path="/schedules" component={Schedules} isPrivate />

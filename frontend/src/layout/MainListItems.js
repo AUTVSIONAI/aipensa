@@ -33,6 +33,9 @@ import BusinessIcon from "@mui/icons-material/Business";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import ShapeLineIcon from "@mui/icons-material/ShapeLine";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
+import AndroidIcon from "@mui/icons-material/Android";
+import PaymentIcon from "@mui/icons-material/Payment";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 
 import { AuthContext } from "../context/Auth/AuthContext";
 import { useActiveMenu } from "../context/ActiveMenuContext";
@@ -546,6 +549,16 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
           />
         )}
 
+        {planExpired && (
+          <ListItemLink
+            to="/schedules"
+            primary={i18n.t("mainDrawer.listItems.schedules")}
+            icon={<EventAvailableIcon />}
+            tooltip={collapsed}
+            onClick={drawerClose}
+          />
+        )}
+
         {showInternalChat && planExpired && (
           <ListItemLink
             to="/chats"
@@ -599,18 +612,9 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
         <ListItemLink
             to="/todolist"
             primary={i18n.t("Tarefas")}
-            icon={<EventAvailableIcon />}
+            icon={<AssignmentIcon />}
             onClick={drawerClose}
         />
-        {user?.profile === "admin" && (
-          <ListItemLink
-            to="/flowbuilders"
-            primary={"Automação (Flowbuilder)"}
-            icon={<ShapeLineIcon />}
-            tooltip={collapsed}
-            onClick={drawerClose}
-          />
-        )}
       </Collapse>
 
 
@@ -723,6 +727,20 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
               </ListItem>
             </Tooltip>
             <Collapse in={openAdministrationSubmenu && !collapsed} timeout="auto" unmountOnExit className={classes.submenu}>
+              <ListItemLink
+                to="/agent-setup"
+                primary="Canal & Robô"
+                icon={<AndroidIcon />}
+                tooltip={collapsed}
+                onClick={drawerClose}
+              />
+              <ListItemLink
+                to="/subscription"
+                primary="Planos e Assinatura"
+                icon={<PaymentIcon />}
+                tooltip={collapsed}
+                onClick={drawerClose}
+              />
               {user.super && (
                 <ListItemLink
                   to="/announcements"
@@ -749,92 +767,6 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
                 />
               )}
 
-              {/* Users moved to Settings
-              {planExpired && (
-                <Can
-                  role={user.profile}
-                  perform="drawer-admin-items:view"
-                  yes={() => (
-                    <ListItemLink
-                      to="/users"
-                      primary={i18n.t("mainDrawer.listItems.users")}
-                      icon={<PeopleIcon />}
-                      tooltip={collapsed}
-                    />
-                  )}
-                />
-              )}
-              */}
-
-              {/* Queues moved to Settings
-              {planExpired && (
-                <Can
-                  role={user.profile}
-                  perform="drawer-admin-items:view"
-                  yes={() => (
-                    <ListItemLink
-                      to="/queues"
-                      primary={i18n.t("mainDrawer.listItems.queues")}
-                      icon={<AccountTreeIcon />}
-                      tooltip={collapsed}
-                    />
-                  )}
-                />
-              )}
-              */}
-
-              {/* Prompts moved to Settings
-              {showOpenAi && planExpired && (
-                <Can
-                  role={user.profile}
-                  perform="drawer-admin-items:view"
-                  yes={() => (
-                    <ListItemLink
-                      to="/prompts"
-                      primary={i18n.t("mainDrawer.listItems.prompts")}
-                      icon={<AllInclusiveIcon />}
-                      tooltip={collapsed}
-                    />
-                  )}
-                />
-              )}
-              */}
-
-              {/* Queue Integration moved to Settings
-              {showIntegrations && planExpired && (
-                <Can
-                  role={user.profile}
-                  perform="drawer-admin-items:view"
-                  yes={() => (
-                    <ListItemLink
-                      to="/queue-integration"
-                      primary={i18n.t("mainDrawer.listItems.queueIntegration")}
-                      icon={<DeviceHubIcon />}
-                      tooltip={collapsed}
-                    />
-                  )}
-                />
-              )}
-              */}
-
-              {/* Connections moved to Settings
-              {planExpired && (
-                <Can
-                  role={user.profile === "user" && user.allowConnections === "enabled" ? "admin" : user.profile}
-                  perform={"drawer-admin-items:view"}
-                  yes={() => (
-                    <ListItemLink
-                      to="/connections"
-                      primary={i18n.t("mainDrawer.listItems.connections")}
-                      icon={<SyncAltIcon />}
-                      showBadge={connectionWarning}
-                      tooltip={collapsed}
-                    />
-                  )}
-                />
-              )}
-              */}
-
               {user.super && (
                 <ListItemLink
                   to="/allConnections"
@@ -845,37 +777,15 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
                 />
               )}
 
-              {/* Files moved to Settings
-              {planExpired && (
-                <Can
-                  role={user.profile}
-                  perform="drawer-admin-items:view"
-                  yes={() => (
-                    <ListItemLink
-                      to="/files"
-                      primary={i18n.t("mainDrawer.listItems.files")}
-                      icon={<AttachFileIcon />}
-                      tooltip={collapsed}
-                    />
-                  )}
+              {user.super && (
+                <ListItemLink
+                  to="/companies"
+                  primary={i18n.t("mainDrawer.listItems.companies")}
+                  icon={<BusinessIcon />}
+                  tooltip={collapsed}
+                  onClick={drawerClose}
                 />
               )}
-              */}
-
-              {/* Financeiro moved to Settings
-              <Can
-                role={user.profile}
-                perform="drawer-admin-items:view"
-                yes={() => (
-                  <ListItemLink
-                    to="/financeiro"
-                    primary={i18n.t("mainDrawer.listItems.financeiro")}
-                    icon={<LocalAtmIcon />}
-                    tooltip={collapsed}
-                  />
-                )}
-              />
-              */}
 
               {planExpired && (
                 <Can
@@ -890,16 +800,6 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
                       onClick={drawerClose}
                     />
                   )}
-                />
-              )}
-
-              {user.super && (
-                <ListItemLink
-                  to="/companies"
-                  primary={i18n.t("mainDrawer.listItems.companies")}
-                  icon={<BusinessIcon />}
-                  tooltip={collapsed}
-                  onClick={drawerClose}
                 />
               )}
 

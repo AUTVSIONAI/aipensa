@@ -20,6 +20,7 @@ import path, { join } from "path";
 
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Setting from "../../models/Setting";
 import Ticket from "../../models/Ticket";
 import Contact from "../../models/Contact";
 import Message from "../../models/Message";
@@ -1127,14 +1128,34 @@ export const handleOpenAi = async (
 
   let aiClient: OpenAI | GoogleGenerativeAI | any;
   // Resolver chave da plataforma quando não informada
-  const resolveApiKey = (prov?: string, key?: string) => {
+  const resolveApiKey = async (prov?: string, key?: string) => {
     if (key && key.trim() !== "") return key;
+
+    // Check Global Settings (Company 1)
+    try {
+      let settingKey = "userApiToken"; // Default for OpenAI
+      if (prov === "openrouter") settingKey = "openrouterApiKey";
+      if (prov === "gemini") settingKey = "geminiApiKey";
+      if (prov === "external") settingKey = "externalAgentApiKey";
+
+      // Try fetching global setting
+      const setting = await Setting.findOne({ where: { companyId: 1, key: settingKey } });
+      if (setting?.value) return setting.value;
+      
+      // Fallback: check if 'userApiToken' is used for everything in some setups
+      if (prov === "openrouter" || prov === "gemini") {
+         const genericSetting = await Setting.findOne({ where: { companyId: 1, key: "userApiToken" } });
+         if (genericSetting?.value) return genericSetting.value;
+      }
+
+    } catch(e) { console.error("[OpenAiService] Error fetching global key:", e); }
+
     if (prov === "openrouter") return process.env.OPENROUTER_API_KEY || "";
     if (prov === "gemini") return process.env.GEMINI_API_KEY || "";
     if (prov === "external") return process.env.EXTERNAL_AGENT_API_KEY || "";
     return process.env.OPENAI_API_KEY || "";
   };
-  const effectiveApiKey = resolveApiKey(provider, openAiSettings.apiKey);
+  const effectiveApiKey = await resolveApiKey(provider, openAiSettings.apiKey);
 
   if (provider === "gemini") {
     // Configurar Gemini
@@ -1481,10 +1502,10 @@ export const handleOpenAi = async (
     let transcriptionText: string;
 
     try {
-      const transcriptionApiKey = (() => {
+      const transcriptionApiKey = await (async () => {
         const voiceKey = (openAiSettings.voiceKey || "").trim();
         if (voiceKey !== "") return voiceKey;
-        const base = resolveApiKey(provider, openAiSettings.apiKey);
+        const base = await resolveApiKey(provider, openAiSettings.apiKey);
         // Se usar Azure para voz, permitir fallback de env
         if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") {
           return process.env.AZURE_SPEECH_KEY || base;
@@ -1564,15 +1585,58 @@ export const handleOpenAi = async (
       }
 
       if (response) {
+        // Processar ações de agendamento
         response = await handleScheduleAction(response, ticket, contact);
+
+        // Processar ações de marketing
+        response = await handleMarketingAction(response, ticket, contact);
+
+        // Processar ações de catálogo
         response = await handleCatalogAction(response, wbot, msg);
+
+        // Processar ações de social media
+        response = await handleSocialMediaAction(response, ticket, contact);
+
+        // Processar ações de postagem de vídeo
+        response = await handleVideoPostAction(
+          response,
+          ticket,
+          contact,
+          wbot,
+          msg
+        );
+
+        // Postar Status do WhatsApp
+        response = await handleStatusPostAction(
+          response,
+          ticket,
+          contact,
+          wbot,
+          msg
+        );
+
+        // Processar ações de pagamento PIX
+        response = await handlePixAction(response, ticket, contact, wbot);
+
+        // Processar ações de upgrade
+        response = await handleUpgradeAction(response);
       }
       const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
       try {
+        const voiceKeyResolved = await (async () => {
+          const vKey = (openAiSettings.voiceKey || "").trim();
+          if (vKey !== "") return vKey;
+          const base = await resolveApiKey(provider, openAiSettings.apiKey);
+          if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") {
+            return process.env.AZURE_SPEECH_KEY || base;
+          }
+          return base;
+        })();
+
         await convertTextToSpeechAndSaveToFile(
           keepOnlySpecifiedChars(response!),
           `${publicFolder}/${fileNameWithOutExtension}`,
-          openAiSettings.voiceKey,
+          voiceKeyResolved,
           openAiSettings.voiceRegion,
           openAiSettings.voice,
           "mp3"

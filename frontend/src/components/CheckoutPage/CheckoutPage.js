@@ -34,7 +34,7 @@ export default function CheckoutPage(props) {
   const classes = useStyles();
   const [activeStep, setActiveStep] = useState(1);
   const [datePayment, setDatePayment] = useState(null);
-  const [invoiceId, setinvoiceId] = useState(props.Invoice.id);
+  const [invoiceId, setinvoiceId] = useState(props.Invoice?.id);
   const currentValidationSchema = validationSchema[activeStep];
   const isLastStep = activeStep === steps.length - 1;
   const { user, socket } = useContext(AuthContext);
@@ -52,6 +52,7 @@ export default function CheckoutPage(props) {
           activeStep={step}
           invoiceId={invoiceId}
           values={values}
+          plan={props.Plan}
         />;
       case 2:
         return <ReviewOrder />;

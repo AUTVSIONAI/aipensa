@@ -235,6 +235,13 @@ const Marketing = () => {
   
   const [settingLoading, setSettingLoading] = useState(false);
   const [flowImagePreview, setFlowImagePreview] = useState("");
+  const [creativeImagePreview, setCreativeImagePreview] = useState("");
+  
+  // DM Instagram Test State
+  const [dmInstagramId, setDmInstagramId] = useState("");
+  const [dmRecipientId, setDmRecipientId] = useState("");
+  const [dmMessage, setDmMessage] = useState("");
+  const [dmLoading, setDmLoading] = useState(false);
   
   // Feed comments expansion state
   const [expandedComments, setExpandedComments] = useState({});
@@ -575,6 +582,38 @@ const Marketing = () => {
     }
   };
 
+  const handleSendDM = async () => {
+    setDmLoading(true);
+    try {
+      if (!dmInstagramId) {
+        toast.warn("Informe o ID do Instagram (Business Account ID)");
+        return;
+      }
+      if (!dmRecipientId) {
+        toast.warn("Informe o ID do Destinatário (Instagram User ID)");
+        return;
+      }
+      if (!dmMessage) {
+        toast.warn("Escreva uma mensagem");
+        return;
+      }
+
+      const payload = {
+        instagramId: dmInstagramId,
+        recipientId: dmRecipientId,
+        message: dmMessage
+      };
+
+      await api.post("/marketing/send-dm", payload);
+      toast.success("Mensagem enviada com sucesso!");
+      setDmMessage(""); // Clear message after success
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setDmLoading(false);
+    }
+  };
+
   const handlePublish = async () => {
     setPubLoading(true);
     try {
@@ -660,7 +699,7 @@ const Marketing = () => {
           <Box display="flex" alignItems="center" gap={2}>
             <Button
               startIcon={<ArrowBackIcon />}
-              onClick={() => history.push("/")}
+              onClick={() => history.push("/dashboard")}
               className={classes.backButton}
             >
               Voltar
@@ -962,9 +1001,9 @@ const Marketing = () => {
           <Box pb={8}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Card className={classes.card}>
+              <Card className={classes.card} style={{ height: "auto" }}>
                 <Section icon={<WidgetsIcon style={{ color: theme.palette.text.primary }} />} title="3.1 Upload de Mídia">
-                  <Box p={4} border="2px dashed rgba(255, 255, 255, 0.2)" borderRadius={8} textAlign="center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
+                  <Box p={1} border="2px dashed rgba(255, 255, 255, 0.2)" borderRadius={8} textAlign="center" style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}>
                     <input
                       accept="image/*"
                       style={{ display: 'none' }}
@@ -973,6 +1012,7 @@ const Marketing = () => {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        setCreativeImagePreview(URL.createObjectURL(file));
                         try {
                           const form = new FormData();
                           form.append("image", file);
@@ -987,10 +1027,15 @@ const Marketing = () => {
                       }}
                     />
                     <label htmlFor="raised-button-file">
-                      <Button variant="contained" component="span" startIcon={<PublicIcon />} className={classes.button}>
-                        Selecionar Imagem do Computador
+                      <Button variant="contained" component="span" startIcon={<PublicIcon />} className={classes.button} size="small">
+                        Selecionar Imagem
                       </Button>
                     </label>
+                    {creativeImagePreview && (
+                        <Box mt={2} p={1} bgcolor="rgba(0,0,0,0.1)" borderRadius={8} display="flex" justifyContent="center">
+                            <img src={creativeImagePreview} alt="Creative Preview" style={{ maxWidth: "100%", maxHeight: 300, objectFit: "contain", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)" }} />
+                        </Box>
+                    )}
                     {imageHash && (
                         <Box mt={2} p={1} bgcolor="rgba(255, 255, 255, 0.1)" borderRadius={4}>
                              <Typography variant="caption" display="block" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Hash Gerado:</Typography>
@@ -1000,8 +1045,62 @@ const Marketing = () => {
                   </Box>
                 </Section>
               </Card>
-              <Box mt={3}>
-                 <Card className={classes.card}>
+              <Box mt={2}>
+                 <Card className={classes.card} style={{ height: "auto" }}>
+                  <Section icon={<ChatBubbleOutlineIcon style={{ color: theme.palette.text.primary }} />} title="Teste de DM Instagram">
+                    <Typography variant="body2" style={{ marginBottom: 16, color: "rgba(255, 255, 255, 0.7)" }}>
+                        Teste o envio de mensagens diretas para verificar permissões e conectividade.
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Instagram Business ID (Sua conta)"
+                      value={dmInstagramId}
+                      onChange={(e) => setDmInstagramId(e.target.value)}
+                      variant="outlined"
+                      margin="normal"
+                      className={classes.input}
+                      helperText="ID da conta empresarial do Instagram (não é o username)"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Recipient ID (Usuário Destino)"
+                      value={dmRecipientId}
+                      onChange={(e) => setDmRecipientId(e.target.value)}
+                      variant="outlined"
+                      margin="normal"
+                      className={classes.input}
+                      helperText="ID numérico do usuário do Instagram (Scoped ID)"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Mensagem"
+                      value={dmMessage}
+                      onChange={(e) => setDmMessage(e.target.value)}
+                      variant="outlined"
+                      margin="normal"
+                      multiline
+                      minRows={2}
+                      className={classes.input}
+                    />
+                    <Box mt={2}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        color="primary"
+                        disabled={dmLoading}
+                        onClick={handleSendDM}
+                        className={classes.button}
+                        startIcon={dmLoading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                      >
+                        {dmLoading ? "Enviando..." : "Enviar DM Teste"}
+                      </Button>
+                    </Box>
+                  </Section>
+                 </Card>
+              </Box>
+
+              <Box mt={2}>
+                 <Card className={classes.card} style={{ height: "auto" }}>
                   <Section icon={<SettingsSuggestIcon style={{ color: theme.palette.text.primary }} />} title="3.2 Criar Criativo (Creative)">
                     <TextField
                       select
@@ -1039,7 +1138,8 @@ const Marketing = () => {
               </Box>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Card className={classes.card}>
+              <Box>
+              <Card className={classes.card} style={{ height: "auto" }}>
                 <Section icon={<CampaignIcon style={{ color: theme.palette.text.primary }} />} title="3.3 Publicar Anúncio (Ad)">
                    <TextField fullWidth label="Nome do Anúncio" value={adName} onChange={(e) => setAdName(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
                    <TextField fullWidth label="AdSet ID" value={adsetId} onChange={(e) => setAdsetId(e.target.value)} variant="outlined" margin="normal" className={classes.input} />
@@ -1054,22 +1154,6 @@ const Marketing = () => {
                    </Box>
                 </Section>
               </Card>
-               <Box mt={3}>
-                <Card className={classes.card}>
-                  <Section icon={<SendIcon style={{ color: theme.palette.text.primary }} />} title="Teste de DM (Instagram)">
-                    <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }} paragraph>
-                       Envie uma mensagem direta de teste para um ticket aberto no sistema.
-                    </Typography>
-                    <TextField fullWidth label="Ticket ID" onChange={(e) => (window.__ticketId = e.target.value)} variant="outlined" margin="normal" size="small" className={classes.input} />
-                    <TextField fullWidth label="Mensagem" onChange={(e) => (window.__dmMessage = e.target.value)} variant="outlined" margin="normal" size="small" className={classes.input} />
-                    <Button variant="contained" color="primary" onClick={async () => {
-                        try {
-                          await api.post("/instagram/message", { ticketId: window.__ticketId, message: window.__dmMessage });
-                          toast.success("Enviada!");
-                        } catch(e) { toastError(e); }
-                    }} className={classes.button}>Enviar Teste</Button>
-                  </Section>
-                </Card>
               </Box>
             </Grid>
           </Grid>
@@ -1124,7 +1208,7 @@ const Marketing = () => {
                                   </Button>
                                 </label>
                                 {flowImagePreview && (
-                                    <Box mt={2}>
+                                    <Box mt={2} p={1} bgcolor="rgba(0,0,0,0.1)" borderRadius={8} display="flex" justifyContent="center">
                                         <img src={flowImagePreview} alt="Ad Preview" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)" }} />
                                     </Box>
                                 )}
@@ -1169,6 +1253,7 @@ const Marketing = () => {
                               onClick={async () => {
                                 if (pages.length === 0) { toast.error("Nenhuma página conectada! Vá em Configurações e conecte uma página."); return; }
                                 if (!pageId) { toast.warn("Selecione uma página para o anúncio!"); return; }
+                                if (!waPhoneE164 || waPhoneE164.length < 10) { toast.warn("Digite um número de WhatsApp válido!"); return; }
                                 if (!imageHash) { toast.warn("Faça o upload da imagem do anúncio primeiro!"); return; }
                                 
                                 setWaFlowCreating(true);

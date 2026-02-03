@@ -71,6 +71,7 @@ export default function Pricing(props) {
     setFieldValue,
     setActiveStep,
     activeStep,
+    plan
   } = props;
 
   const classes = useStyles();
@@ -83,11 +84,30 @@ export default function Pricing(props) {
 
   useEffect(() => {
     async function fetchData() {
-      await loadPlans();
+      if (plan) {
+        const plans = [{
+          title: plan.name,
+          planId: plan.id,
+          price: plan.amount,
+          description: [
+            `${plan.users} Usuários`,
+            `${plan.connections} Conexão`,
+            `${plan.queues} Filas`
+          ],
+          users: plan.users,
+          connections: plan.connections,
+          queues: plan.queues,
+          buttonText: 'SELECIONAR',
+          buttonVariant: 'outlined',
+        }];
+        setStoragePlans(plans);
+      } else {
+        await loadPlans();
+      }
     }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [plan]);
 
   const loadPlans = async () => {
     try {

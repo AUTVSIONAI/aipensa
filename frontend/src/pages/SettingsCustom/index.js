@@ -18,15 +18,12 @@ import SectionChip from "../../components/UI/SectionChip";
 import OutlinedButton from "../../components/UI/OutlinedButton";
 
 // New Imports for Consolidated Flow
-import Connections from "../Connections";
-import Queues from "../Queues";
 import Users from "../Users";
 import Tags from "../Tags";
-import Prompts from "../Prompts"; // AI/Prompts
-import QueueIntegration from "../QueueIntegration"; // Integrations
 import Files from "../Files";
 import Financeiro from "../Financeiro";
 import Annoucements from "../Annoucements";
+import Subscription from "../Subscription";
 
 import { i18n } from "../../translate/i18n.js";
 import { toast } from "react-toastify";
@@ -37,6 +34,7 @@ import useCompanySettings from "../../hooks/useSettings/companySettings";
 import useSettings from "../../hooks/useSettings";
 
 // Icons
+import MenuIcon from "@material-ui/icons/Menu";
 import SettingsIcon from "@material-ui/icons/Settings";
 import WhatsAppIcon from "@material-ui/icons/WhatsApp";
 import PeopleIcon from "@material-ui/icons/People";
@@ -69,7 +67,7 @@ import ViewStreamIcon from "@material-ui/icons/ViewStream";
 const useStyles = makeStyles((theme) => ({
   page: {
     flex: 1,
-    height: "100%",
+    height: "calc(100vh - 64px)",
     minHeight: 0,
     display: "flex",
   },
@@ -82,7 +80,9 @@ const useStyles = makeStyles((theme) => ({
     minHeight: 0,
   },
   tabsWrapper: {
-    minWidth: 240,
+    width: (props) => (props.drawerOpen ? 240 : 72),
+    minWidth: (props) => (props.drawerOpen ? 240 : 72),
+    transition: "width 0.3s ease, min-width 0.3s ease",
     background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.65)" : "rgba(255, 255, 255, 0.75)",
     borderRight: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
     backdropFilter: "blur(18px)",
@@ -94,7 +94,7 @@ const useStyles = makeStyles((theme) => ({
   },
   tabs: {
     borderRight: "none",
-    minWidth: 240,
+    width: "100%",
     background: "transparent",
     flex: "1 1 auto",
     minHeight: 0,
@@ -108,20 +108,25 @@ const useStyles = makeStyles((theme) => ({
       },
     },
     "& .MuiTab-wrapper": {
-        alignItems: "flex-start",
-        paddingLeft: theme.spacing(2),
+        alignItems: "center",
+        paddingLeft: (props) => (props.drawerOpen ? theme.spacing(2) : 0),
+        justifyContent: (props) => (props.drawerOpen ? "flex-start" : "center"),
         flexDirection: "row",
-        justifyContent: "flex-start",
         flexWrap: "nowrap",
     },
     "& .MuiTab-root": {
         minHeight: 50,
+        minWidth: 0,
+        padding: (props) => (props.drawerOpen ? "6px 12px" : "6px 0"),
         textTransform: "none",
         fontSize: "0.95rem",
         opacity: 0.7,
         transition: "all 0.3s",
         margin: "4px 8px",
         borderRadius: "8px",
+        "& .MuiTab-label": {
+             display: (props) => (props.drawerOpen ? "block" : "none"),
+        },
         "&.Mui-selected": {
             opacity: 1,
             fontWeight: "bold",
@@ -131,7 +136,7 @@ const useStyles = makeStyles((theme) => ({
         }
     },
     "& .MuiSvgIcon-root": {
-        marginRight: theme.spacing(2),
+        marginRight: (props) => (props.drawerOpen ? theme.spacing(2) : 0),
         marginBottom: "0 !important",
         flexShrink: 0,
         fontSize: 22,
@@ -140,10 +145,14 @@ const useStyles = makeStyles((theme) => ({
   settingsSearchContainer: {
     padding: theme.spacing(2, 1, 1, 1),
     flex: "0 0 auto",
+    display: (props) => (props.drawerOpen ? "block" : "none"),
   },
   sidebarBrand: {
     padding: theme.spacing(2, 2, 1, 2),
     borderBottom: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: (props) => (props.drawerOpen ? "space-between" : "center"),
   },
   sidebarBrandTitle: {
     fontWeight: 900,
@@ -174,6 +183,7 @@ const useStyles = makeStyles((theme) => ({
     flex: 1,
     padding: theme.spacing(0), // No padding here, as children have their own containers
     overflowY: "auto",
+    overflowX: "hidden",
     ...theme.scrollbarStylesSoft,
     minHeight: 0,
     background:
@@ -419,14 +429,13 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const SettingsCustom = () => {
-  const classes = useStyles();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const classes = useStyles({ drawerOpen });
   const history = useHistory();
   const contentRef = useRef(null);
   const optionsHeaderRef = useRef(null);
   const [tab, setTab] = useState("options");
-  const [studioTab, setStudioTab] = useState("ai");
-  const [studioQuery, setStudioQuery] = useState("");
-  const [studioFavorites, setStudioFavorites] = useState([]);
+
   const [settingsQuery, setSettingsQuery] = useState("");
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [activeOptionsSection, setActiveOptionsSection] = useState("settings-section-atendimento");
@@ -496,11 +505,7 @@ const SettingsCustom = () => {
     };
   }, [socket, user?.companyId]);
 
-  const favoritesStorageKey = useMemo(() => {
-    const companyId = user?.companyId ?? "0";
-    const userId = user?.id ?? "0";
-    return `zpStudioFavorites:${companyId}:${userId}`;
-  }, [user?.companyId, user?.id]);
+
 
   const optionsFavoritesStorageKey = useMemo(() => {
     const companyId = user?.companyId ?? "0";
@@ -514,21 +519,7 @@ const SettingsCustom = () => {
     return `zpOptionsDensity:${companyId}:${userId}`;
   }, [user?.companyId, user?.id]);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(favoritesStorageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) setStudioFavorites(parsed);
-      }
-    } catch (e) {}
-  }, [favoritesStorageKey]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(favoritesStorageKey, JSON.stringify(studioFavorites));
-    } catch (e) {}
-  }, [favoritesStorageKey, studioFavorites]);
 
   useEffect(() => {
     try {
@@ -562,9 +553,7 @@ const SettingsCustom = () => {
   const handleTabChange = (event, newValue) => {
     setTab(newValue);
   };
-  const handleStudioTabChange = (event, newValue) => {
-    setStudioTab(newValue);
-  };
+
   const handleContentScroll = (event) => {
     const el = event.currentTarget;
     const next = el.scrollTop > 280;
@@ -592,13 +581,11 @@ const SettingsCustom = () => {
     const base = [
       { id: "options", label: "Opções Gerais", keywords: ["opcoes", "gerais", "configuracoes"], onOpen: () => openSettingsTab("options") },
       { id: "schedules", label: "Horários de Atendimento", keywords: ["horario", "horarios", "atendimento", "expediente"], onOpen: () => openSettingsTab("schedules") },
-      { id: "connections", label: "Conexões", keywords: ["conexoes", "whatsapp", "conexao"], onOpen: () => openSettingsTab("connections") },
       { id: "users", label: "Equipe (Usuários)", keywords: ["usuarios", "equipe", "atendentes"], onOpen: () => openSettingsTab("users") },
-      { id: "studio", label: "IA & Automações", keywords: ["ia", "automacoes", "automacao", "flowbuilder", "integracoes", "filas"], onOpen: () => openSettingsTab("studio") },
       { id: "tags", label: "Etiquetas (Tags)", keywords: ["tags", "etiquetas"], onOpen: () => openSettingsTab("tags") },
       { id: "files", label: "Arquivos", keywords: ["arquivos", "midia", "files"], onOpen: () => openSettingsTab("files") },
       { id: "financeiro", label: "Financeiro", keywords: ["financeiro", "cobranca", "pagamento"], onOpen: () => openSettingsTab("financeiro") },
-      { id: "whitelabel", label: "Whitelabel", keywords: ["whitelabel", "marca", "logo", "cores"], onOpen: () => openSettingsTab("whitelabel") },
+      // Whitelabel moved to super user check
 
       { id: "opt-chatbot", label: "Tipo do Bot (Opções Gerais)", keywords: ["tipo", "bot", "chatbot", "botoes", "lista"], onOpen: () => openSettingsTabAndScroll("options", "settings-option-chatbot-type") },
       { id: "opt-download", label: "Limite de Download (Opções Gerais)", keywords: ["download", "limite", "arquivos", "mb"], onOpen: () => openSettingsTabAndScroll("options", "settings-option-download-limit") },
@@ -628,9 +615,9 @@ const SettingsCustom = () => {
     ];
     if (user?.super) {
       base.push(
+        { id: "whitelabel", label: "Whitelabel", keywords: ["whitelabel", "marca", "logo", "cores"], onOpen: () => openSettingsTab("whitelabel") },
         { id: "companies", label: "Empresas", keywords: ["empresas", "company"], onOpen: () => openSettingsTab("companies") },
         { id: "announcements", label: "Avisos", keywords: ["avisos", "anuncios"], onOpen: () => openSettingsTab("announcements") },
-        { id: "plans", label: "Planos", keywords: ["planos", "assinatura"], onOpen: () => openSettingsTab("plans") },
         { id: "helps", label: "Ajuda", keywords: ["ajuda", "faq", "suporte"], onOpen: () => openSettingsTab("helps") }
       );
     }
@@ -770,78 +757,17 @@ const SettingsCustom = () => {
     };
   }, [tab, optionsSections]);
 
-  const studioActions = useMemo(() => {
-    const actions = [
-      {
-        id: "ai",
-        label: "IA (Prompts)",
-        keywords: ["ia", "prompts", "openai", "assistente", "bot"],
-        onOpen: () => setStudioTab("ai"),
-      },
-      {
-        id: "flowbuilders",
-        label: "Flowbuilder (Lista)",
-        keywords: ["flow", "flowbuilder", "automacao", "fluxo", "builder"],
-        onOpen: () => history.push("/flowbuilders"),
-      },
-      {
-        id: "flowbuilder-new",
-        label: "Flowbuilder (Novo Fluxo)",
-        keywords: ["flow", "novo", "criar", "flowbuilder", "automacao", "fluxo"],
-        onOpen: () => history.push("/flowbuilder"),
-      },
-      {
-        id: "integrations",
-        label: "Integrações",
-        keywords: ["integracoes", "integracao", "api", "webhook"],
-        onOpen: () => setStudioTab("integrations"),
-      },
-      {
-        id: "queues",
-        label: "Filas & Chatbots",
-        keywords: ["filas", "fila", "chatbot", "setor", "atendimento"],
-        onOpen: () => setStudioTab("queues"),
-      },
-    ];
-    return actions;
-  }, [history]);
 
-  const favoriteActionItems = useMemo(() => {
-    return studioFavorites
-      .map((id) => studioActions.find((a) => a.id === id))
-      .filter(Boolean);
-  }, [studioActions, studioFavorites]);
-
-  const isFavorite = (actionId) => studioFavorites.includes(actionId);
-  const toggleFavorite = (actionId) => {
-    setStudioFavorites((prev) => {
-      if (prev.includes(actionId)) return prev.filter((id) => id !== actionId);
-      return [...prev, actionId];
-    });
-  };
-
-  const filteredStudioActions = useMemo(() => {
-    const q = normalizeText(studioQuery).trim();
-    if (!q) return [];
-    return studioActions.filter((a) => {
-      const haystack = normalizeText([a.label, ...(a.keywords || [])].join(" "));
-      return haystack.includes(q);
-    });
-  }, [studioActions, studioQuery]);
 
   function openSettingsTab(tabValue) {
     setTab(tabValue);
     setSettingsQuery("");
-    setStudioQuery("");
-    if (tabValue !== "studio") {
-      setStudioTab("ai");
-    }
   }
+
 
   function openSettingsTabAndScroll(tabValue, elementId) {
     setTab(tabValue);
     setSettingsQuery("");
-    setStudioQuery("");
     let attempts = 0;
     const tryScroll = () => {
       attempts += 1;
@@ -892,12 +818,19 @@ const SettingsCustom = () => {
         <div className={classes.root}>
             <div className={classes.tabsWrapper}>
                 <div className={classes.sidebarBrand}>
-                    <Typography variant="subtitle1" className={classes.sidebarBrandTitle}>
-                        Configurações
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" className={classes.sidebarBrandSubtitle}>
-                        Painel premium de administração
-                    </Typography>
+                    {drawerOpen && (
+                        <div>
+                            <Typography variant="subtitle1" className={classes.sidebarBrandTitle}>
+                                Configurações
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" className={classes.sidebarBrandSubtitle}>
+                                Painel premium
+                            </Typography>
+                        </div>
+                    )}
+                    <IconButton onClick={() => setDrawerOpen(!drawerOpen)} size="small">
+                        <MenuIcon />
+                    </IconButton>
                 </div>
                 <div className={classes.settingsSearchContainer}>
                     <TextField
@@ -961,14 +894,14 @@ const SettingsCustom = () => {
                 >
                     <Tab icon={<SettingsIcon />} label="Opções Gerais" value="options" />
                     <Tab icon={<AccessTimeIcon />} label="Horários de Atendimento" value="schedules" />
-                    <Tab icon={<WhatsAppIcon />} label="Conexões" value="connections" />
                     <Tab icon={<PeopleIcon />} label="Equipe (Usuários)" value="users" />
                     
-                    <Tab icon={<AllInclusiveIcon />} label="IA & Automações" value="studio" />
+
                     <Tab icon={<LabelIcon />} label="Etiquetas (Tags)" value="tags" />
                     <Tab icon={<AttachFileIcon />} label="Arquivos" value="files" />
                     <Tab icon={<LocalAtmIcon />} label="Financeiro" value="financeiro" />
-                    <Tab icon={<ExtensionIcon />} label="Whitelabel" value="whitelabel" />
+                    {user?.super && <Tab icon={<ExtensionIcon />} label="Whitelabel" value="whitelabel" />}
+                    <Tab icon={<HelpIcon />} label="Ajuda" value="helps" />
 
                     <OnlyForSuperUser
                         user={user}
@@ -976,8 +909,6 @@ const SettingsCustom = () => {
                             <>
                                 <Tab icon={<BusinessIcon />} label="Empresas" value="companies" />
                                 <Tab icon={<AnnouncementIcon />} label="Avisos" value="announcements" />
-                                <Tab icon={<DescriptionIcon />} label="Planos" value="plans" />
-                                <Tab icon={<HelpIcon />} label="Ajuda" value="helps" />
                             </>
                         )}
                     />
@@ -1197,219 +1128,13 @@ const SettingsCustom = () => {
                      </Paper>
                 </TabPanel>
 
-                <TabPanel value={tab} name="connections" className={classes.embeddedContainer}>
-                    <Connections />
-                </TabPanel>
+
 
                 <TabPanel value={tab} name="users" className={classes.embeddedContainer}>
                     <Users />
                 </TabPanel>
 
-                <TabPanel value={tab} name="studio" className={classes.embeddedContainer}>
-                    <div className={classes.studioHeader}>
-                        <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" style={{ gap: 12 }}>
-                            <Box>
-                                <Typography variant="h6" style={{ fontWeight: 800 }}>
-                                    IA & Automações
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Centralize IA, filas, automações e integrações em um só lugar.
-                                </Typography>
-                            </Box>
-                            <Box display="flex" flexWrap="wrap" style={{ gap: 12 }}>
-                                <PrimaryButton
-                                    startIcon={<AccountTreeIcon />}
-                                    onClick={() => history.push("/flowbuilders")}
-                                >
-                                    Abrir Flowbuilder
-                                </PrimaryButton>
-                                <OutlinedButton
-                                    variant="outlined"
-                                    startIcon={<DeviceHubIcon />}
-                                    onClick={() => setStudioTab("integrations")}
-                                >
-                                    Integrações
-                                </OutlinedButton>
-                                <OutlinedButton
-                                    variant="outlined"
-                                    startIcon={<MemoryIcon />}
-                                    onClick={() => setStudioTab("ai")}
-                                >
-                                    IA
-                                </OutlinedButton>
-                                <OutlinedButton
-                                    variant="outlined"
-                                    startIcon={<ListIcon />}
-                                    onClick={() => setStudioTab("queues")}
-                                >
-                                    Filas
-                                </OutlinedButton>
-                            </Box>
-                        </Box>
-                        <Box mt={2} mb={1}>
-                            <TextField
-                                fullWidth
-                                variant="outlined"
-                                size="small"
-                                value={studioQuery}
-                                onChange={(e) => setStudioQuery(e.target.value)}
-                                placeholder="Buscar: fila, prompt, integração, flowbuilder…"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <SearchIcon />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                        </Box>
-                        {(studioFavorites.length > 0 || studioQuery.trim().length > 0) && (
-                            <Box mt={1} display="flex" flexWrap="wrap" style={{ gap: 8 }}>
-                                {studioFavorites
-                                    .map((id) => studioActions.find((a) => a.id === id))
-                                    .filter(Boolean)
-                                    .map((a) => (
-                                        <Chip
-                                            key={a.id}
-                                            label={`Fixado: ${a.label}`}
-                                            onClick={a.onOpen}
-                                            onDelete={() => toggleFavorite(a.id)}
-                                            variant="outlined"
-                                        />
-                                    ))}
-                            </Box>
-                        )}
-                        <Box mt={2}>
-                            <Tabs
-                                value={studioTab}
-                                onChange={handleStudioTabChange}
-                                variant="scrollable"
-                                scrollButtons="auto"
-                                className={classes.studioTabs}
-                            >
-                                <Tab icon={<MemoryIcon />} label="IA" value="ai" />
-                                <Tab icon={<AccountTreeIcon />} label="Flowbuilder" value="flowbuilder" />
-                                <Tab icon={<DeviceHubIcon />} label="Integrações" value="integrations" />
-                                <Tab icon={<ListIcon />} label="Filas & Chatbots" value="queues" />
-                            </Tabs>
-                        </Box>
-                    </div>
 
-                    <div className={classes.studioPanel}>
-                        {studioQuery.trim().length === 0 && favoriteActionItems.length > 0 && (
-                            <div className={classes.studioFavoriteGrid}>
-                                {favoriteActionItems.map((a) => (
-                                    <GlassCard key={a.id}>
-                                        <Typography variant="subtitle1" className={classes.studioFavoriteTitle}>
-                                            {a.label}
-                                        </Typography>
-                                        <Typography variant="body2" color="textSecondary">
-                                            Acesso rápido fixado.
-                                        </Typography>
-                                        <div className={classes.studioFavoriteActions}>
-                                        <PrimaryButton onClick={a.onOpen}>
-                                            Abrir
-                                        </PrimaryButton>
-                                        <OutlinedButton
-                                                onClick={() => toggleFavorite(a.id)}
-                                            >
-                                                Desafixar
-                                        </OutlinedButton>
-                                        </div>
-                                    </GlassCard>
-                                ))}
-                            </div>
-                        )}
-                        {studioQuery.trim().length > 0 && (
-                            <GlassCard style={{ marginBottom: 16 }}>
-                                <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" style={{ gap: 12 }}>
-                                    <Typography variant="h6" style={{ fontWeight: 800 }}>
-                                        Resultados da busca
-                                    </Typography>
-                                    <OutlinedButton onClick={() => setStudioQuery("")}>
-                                        Limpar
-                                    </OutlinedButton>
-                                </Box>
-                                <Box mt={2} display="flex" flexDirection="column" style={{ gap: 10 }}>
-                                    {filteredStudioActions.length === 0 ? (
-                                        <Typography variant="body2" color="textSecondary">
-                                            Nenhum resultado.
-                                        </Typography>
-                                    ) : (
-                                        filteredStudioActions.map((a) => (
-                                            <Box key={a.id} display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" style={{ gap: 10 }}>
-                                                <OutlinedButton
-                                                    onClick={() => {
-                                                        a.onOpen();
-                                                        setStudioQuery("");
-                                                    }}
-                                                >
-                                                    {a.label}
-                                                </OutlinedButton>
-                                                <OutlinedButton
-                                                    onClick={() => toggleFavorite(a.id)}
-                                                >
-                                                    {isFavorite(a.id) ? "Fixado" : "Fixar"}
-                                                </OutlinedButton>
-                                            </Box>
-                                        ))
-                                    )}
-                                </Box>
-                            </GlassCard>
-                        )}
-                        {studioTab === "ai" && (
-                            <GlassCard>
-                                <Prompts />
-                            </GlassCard>
-                        )}
-
-                        {studioTab === "integrations" && (
-                            <GlassCard>
-                                <QueueIntegration />
-                            </GlassCard>
-                        )}
-
-                        {studioTab === "queues" && (
-                            <GlassCard>
-                                <Queues />
-                            </GlassCard>
-                        )}
-
-                        {studioTab === "flowbuilder" && (
-                            <GlassCard>
-                                <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" style={{ gap: 12 }}>
-                                    <Box>
-                                        <Typography variant="h6" style={{ fontWeight: 800 }}>
-                                            Flowbuilder
-                                        </Typography>
-                                        <Typography variant="body2" color="textSecondary">
-                                            Crie fluxos de automação para marketing, campanhas e atendimento.
-                                        </Typography>
-                                    </Box>
-                                    <Box display="flex" flexWrap="wrap" style={{ gap: 12 }}>
-                                        <PrimaryButton
-                                            startIcon={<AccountTreeIcon />}
-                                            onClick={() => history.push("/flowbuilders")}
-                                        >
-                                            Ver Fluxos
-                                        </PrimaryButton>
-                                        <OutlinedButton
-                                            onClick={() => history.push("/flowbuilder")}
-                                        >
-                                            Novo Fluxo
-                                        </OutlinedButton>
-                                    </Box>
-                                </Box>
-                                <Box mt={2} mb={2}>
-                                    <Divider />
-                                </Box>
-                                <Typography variant="body2" color="textSecondary">
-                                    Dica: você também encontra o Flowbuilder no menu lateral em Marketing e em CRM (Automação).
-                                </Typography>
-                            </GlassCard>
-                        )}
-                    </div>
-                </TabPanel>
 
                  <TabPanel value={tab} name="tags" className={classes.embeddedContainer}>
                     <Tags />
@@ -1423,13 +1148,20 @@ const SettingsCustom = () => {
                     <Financeiro />
                 </TabPanel>
 
-                <TabPanel value={tab} name="whitelabel" className={classes.embeddedContainer}>
-                     <MainHeader>
-                         <Title>Whitelabel</Title>
-                    </MainHeader>
-                    <Paper className={classes.embeddedPaper} elevation={0}>
-                        <Whitelabel settings={settings} />
-                    </Paper>
+                {user?.super && (
+                    <TabPanel value={tab} name="whitelabel" className={classes.embeddedContainer}>
+                        <MainHeader>
+                            <Title>Whitelabel</Title>
+                        </MainHeader>
+                        <Paper className={classes.embeddedPaper} elevation={0}>
+                            <Whitelabel settings={settings} />
+                        </Paper>
+                    </TabPanel>
+                )}
+
+
+                <TabPanel value={tab} name="helps" className={classes.embeddedContainer}>
+                    <HelpsManager />
                 </TabPanel>
 
                 <OnlyForSuperUser
@@ -1441,12 +1173,6 @@ const SettingsCustom = () => {
                             </TabPanel>
                             <TabPanel value={tab} name="announcements" className={classes.embeddedContainer}>
                                 <Annoucements />
-                            </TabPanel>
-                            <TabPanel value={tab} name="plans" className={classes.embeddedContainer}>
-                                <PlansManager />
-                            </TabPanel>
-                            <TabPanel value={tab} name="helps" className={classes.embeddedContainer}>
-                                <HelpsManager />
                             </TabPanel>
                         </>
                     )}
