@@ -195,7 +195,7 @@ const useStyles = makeStyles((theme) => ({
     background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.25)" : "rgba(255, 255, 255, 0.6)",
     border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
     backdropFilter: "blur(18px)",
-  },
+  }),
   sectionGuide: {
     margin: theme.spacing(1, 0, 2, 0),
     padding: theme.spacing(1.5),
