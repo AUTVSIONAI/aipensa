@@ -875,7 +875,7 @@ const Connections = () => {
                 </Grid>
               ) : (
                 <>
-                  {(!whatsApps || whatsApps.length === 0) && (
+                  {(!whatsApps || !Array.isArray(whatsApps) || whatsApps.length === 0) && (
                     <Grid item xs={12}>
                       <div className={classes.emptyState}>
                         <Typography variant="subtitle1" color="textPrimary">

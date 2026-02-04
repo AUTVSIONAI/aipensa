@@ -227,7 +227,7 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
     async function checkHelps() {
       const helps = await list();
       if (isMountedRef.current) {
-        setHasHelps(helps.length > 0);
+        setHasHelps(Array.isArray(helps) && helps.length > 0);
       }
     }
     checkHelps();
@@ -379,7 +379,7 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
 
   useEffect(() => {
     let unreadsCount = 0;
-    if (chats.length > 0) {
+    if (Array.isArray(chats) && chats.length > 0) {
       for (let chat of chats) {
         for (let chatUser of chat.users) {
           if (chatUser.userId === user.id) {

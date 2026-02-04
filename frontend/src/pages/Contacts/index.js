@@ -608,25 +608,27 @@ const Contacts = () => {
     const countContactsByState = () => {
         const stateCounts = {};
 
-        contacts.forEach(contact => {
-            const number = contact.number;
-            if (number && number.length > 2) {
-                const ddd = number.substring(2, 4); // Extrai os dígitos 3 e 4 (DDD após o código do país)
-                if (dddList[ddd]) {
-                    const state = dddList[ddd];
-                    if (!stateCounts[state]) {
-                        stateCounts[state] = 0;
+        if (Array.isArray(contacts)) {
+            contacts.forEach(contact => {
+                const number = contact.number;
+                if (number && number.length > 2) {
+                    const ddd = number.substring(2, 4); // Extrai os dígitos 3 e 4 (DDD após o código do país)
+                    if (dddList[ddd]) {
+                        const state = dddList[ddd];
+                        if (!stateCounts[state]) {
+                            stateCounts[state] = 0;
+                        }
+                        stateCounts[state]++;
+                    } else {
+                        // Se o DDD não estiver na lista de DDDs do Brasil, adiciona à categoria "Outros"
+                        if (!stateCounts["Outros"]) {
+                            stateCounts["Outros"] = 0;
+                        }
+                        stateCounts["Outros"]++;
                     }
-                    stateCounts[state]++;
-                } else {
-                    // Se o DDD não estiver na lista de DDDs do Brasil, adiciona à categoria "Outros"
-                    if (!stateCounts["Outros"]) {
-                        stateCounts["Outros"] = 0;
-                    }
-                    stateCounts["Outros"]++;
                 }
-            }
-        });
+            });
+        }
 
         return stateCounts;
     };
