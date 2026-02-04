@@ -275,16 +275,16 @@ const Marketing = () => {
         const { data } = await api.get("/marketing/status");
         setStatus(data);
       } catch (err) {
-        const errorType = err.response?.data?.error;
-        if (err.response?.status === 400 && (errorType === "ERR_NO_AD_ACCOUNT" || errorType === "ERR_NO_TOKEN")) {
+        const errorType = err.response && err.response.data && err.response.data.error;
+        if (err.response && err.response.status === 400 && (errorType === "ERR_NO_AD_ACCOUNT" || errorType === "ERR_NO_TOKEN")) {
              setAdAccountError(true);
              // Don't toast error for missing config, just warn
              // toast.warn("Configure sua conta de anúncios para continuar.");
-        } else if (err.response?.status !== 400) {
+        } else if (err.response && err.response.status !== 400) {
           toastError(err);
         }
         setStatusError(true);
-        setStatusErrorMsg(String(err?.response?.data?.error || err?.message || "Erro ao obter status"));
+        setStatusErrorMsg(String((err && err.response && err.response.data && err.response.data.error) || (err && err.message) || "Erro ao obter status"));
       } finally {
         setStatusLoading(false);
       }
@@ -308,13 +308,13 @@ const Marketing = () => {
              return;
         }
 
-        setPages(data?.data || []);
+        setPages((data && data.data) || []);
       } catch (err) {
-        if (err.response?.status !== 400) {
+        if (err.response && err.response.status !== 400) {
           toastError(err);
         }
         setPagesError(true);
-        setPagesErrorMsg(String(err?.response?.data?.error || err?.message || "Erro ao obter páginas"));
+        setPagesErrorMsg(String((err && err.response && err.response.data && err.response.data.error) || (err && err.message) || "Erro ao obter páginas"));
       } finally {
         setPagesLoading(false);
       }
@@ -340,14 +340,14 @@ const Marketing = () => {
 
         setInsights(data.data || []);
       } catch (err) {
-        const errorType = err.response?.data?.error;
-        if (err.response?.status === 400 && (errorType === "ERR_NO_AD_ACCOUNT" || errorType === "ERR_NO_TOKEN")) {
+        const errorType = err.response && err.response.data && err.response.data.error;
+        if (err.response && err.response.status === 400 && (errorType === "ERR_NO_AD_ACCOUNT" || errorType === "ERR_NO_TOKEN")) {
              setAdAccountError(true);
-        } else if (err.response?.status !== 400) {
+        } else if (err.response && err.response.status !== 400) {
           toastError(err);
         }
         setInsightsError(true);
-        setInsightsErrorMsg(String(err?.response?.data?.error || err?.message || "Erro ao obter insights"));
+        setInsightsErrorMsg(String((err && err.response && err.response.data && err.response.data.error) || (err && err.message) || "Erro ao obter insights"));
       } finally {
         setInsightsLoading(false);
       }
@@ -715,10 +715,10 @@ const Marketing = () => {
           </Box>
           <Box display="flex" gap={2}>
             <Chip 
-               icon={status?.adAccountId ? <ThumbUpIcon /> : <InfoOutlinedIcon />} 
-               label={status?.adAccountId ? "Meta API Conectada" : "Meta API Desconectada"} 
-               color={status?.adAccountId ? "primary" : "default"} 
-               variant={status?.adAccountId ? "default" : "outlined"}
+               icon={status && status.adAccountId ? <ThumbUpIcon /> : <InfoOutlinedIcon />} 
+               label={status && status.adAccountId ? "Meta API Conectada" : "Meta API Desconectada"} 
+               color={status && status.adAccountId ? "primary" : "default"} 
+               variant={status && status.adAccountId ? "default" : "outlined"}
                style={{ height: 40, borderRadius: 20, paddingLeft: 8, paddingRight: 8 }}
              />
           </Box>
@@ -822,14 +822,14 @@ const Marketing = () => {
                              <Typography variant="h6" style={{ color: "#10b981" }}>Ativo</Typography>
                           </Grid>
                         </Grid>
-                        {status?.adAccountId && (
+                        {status && status.adAccountId && (
                           <Box mt={4} display="flex" gap={2}>
                             <Button
                               variant="outlined"
                               color="primary"
                               startIcon={<LinkIcon />}
                               onClick={() => {
-                                const act = status?.adAccountId;
+                                const act = status && status.adAccountId;
                                 const url = `https://www.facebook.com/adsmanager/manage?act=act_${act}`;
                                 window.open(url, "_blank");
                               }}
@@ -1450,7 +1450,7 @@ const Marketing = () => {
                                  id="pub-file-upload"
                                  type="file"
                                  onChange={async (e) => {
-                                   const file = e.target.files?.[0];
+                                   const file = e.target.files && e.target.files[0];
                                    if (!file) return;
                                    try {
                                      setPubLoading(true);
@@ -1603,9 +1603,9 @@ const Marketing = () => {
                          <Grid item xs={12} md={6} lg={6} key={post.id}>
                             <Card className={classes.card} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
                                <Box p={2} display="flex" alignItems="center" borderBottom="1px solid rgba(255, 255, 255, 0.1)">
-                                  <Avatar src={post.from?.picture?.data?.url} style={{ border: "2px solid #3b82f6" }}>{post.from?.name?.[0]}</Avatar>
+                                  <Avatar src={post.from && post.from.picture && post.from.picture.data && post.from.picture.data.url} style={{ border: "2px solid #3b82f6" }}>{(post.from && post.from.name && post.from.name[0]) || "?"}</Avatar>
                                   <Box ml={2}>
-                                     <Typography variant="subtitle2" style={{ fontWeight: 700, color: theme.palette.text.primary }}>{post.from?.name}</Typography>
+                                     <Typography variant="subtitle2" style={{ fontWeight: 700, color: theme.palette.text.primary }}>{(post.from && post.from.name) || "Usuário"}</Typography>
                                      <Typography variant="caption" style={{ display: "flex", alignItems: "center", gap: 4, color: "rgba(255, 255, 255, 0.7)" }}>
                                         {new Date(post.created_time).toLocaleDateString()} às {new Date(post.created_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                         <PublicIcon style={{ fontSize: 12 }} />
@@ -1636,7 +1636,7 @@ const Marketing = () => {
                                        onClick={() => handleLike(post.id)}
                                        style={{ color: "rgba(255, 255, 255, 0.7)" }}
                                      >
-                                        Curtir ({post.likes?.summary?.total_count || 0})
+                                        Curtir ({(post.likes && post.likes.summary && post.likes.summary.total_count) || 0})
                                      </Button>
                                      <Button 
                                        startIcon={<ChatBubbleOutlineIcon />} 
@@ -1644,7 +1644,7 @@ const Marketing = () => {
                                        onClick={() => toggleComments(post.id)}
                                        style={{ color: "rgba(255, 255, 255, 0.7)" }}
                                      >
-                                        Comentar ({post.comments?.summary?.total_count || 0})
+                                        Comentar ({(post.comments && post.comments.summary && post.comments.summary.total_count) || 0})
                                      </Button>
                                   </Box>
                                   <IconButton size="small" onClick={() => window.open(post.permalink_url, "_blank")} style={{ color: "rgba(255, 255, 255, 0.7)" }}>
@@ -1655,12 +1655,12 @@ const Marketing = () => {
                                <Collapse in={expandedComments[post.id]} timeout="auto" unmountOnExit>
                                    <Box p={2} bgcolor="rgba(0, 0, 0, 0.2)" borderTop="1px solid rgba(255, 255, 255, 0.1)">
                                       <Box style={{ maxHeight: 300, overflowY: "auto", marginBottom: 16, paddingRight: 8 }}>
-                                         {post.comments?.data?.length > 0 ? (
+                                         {post.comments && post.comments.data && post.comments.data.length > 0 ? (
                                            post.comments.data.map((c) => (
                                              <Box key={c.id} mb={2} display="flex" alignItems="flex-start">
-                                                <Avatar style={{ width: 32, height: 32, marginRight: 12, fontSize: 14 }}>{c.from?.name?.[0]}</Avatar>
+                                                <Avatar style={{ width: 32, height: 32, marginRight: 12, fontSize: 14 }}>{(c.from && c.from.name && c.from.name[0]) || "?"}</Avatar>
                                                 <Box bgcolor="rgba(255, 255, 255, 0.1)" p={2} borderRadius="0 12px 12px 12px" border="1px solid rgba(255, 255, 255, 0.1)" flexGrow={1}>
-                                                   <Typography variant="subtitle2" style={{ fontSize: "0.85rem", fontWeight: "bold", color: theme.palette.text.primary }}>{c.from?.name}</Typography>
+                                                   <Typography variant="subtitle2" style={{ fontSize: "0.85rem", fontWeight: "bold", color: theme.palette.text.primary }}>{(c.from && c.from.name) || "Usuário"}</Typography>
                                                    <Typography variant="body2" style={{ fontSize: "0.9rem", color: "#d1d5db" }}>{c.message}</Typography>
                                                 </Box>
                                              </Box>

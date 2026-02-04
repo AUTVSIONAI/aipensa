@@ -429,9 +429,13 @@ export const stripewebhook = async (
       const companyId = invoices.companyId;
       const company = await Company.findByPk(companyId);
 
-      const expiresAt = new Date(company.dueDate);
-      expiresAt.setDate(expiresAt.getDate() + 30);
-      const date = expiresAt.toISOString().split("T")[0];
+      let newDueDate = new Date(company.dueDate);
+      const now = new Date();
+      if (newDueDate < now) {
+        newDueDate = now;
+      }
+      newDueDate.setDate(newDueDate.getDate() + 30);
+      const date = newDueDate.toISOString().split("T")[0];
 
       if (company) {
         await company.update({
@@ -528,9 +532,13 @@ export const mercadopagowebhook = async (
       const companyId = invoices.companyId;
       const company = await Company.findByPk(companyId);
 
-      const expiresAt = new Date(company.dueDate);
-      expiresAt.setDate(expiresAt.getDate() + 30);
-      const date = expiresAt.toISOString().split("T")[0];
+      let newDueDate = new Date(company.dueDate);
+      const now = new Date();
+      if (newDueDate < now) {
+        newDueDate = now;
+      }
+      newDueDate.setDate(newDueDate.getDate() + 30);
+      const date = newDueDate.toISOString().split("T")[0];
 
       if (company) {
         await company.update({

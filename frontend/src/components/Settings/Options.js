@@ -92,7 +92,7 @@ const useStyles = makeStyles((theme) => ({
   selectContainer: (props) => ({
     width: "100%",
     textAlign: "left",
-    padding: theme.spacing(props?.density === "compact" ? 1.5 : 1.75),
+    padding: theme.spacing(props && props.density === "compact" ? 1.5 : 1.75),
     borderRadius: 14,
     background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.45)" : "rgba(255, 255, 255, 0.85)",
     border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
