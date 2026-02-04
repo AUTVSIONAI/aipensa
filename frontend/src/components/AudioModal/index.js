@@ -251,7 +251,7 @@ const AudioModal = ({ url }) => {
                     <Speed /> {audioRate}x
                 </SpeedButton>
             </SecondaryControls>
-            <audio ref={audioRef} style={{ display: "none" }}>
+            <audio ref={audioRef} style={{ display: "none" }} controls>
                 {getAudioSource()}
             </audio>
         </PlayerContainer>
