@@ -148,6 +148,13 @@ const Routes = () => {
                   isPrivate
                   roles={["admin"]}
                 />
+                <Route
+                  exact
+                  path="/plans"
+                  component={Plans}
+                  isPrivate
+                  roles={["admin"]}
+                />
                 {showCampaigns && (
                   <>
                     <Route exact path="/contact-lists" component={ContactLists} isPrivate />

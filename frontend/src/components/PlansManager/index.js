@@ -863,25 +863,25 @@ export function PlansManagerGrid(props) {
     };
 
     return (
-<Grid container spacing={3}>
-    {records.map((row) => (
-        <Grid item xs={12} sm={6} md={4} lg={3} key={row.id}>
-            <Card
-                style={{
-                    backgroundColor: "#ffffff",
-                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                    borderRadius: "10px",
-                    padding: "20px",
-                    margin: "10px",
-                    transition: "transform 0.2s ease-in-out",
-                    cursor: "pointer",
-                       }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                >
-                <CardContent style={{ padding: "16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    {/* Valor destacado no topo */}
-                    <Typography
+        <Grid container spacing={3}>
+            {Array.isArray(records) && records.length > 0 ? records.map((row) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={row.id}>
+                    <Card
+                        style={{
+                            backgroundColor: "#ffffff",
+                            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                            borderRadius: "10px",
+                            padding: "20px",
+                            margin: "10px",
+                            transition: "transform 0.2s ease-in-out",
+                            cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    >
+                        <CardContent style={{ padding: "16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                            {/* Valor destacado no topo */}
+                            <Typography
                         variant="h4"
                         style={{
                             fontWeight: "bold",
@@ -890,89 +890,89 @@ export function PlansManagerGrid(props) {
                             textAlign: "center",
                         }}
                     >
-                        {i18n.t("plans.form.money")} {row.amount ? row.amount.toLocaleString('pt-br', { minimumFractionDigits: 2 }) : "00.00"}
+                        {i18n.t("plans.form.money")} {row.amount ? Number(row.amount).toLocaleString('pt-br', { minimumFractionDigits: 2 }) : "00.00"}
                     </Typography>
-                    
-                    {/* Nome do plano */}
-                    <Typography
-                        variant="h6"
-                        style={{
-                            fontWeight: "bold",
-                            color: "#333",
-                            marginBottom: "8px",
-                            textAlign: "center",
-                        }}
-                    >
-                        {row.name || "-"}
-                    </Typography>
+                            
+                            {/* Nome do plano */}
+                            <Typography
+                                variant="h6"
+                                style={{
+                                    fontWeight: "bold",
+                                    color: "#333",
+                                    marginBottom: "8px",
+                                    textAlign: "center",
+                                }}
+                            >
+                                {row.name || "-"}
+                            </Typography>
 
-                    {/* Outros campos, exibidos verticalmente */}
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        {i18n.t("plans.form.users")}: {row.users || "-"}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        {i18n.t("plans.form.public")}: {row.isPublic ? "Sim" : "Não"}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        {i18n.t("plans.form.connections")}: {row.connections || "-"}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        Filas: {row.queues || "-"}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        Whatsapp: {renderWhatsapp(row)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        Facebook: {renderFacebook(row)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        Instagram: {renderInstagram(row)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        {i18n.t("plans.form.campaigns")}: {renderCampaigns(row)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        {i18n.t("plans.form.schedules")}: {renderSchedules(row)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        Chat Interno: {renderInternalChat(row)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        API Externa: {renderExternalApi(row)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        Kanban: {renderKanban(row)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        Open.AI: {renderOpenAi(row)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
-                        Integrações: {renderIntegrations(row)}
-                    </Typography>
-                </CardContent>
-                <CardActions style={{ padding: "8px 16px", justifyContent: "flex-end" }}>
-                    <IconButton
-                        onClick={() => onSelect(row)}
-                        aria-label="edit"
-                        style={{
-                        backgroundColor: "#3DB8FF",
-                        borderRadius: "10px",
-                        width: "40px",
-                        height: "40px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        transition: "0.3s",
-                       }}
-                    >
-                        <EditIcon style={{ color: "#fff" }}/>
-                    </IconButton>
-                </CardActions>
-            </Card>
+                            {/* Outros campos, exibidos verticalmente */}
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                {i18n.t("plans.form.users")}: {row.users || "-"}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                {i18n.t("plans.form.public")}: {row.isPublic ? "Sim" : "Não"}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                {i18n.t("plans.form.connections")}: {row.connections || "-"}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                Filas: {row.queues || "-"}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                Whatsapp: {renderWhatsapp(row)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                Facebook: {renderFacebook(row)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                Instagram: {renderInstagram(row)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                {i18n.t("plans.form.campaigns")}: {renderCampaigns(row)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                {i18n.t("plans.form.schedules")}: {renderSchedules(row)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                Chat Interno: {renderInternalChat(row)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                API Externa: {renderExternalApi(row)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                Kanban: {renderKanban(row)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                Open.AI: {renderOpenAi(row)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary" style={{ marginBottom: "8px" }}>
+                                Integrações: {renderIntegrations(row)}
+                            </Typography>
+                        </CardContent>
+                        <CardActions style={{ padding: "8px 16px", justifyContent: "flex-end" }}>
+                            <IconButton
+                                onClick={() => onSelect(row)}
+                                aria-label="edit"
+                                style={{
+                                backgroundColor: "#3DB8FF",
+                                borderRadius: "10px",
+                                width: "40px",
+                                height: "40px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                transition: "0.3s",
+                               }}
+                            >
+                                <EditIcon style={{ color: "#fff" }}/>
+                            </IconButton>
+                        </CardActions>
+                    </Card>
+                </Grid>
+            )) : <Grid item xs={12}><Typography variant="h6" align="center" style={{ padding: 20 }}>Nenhum plano encontrado</Typography></Grid>}
         </Grid>
-    ))}
-</Grid>
    )
 }
 
