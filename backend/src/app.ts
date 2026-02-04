@@ -110,7 +110,12 @@ app.use(
         "https://api.aipensa.com"
       ].map(normalizeOrigin).filter(Boolean);
 
-      if (allowedDomains.includes(normalizeOrigin(origin))) {
+      // Simple check to allow any subdomain or main domain
+      const isAllowed = allowedDomains.some(domain => origin.startsWith(domain)) || 
+                        origin.includes("aipensa.com") || 
+                        allowedDomains.includes(normalizeOrigin(origin));
+
+      if (isAllowed) {
         callback(null, true);
       } else {
         // Fallback: allow all but this might fail with credentials: true if not handled by the browser correctly
