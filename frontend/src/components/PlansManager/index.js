@@ -1008,7 +1008,7 @@ export default function PlansManager() {
         }
         fetchData()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [record])
+    }, []) // Changed dependency array to empty to avoid infinite loop
 
     const loadPlans = async () => {
         setLoading(true)
