@@ -16,6 +16,9 @@ export const initIO = (httpServer: Server): SocketIO => {
       },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    },
+    allowRequest: (req, callback) => {
+      callback(null, true);
     }
   });
 
