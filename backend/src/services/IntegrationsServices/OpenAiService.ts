@@ -1568,11 +1568,11 @@ export const handleOpenAi = async (
         // Processar ações de pagamento PIX
         response = await handlePixAction(response, ticket, contact, wbot);
 
-        // Processar geração de imagem DALL-E
-        response = await handleImageGenerationAction(response, ticket, contact, wbot);
+      // Processar geração de imagem DALL-E
+      response = await handleImageGenerationAction(response, ticket, contact, wbot);
 
-        // Processar ações de upgrade
-        response = await handleUpgradeAction(response);
+      // Processar ações de upgrade
+      response = await handleUpgradeAction(response);
       }
 
       // Verifica se a resposta foi processada (schedule ou marketing)
