@@ -10,6 +10,7 @@ import CardHeader from '@material-ui/core/CardHeader';
 import CardActions from '@material-ui/core/CardActions';
 import Typography from '@material-ui/core/Typography';
 import StarIcon from '@material-ui/icons/StarBorder';
+import { useHistory } from "react-router-dom";
 
 import SubscriptionModal from "../../components/SubscriptionModal";
 import MainHeader from "../../components/MainHeader";
