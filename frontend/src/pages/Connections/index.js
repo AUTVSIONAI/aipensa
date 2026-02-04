@@ -731,6 +731,8 @@ const Connections = () => {
                               version="13.0"
                               scope="public_profile,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management"
                               redirectUri={window.location.origin}
+                              disableMobileRedirect={true}
+                              auth_type="reauthenticate"
                               callback={(response) => {
                                 responseFacebook(response);
                                 popupState.close();
