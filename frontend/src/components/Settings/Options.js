@@ -184,7 +184,7 @@ const useStyles = makeStyles((theme) => ({
     color: "#fff",
     boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 12px 32px rgba(0,0,0,0.10)",
     flexShrink: 0,
-  },
+  }),
   sectionSubtitle: {
     opacity: 0.85,
   },
