@@ -735,6 +735,13 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
                 onClick={drawerClose}
               />
               <ListItemLink
+                to="/queue-integration"
+                primary={i18n.t("mainDrawer.listItems.queueIntegration")}
+                icon={<ShapeLineIcon />}
+                tooltip={collapsed}
+                onClick={drawerClose}
+              />
+              <ListItemLink
                 to="/subscription"
                 primary="Planos e Assinatura"
                 icon={<PaymentIcon />}

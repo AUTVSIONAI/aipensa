@@ -26,7 +26,8 @@ const ModalImageCors = ({ imageUrl }) => {
 		const fetchImage = async () => {
 			let requestUrl = imageUrl;
 			try {
-				requestUrl = new URL(imageUrl, api.defaults.baseURL).toString();
+				const backendUrl = api.defaults.baseURL.replace(":8080", "");
+				requestUrl = new URL(imageUrl, backendUrl).toString();
 			} catch (_) {
 				return;
 			}

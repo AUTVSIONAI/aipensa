@@ -208,6 +208,20 @@ const AudioModal = ({ url }) => {
     const getAudioSource = () => {
         let sourceUrl = url;
 
+        if (!sourceUrl.startsWith('http')) {
+             // Ensure we don't have double slash issue if backend url ends with /
+             let backendUrl = process.env.REACT_APP_BACKEND_URL.replace(/\/$/, "");
+             // Remove port 8080 if it exists, as connection is timed out on that port
+             backendUrl = backendUrl.replace(":8080", "");
+             
+             // Check if sourceUrl already has "public/"
+             if (sourceUrl.startsWith("public/") || sourceUrl.startsWith("/public/")) {
+                sourceUrl = `${backendUrl}/${sourceUrl.replace(/^\//, "")}`;
+             } else {
+                sourceUrl = `${backendUrl}/public/${sourceUrl}`;
+             }
+        }
+
         if (isIOS) {
             sourceUrl = sourceUrl.replace(".ogg", ".mp3");
         }
