@@ -1014,9 +1014,16 @@ export default function PlansManager() {
         setLoading(true)
         try {
             const planList = await list()
-            setRecords(planList)
+            // Ensure planList is an array
+            if (Array.isArray(planList)) {
+                setRecords(planList)
+            } else {
+                console.error("Plan list is not an array:", planList)
+                setRecords([])
+            }
         } catch (e) {
             toast.error('Não foi possível carregar a lista de registros')
+            setRecords([])
         }
         setLoading(false)
     }

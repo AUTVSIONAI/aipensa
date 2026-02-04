@@ -110,10 +110,8 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 
 export const list = async (req: Request, res: Response): Promise<Response> => {
   const { listPublic } = req.query as IndexQuery;
-  console.log(`[PlanController] List called with listPublic=${listPublic}`);
 
   const plans: Plan[] = await FindAllPlanService(listPublic);
-  console.log(`[PlanController] Found ${plans.length} plans`);
 
   return res.status(200).json(plans);
 };

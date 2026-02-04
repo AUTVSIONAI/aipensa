@@ -81,8 +81,19 @@ const Helps = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const helps = await list();
-      setRecords(helps);
+      try {
+        const helps = await list();
+        // Ensure helps is an array before setting records
+        if (Array.isArray(helps)) {
+          setRecords(helps);
+        } else {
+          console.error("Helps data is not an array:", helps);
+          setRecords([]);
+        }
+      } catch (err) {
+        console.error("Error fetching helps:", err);
+        setRecords([]);
+      }
     }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,7 +147,7 @@ const Helps = () => {
     return (
       <>
         <div className={`${classes.mainPaper} ${classes.mainPaperContainer}`}>
-          {records.length ? records.map((record, key) => (
+          {Array.isArray(records) && records.length ? records.map((record, key) => (
             <Paper key={key} className={`${classes.helpPaper} ${classes.paperHover}`} onClick={() => openVideoModal(record.video)}>
               <img
                 src={`https://img.youtube.com/vi/${record.video}/mqdefault.jpg`}

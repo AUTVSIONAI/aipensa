@@ -6,9 +6,17 @@ const useStyles = makeStyles(theme => ({
 	MainHeaderButtonsWrapper: {
 		flex: "none",
 		marginLeft: "auto",
+		display: "flex",
+		flexWrap: "wrap",
+		justifyContent: "flex-end",
 		"& > *": {
 			margin: theme.spacing(1),
 		},
+        [theme.breakpoints.down("sm")]: {
+            flexBasis: "100%",
+            justifyContent: "center",
+            marginTop: theme.spacing(1),
+        },
 	},
 }));
 
