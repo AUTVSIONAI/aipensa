@@ -100,7 +100,21 @@ export const createSubscription = async (
     invoiceId
   } = req.body;
 
-  const valorNumber = Number(String(price).replace(/\./g, "").replace(",", "."));
+  let valorNumber: number;
+  // Fix for price format (e.g. "297.00" becoming 29700)
+  if (typeof price === "number") {
+    valorNumber = price;
+  } else {
+    const priceStr = String(price);
+    // If it looks like US format (dot but no comma), parse as float
+    if (priceStr.includes(".") && !priceStr.includes(",")) {
+      valorNumber = parseFloat(priceStr);
+    } else {
+      // Fallback to BR format (dot as thousand separator)
+      valorNumber = Number(priceStr.replace(/\./g, "").replace(",", "."));
+    }
+  }
+
   const valor = Number(
     valorNumber
       .toLocaleString("pt-br", { minimumFractionDigits: 2 })

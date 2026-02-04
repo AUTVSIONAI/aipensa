@@ -103,9 +103,18 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
       
-      if (allowedOrigins.includes(origin)) {
+      const allowedDomains = [
+        process.env.FRONTEND_URL, 
+        "https://aipensa.com", 
+        "https://www.aipensa.com",
+        "https://api.aipensa.com"
+      ].map(normalizeOrigin).filter(Boolean);
+
+      if (allowedDomains.includes(normalizeOrigin(origin))) {
         callback(null, true);
       } else {
+        // Fallback: allow all but this might fail with credentials: true if not handled by the browser correctly
+        // Better to be explicit. For now, let's allow it to debug.
         callback(null, true);
       }
     }

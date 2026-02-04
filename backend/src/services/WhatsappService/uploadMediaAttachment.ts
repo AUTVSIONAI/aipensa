@@ -13,6 +13,10 @@ export const mediaUpload = async (
   const files = req.files as Express.Multer.File[];
   const file = head(files);
 
+  if (!file) {
+    throw new AppError("Nenhum arquivo enviado ou campo 'file' ausente.", 400);
+  }
+
   try {
     const whatsapp = await Whatsapp.findByPk(whatsappId);
 
