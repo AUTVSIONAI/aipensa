@@ -1322,8 +1322,14 @@ export const handleOpenAi = async (
 
   NÃO invente dados. Se o usuário perguntar sobre campanhas ou desempenho, use essas tags e aguarde a resposta do sistema.
 
+  IMAGE GENERATION (DALL-E):
+  You can generate images using DALL-E based on the user's prompt.
+  IMPORTANT: This action only works if the user has the "ADMIN" tag.
+  - To generate an image: Use the tag [GENERATE_IMAGE] { "prompt": "Description of the image", "size": "1024x1024" } [/GENERATE_IMAGE]
+  - After generating, ask the user if they want to post it to social media using the [POST_FEED] command.
+  
   ${catalogContext}
-
+  
   ${openAiSettings.prompt}\n`;
 
   let messagesOpenAi = [];
@@ -1451,6 +1457,9 @@ export const handleOpenAi = async (
 
         // Processar ações de pagamento PIX
         response = await handlePixAction(response, ticket, contact, wbot);
+
+        // Processar geração de imagem DALL-E
+        response = await handleImageGenerationAction(response, ticket, contact, wbot);
 
         // Processar ações de upgrade
         response = await handleUpgradeAction(response);
