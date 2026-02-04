@@ -90,6 +90,7 @@ const CompanyModal = ({ open, onClose, companyId }) => {
 		dueDate: "",
 		recurrence: "MENSAL",
 	});
+	const [plans, setPlans] = useState([]);
 	const [showPassword, setShowPassword] = useState(false);
 
 	useEffect(() => {

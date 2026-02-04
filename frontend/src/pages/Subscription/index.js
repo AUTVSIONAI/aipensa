@@ -47,6 +47,7 @@ const Subscription = () => {
   const { user } = useContext(AuthContext);
   const { returnDays } = useDate();
   const { getPlanList } = usePlans();
+  const history = useHistory();
 
   const [loading, setLoading] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -61,6 +62,12 @@ const Subscription = () => {
       setDueDate(moment(currentDueDate).format("DD/MM/YYYY"));
     }
 
+    // If user is super admin, redirect to Plan management page instead of showing subscription page
+    if (user.super) {
+        history.push("/plans");
+        return null;
+    }
+
     const loadPlans = async () => {
         try {
             const data = await getPlanList();
@@ -71,7 +78,7 @@ const Subscription = () => {
         }
     }
     loadPlans();
-  }, [getPlanList]);
+  }, [getPlanList, user, history]);
 
   const handleOpenContactModal = async (plan) => {
     try {
