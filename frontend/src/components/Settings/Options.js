@@ -58,7 +58,7 @@ const useStyles = makeStyles((theme) => ({
     width: "100%",
   },
   switchLabel: (props) => ({
-    fontSize: props?.density === "compact" ? "0.875rem" : "0.95rem",
+    fontSize: props && props.density === "compact" ? "0.875rem" : "0.95rem",
     color: theme.palette.text.secondary,
   }),
   fixedHeightPaper: {
@@ -155,7 +155,7 @@ const useStyles = makeStyles((theme) => ({
       flexShrink: 0,
     },
     "& .MuiInputAdornment-root .MuiSvgIcon-root": {
-      fontSize: props?.density === "compact" ? 23 : 24,
+      fontSize: props && props.density === "compact" ? 23 : 24,
       flexShrink: 0,
     },
     "& .MuiInputLabel-root": {
@@ -175,8 +175,8 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(2),
   },
   sectionHeaderIcon: (props) => ({
-    width: props?.density === "compact" ? 46 : 48,
-    height: props?.density === "compact" ? 46 : 48,
+    width: props && props.density === "compact" ? 46 : 48,
+    height: props && props.density === "compact" ? 46 : 48,
     borderRadius: 14,
     display: "inline-flex",
     alignItems: "center",
@@ -189,7 +189,7 @@ const useStyles = makeStyles((theme) => ({
     opacity: 0.85,
   },
   sectionBlock: (props) => ({
-    padding: theme.spacing(props?.density === "compact" ? 2.25 : 2.5),
+    padding: theme.spacing(props && props.density === "compact" ? 2.25 : 2.5),
     marginBottom: theme.spacing(2),
     borderRadius: 18,
     background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.25)" : "rgba(255, 255, 255, 0.6)",
