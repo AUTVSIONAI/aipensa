@@ -184,7 +184,7 @@ const useStyles = makeStyles((theme) => ({
     color: "#fff",
     boxShadow: theme.palette.type === "dark" ? "0 18px 44px rgba(0,0,0,0.45)" : "0 12px 32px rgba(0,0,0,0.10)",
     flexShrink: 0,
-  }),
+  },
   sectionSubtitle: {
     opacity: 0.85,
   },
@@ -195,7 +195,7 @@ const useStyles = makeStyles((theme) => ({
     background: theme.palette.type === "dark" ? "rgba(17, 24, 39, 0.25)" : "rgba(255, 255, 255, 0.6)",
     border: theme.palette.type === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
     backdropFilter: "blur(18px)",
-  }),
+  },
   sectionGuide: {
     margin: theme.spacing(1, 0, 2, 0),
     padding: theme.spacing(1.5),
@@ -277,6 +277,10 @@ export default function Options(props) {
   // OPENAI API KEY TRANSCRIÇÃO DE ÁUDIO
   const [openaitokenType, setopenaitokenType] = useState('');
   const [loadingopenaitokenType, setLoadingopenaitokenType] = useState(false);
+  
+  // OPENROUTER API KEY
+  const [openroutertokenType, setopenroutertokenType] = useState('');
+  const [loadingopenroutertokenType, setLoadingopenroutertokenType] = useState(false);
 
   // LGPD
   const [enableLGPD, setEnableLGPD] = useState("disabled");
@@ -344,6 +348,7 @@ export default function Options(props) {
   const { update: updatestripeprivatekey } = useSettings();
   const { update: updateasaastoken } = useSettings();
   const { update: updateopenaitoken } = useSettings();
+  const { update: updateopenroutertoken } = useSettings();
   const { update } = useCompanySettings();
 
   const isSuper = () => {
@@ -379,6 +384,9 @@ export default function Options(props) {
 
       const openaitokenType = oldSettings.find((s) => s.key === 'openaikeyaudio');
       if (openaitokenType) setopenaitokenType(openaitokenType.value);
+
+      const openroutertokenType = oldSettings.find((s) => s.key === 'globalOpenRouterKey');
+      if (openroutertokenType) setopenroutertokenType(openroutertokenType.value);
     }
   }, [oldSettings]);
 
@@ -504,6 +512,17 @@ export default function Options(props) {
     await updateopenaitoken({ key: 'openaikeyaudio', value: openaitokenType });
     toast.success('Operação atualizada com sucesso.');
     setLoadingopenaitokenType(false);
+  }
+
+  async function handleChangeopenroutertoken(value) {
+    setopenroutertokenType(value);
+  }
+
+  async function handleBluropenroutertoken() {
+    setLoadingopenroutertokenType(true);
+    await updateopenroutertoken({ key: 'globalOpenRouterKey', value: openroutertokenType });
+    toast.success('Operação atualizada com sucesso.');
+    setLoadingopenroutertokenType(false);
   }
 
   async function handleChangeUserRating(value) {
@@ -737,7 +756,7 @@ export default function Options(props) {
           <Typography variant="body2" color="textSecondary">Acelera o atendimento e mantém consistência evitando sobrecarga.</Typography>
         </Box>
         <Grid spacing={2} container>
-          <Grid item xs={12} md={6} lg={4}>
+          <Grid item xs={12} md={6} lg={6}>
             <FormControl className={classes.selectContainer} id="settings-option-chatbot-type">
               <InputLabel id="chatBotType-label">{i18n.t("settings.settings.options.chatBotType")}</InputLabel>
               <Select
@@ -759,7 +778,7 @@ export default function Options(props) {
           </Grid>
 
           {isSuper() ? (
-            <Grid item xs={12} md={6} lg={4}>
+            <Grid item xs={12} md={6} lg={6}>
               <FormControl className={classes.selectContainer} id="settings-option-download-limit">
                 <InputLabel id="downloadLimit-label">Limite de Download de Arquivos (MB)</InputLabel>
                 <Select
@@ -786,7 +805,7 @@ export default function Options(props) {
             </Grid>
           ) : null}
 
-          <Grid item xs={12} md={6} lg={4}>
+          <Grid item xs={12} md={6} lg={6}>
             <FormControl className={classes.selectContainer} id="settings-option-schedule-type">
               <InputLabel id="schedule-type-label">{i18n.t("settings.settings.options.officeScheduling")}</InputLabel>
               <Select
@@ -837,7 +856,7 @@ export default function Options(props) {
         </Box>
         <Grid spacing={2} container>
           {isSuper() ? (
-            <Grid xs={12} sm={6} md={6} lg={4} item>
+            <Grid xs={12} sm={6} md={6} lg={6} item>
               <FormControl className={classes.selectContainer} id="settings-option-user-creation">
                 <div className={classes.switchContainer}>
                   <Switch
@@ -852,7 +871,7 @@ export default function Options(props) {
             </Grid>
           ) : null}
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-user-rating">
               <div className={classes.switchContainer}>
                 <Switch
@@ -867,7 +886,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-send-greeting-accepted">
               <div className={classes.switchContainer}>
                 <Switch
@@ -886,7 +905,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-user-random">
               <div className={classes.switchContainer}>
                 <Switch
@@ -901,7 +920,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-transfer-message">
               <div className={classes.switchContainer}>
                 <Switch
@@ -915,7 +934,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-accept-call-whatsapp">
               <div className={classes.switchContainer}>
                 <Switch
@@ -930,7 +949,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-send-sign-message">
               <div className={classes.switchContainer}>
                 <Switch
@@ -944,7 +963,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-send-greeting-one-queue">
               <div className={classes.switchContainer}>
                 <Switch
@@ -959,7 +978,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
           
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-enable-auto-status">
               <div className={classes.switchContainer}>
                 <Switch
@@ -974,7 +993,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-send-queue-position">
               <div className={classes.switchContainer}>
                 <Switch
@@ -989,7 +1008,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-send-farewell-waiting">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1003,7 +1022,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-accept-audio-message-contact">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1046,7 +1065,7 @@ export default function Options(props) {
           <Typography variant="body2" color="textSecondary">Garante conformidade e disciplina operacional.</Typography>
         </Box>
         <Grid spacing={2} container>
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-enable-lgpd">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1061,7 +1080,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-required-tag">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1076,7 +1095,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-close-ticket-on-transfer">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1091,7 +1110,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={4} item>
+          <Grid xs={12} sm={6} md={6} lg={6} item>
             <FormControl className={classes.selectContainer} id="settings-option-show-notification-pending">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1179,7 +1198,7 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             {/* LGPD Manter ou não mensagem deletada pelo contato */}
-            <Grid xs={12} sm={6} md={6} lg={4} item>
+            <Grid xs={12} sm={6} md={6} lg={6} item>
               <FormControl className={classes.selectContainer}>
                 <InputLabel id="lgpdDeleteMessage-label">{i18n.t("settings.settings.LGPD.obfuscateMessageDelete")}</InputLabel>
                 <Select
@@ -1199,7 +1218,7 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             {/* LGPD Sempre solicitar confirmação / consentimento dos dados */}
-            <Grid xs={12} sm={6} md={6} lg={4} item>
+            <Grid xs={12} sm={6} md={6} lg={6} item>
               <FormControl className={classes.selectContainer}>
                 <InputLabel id="lgpdConsent-label">{i18n.t("settings.settings.LGPD.alwaysConsent")}</InputLabel>
                 <Select
@@ -1219,7 +1238,7 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             {/* LGPD Ofuscar número telefone para usuários */}
-            <Grid xs={12} sm={6} md={6} lg={4} item>
+            <Grid xs={12} sm={6} md={6} lg={6} item>
               <FormControl className={classes.selectContainer}>
                 <InputLabel id="lgpdHideNumber-label">{i18n.t("settings.settings.LGPD.obfuscatePhoneUser")}</InputLabel>
                 <Select
@@ -1467,10 +1486,10 @@ export default function Options(props) {
               </div>
               <div>
                 <Typography variant="subtitle1" className={classes.sectionTitle}>
-                  OpenAI API Key (Transcrição de áudio)
+                  OpenAI & LLM
                 </Typography>
                 <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
-                  Chave global para transcrever áudios (todas as empresas).
+                  Chaves de API para Inteligência Artificial (OpenAI, OpenRouter, etc).
                 </Typography>
               </div>
             </div>
@@ -1481,7 +1500,7 @@ export default function Options(props) {
                     id='openaikeyaudio'
                     name='openaikeyaudio'
                     margin='dense'
-                    label='OpenAI API Key'
+                    label='OpenAI API Key (Transcrição de áudio)'
                     variant='outlined'
                     value={openaitokenType}
                     onChange={(e) => handleChangeopenaitoken(e.target.value)}
@@ -1495,6 +1514,28 @@ export default function Options(props) {
                     }}
                   />
                   <FormHelperText>{loadingopenaitokenType && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+              <Grid xs={12} sm={12} md={12} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='globalOpenRouterKey'
+                    name='globalOpenRouterKey'
+                    margin='dense'
+                    label='Global OpenRouter Key (LLM)'
+                    variant='outlined'
+                    value={openroutertokenType}
+                    onChange={(e) => handleChangeopenroutertoken(e.target.value)}
+                    onBlur={handleBluropenroutertoken}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <VpnKeyIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingopenroutertokenType && 'Atualizando...'}</FormHelperText>
                 </FormControl>
               </Grid>
             </Grid>

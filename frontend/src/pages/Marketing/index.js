@@ -1750,7 +1750,7 @@ const Marketing = () => {
                           <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
                              A configuração da IA é feita no menu "OpenAI" ou "Integrações".
                           </Typography>
-                          <Button variant="outlined" color="primary" onClick={() => history.push("/openai")}>
+                          <Button variant="outlined" color="primary" onClick={() => history.push("/settings", { tab: "options", subTab: "settings-openai-audio" })}>
                              Ir para Configurações de IA
                           </Button>
                        </Box>
