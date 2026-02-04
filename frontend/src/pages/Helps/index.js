@@ -100,7 +100,16 @@ const Helps = () => {
   }, []);
 
   const openVideoModal = (video) => {
-    setSelectedVideo(video);
+    // Extract video ID if full URL is stored
+    let videoId = video;
+    if (video && (video.includes("youtube.com") || video.includes("youtu.be"))) {
+        const urlParams = new URLSearchParams(new URL(video).search);
+        videoId = urlParams.get("v");
+        if (!videoId && video.includes("youtu.be")) {
+            videoId = video.split("/").pop();
+        }
+    }
+    setSelectedVideo(videoId);
   };
 
   const closeVideoModal = () => {

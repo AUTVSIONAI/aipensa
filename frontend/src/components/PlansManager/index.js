@@ -971,7 +971,7 @@ export function PlansManagerGrid(props) {
                 </CardActions>
             </Card>
         </Grid>
-    ))}
+    )) : null}
 </Grid>
    )
 }
