@@ -85,9 +85,24 @@ const CompanyModal = ({ open, onClose, companyId }) => {
 		passwordDefault: "",
 		numberAttendants: 1,
 		numberConections: 1,
-		status: false
+		status: false,
+		planId: "",
+		dueDate: "",
+		recurrence: "MENSAL",
 	});
 	const [showPassword, setShowPassword] = useState(false);
+
+	useEffect(() => {
+		async function fetchPlans() {
+			try {
+				const { data } = await api.get("/plans/list");
+				setPlans(data);
+			} catch (err) {
+				toastError(err);
+			}
+		}
+		fetchPlans();
+	}, []);
 	const dialogRef = useRef(null);
 	const [dragging, setDragging] = useState(false);
 	const [relX, setRelX] = useState(0);
@@ -234,6 +249,60 @@ const CompanyModal = ({ open, onClose, companyId }) => {
 									}
 									label={values.status ? "Ativo" : "Inativo"}
 								/>
+							</div>
+							<div className={classes.multFieldLine}>
+								<Field
+									as={TextField}
+									label="Data de Vencimento"
+									type="date"
+									name="dueDate"
+									InputLabelProps={{
+										shrink: true,
+									}}
+									variant="outlined"
+									margin="dense"
+									fullWidth
+								/>
+							</div>
+							<div className={classes.multFieldLine}>
+								<Field
+									as={TextField}
+									label="Recorrência"
+									name="recurrence"
+									variant="outlined"
+									margin="dense"
+									fullWidth
+									select
+									SelectProps={{
+										native: true,
+									}}
+								>
+									<option value="MENSAL">Mensal</option>
+									<option value="TRIMESTRAL">Trimestral</option>
+									<option value="SEMESTRAL">Semestral</option>
+									<option value="ANUAL">Anual</option>
+								</Field>
+							</div>
+							<div className={classes.multFieldLine}>
+								<Field
+									as={TextField}
+									label="Plano"
+									name="planId"
+									variant="outlined"
+									margin="dense"
+									fullWidth
+									select
+									SelectProps={{
+										native: true,
+									}}
+								>
+									<option value="">Selecione um plano</option>
+									{plans.map((plan) => (
+										<option key={plan.id} value={plan.id}>
+											{plan.name}
+										</option>
+									))}
+								</Field>
 							</div>
 							<div className={classes.multFieldLine}>
 								<Field
