@@ -971,7 +971,7 @@ export function PlansManagerGrid(props) {
                 </CardActions>
             </Card>
         </Grid>
-    )) : null}
+    ))}
 </Grid>
    )
 }
@@ -1022,6 +1022,7 @@ export default function PlansManager() {
                 setRecords([])
             }
         } catch (e) {
+            console.error("Error loading plans:", e)
             toast.error('Não foi possível carregar a lista de registros')
             setRecords([])
         }
