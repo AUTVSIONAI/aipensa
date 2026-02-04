@@ -10,11 +10,12 @@ let io: SocketIO;
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     cors: {
-      origin: process.env.NODE_ENV === "production" ? false : process.env.FRONTEND_URL,
-      credentials: true
-    },
-    allowRequest: (req, callback) => {
-      callback(null, true);
+      origin: (origin, callback) => {
+        // Permitir todas as origens
+        callback(null, true);
+      },
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     }
   });
 
