@@ -28,6 +28,10 @@ export const createSubscription = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  console.log("--- CreateSubscription Request ---");
+  console.log("Body:", req.body);
+  console.log("User:", req.user);
+
   //let mercadopagoURL;
   let stripeURL;
   let pix;
@@ -62,8 +66,10 @@ export const createSubscription = async (
     console.error("Error retrieving settings:", error);
   }
 
-  console.log(key_ASAAS_TOKEN);
-  console.log(key_MP_ACCESS_TOKEN);
+  console.log("Keys loaded:");
+  console.log("Stripe:", key_STRIPE_PRIVATE ? "Loaded" : "Missing");
+  console.log("Asaas:", key_ASAAS_TOKEN ? "Loaded" : "Missing");
+  console.log("MP:", key_MP_ACCESS_TOKEN ? "Loaded" : "Missing");
 
   const gerencianet = new Gerencianet(options);
   const { companyId } = req.user;
@@ -74,8 +80,9 @@ export const createSubscription = async (
     connections: Yup.mixed().required()
   });
 
-  if (!(await schema.isValid(req.body))) {
-    console.log("Erro linha 32");
+  const isValid = await schema.isValid(req.body);
+  if (!isValid) {
+    console.log("Validation Failed:", req.body);
     throw new AppError("Dados Incorretos - Contate o Suporte!", 400);
   }
 
@@ -93,7 +100,7 @@ export const createSubscription = async (
     invoiceId
   } = req.body;
 
-  const valorNumber = Number(String(price).replace(",", "."));
+  const valorNumber = Number(String(price).replace(/\./g, "").replace(",", "."));
   const valor = Number(
     valorNumber
       .toLocaleString("pt-br", { minimumFractionDigits: 2 })
@@ -186,24 +193,34 @@ export const createSubscription = async (
         apiVersion: "2022-11-15"
       });
 
+      console.log(`Creating Stripe session for Invoice #${invoiceId}, Amount: ${valorext}`);
+
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      const successUrl = process.env.STRIPE_OK_URL || `${frontendUrl}/financeiro`;
+      const cancelUrl = process.env.STRIPE_CANCEL_URL || `${frontendUrl}/financeiro`;
+
+      console.log(`Stripe URLs - Success: ${successUrl}, Cancel: ${cancelUrl}`);
+
       const sessionStripe = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: `#Fatura:${invoiceId}`
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "brl",
+              product_data: {
+                name: `#Fatura:${invoiceId}`
+              },
+              unit_amount: Math.round(Number(valorext) * 100)
             },
-            unit_amount: Math.round(Number(valorext) * 100)
-          },
-          quantity: 1
-        }
-      ],
-      mode: "payment",
-      success_url: process.env.STRIPE_OK_URL,
-      cancel_url: process.env.STRIPE_CANCEL_URL
-    });
+            quantity: 1
+          }
+        ],
+        mode: "payment",
+        success_url: successUrl,
+        cancel_url: cancelUrl
+      });
+
+    console.log("Stripe Session Created:", sessionStripe.id);
 
     const invoicesX = await Invoices.findByPk(invoiceId);
     const invoiX = await invoicesX.update({

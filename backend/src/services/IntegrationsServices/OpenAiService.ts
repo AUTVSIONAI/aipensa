@@ -1140,12 +1140,19 @@ export const handleOpenAi = async (
 
       // Try fetching global setting
       const setting = await Setting.findOne({ where: { companyId: 1, key: settingKey } });
-      if (setting?.value) return setting.value;
+      if (setting?.value) {
+        console.log(`[OpenAiService] Found global key for ${prov}: ${settingKey}`);
+        return setting.value;
+      }
       
       // Fallback: check if 'userApiToken' is used for everything in some setups
-      if (prov === "openrouter" || prov === "gemini") {
+      // But only if we are not explicitly looking for openai (which already uses userApiToken)
+      if (prov !== "openai") {
          const genericSetting = await Setting.findOne({ where: { companyId: 1, key: "userApiToken" } });
-         if (genericSetting?.value) return genericSetting.value;
+         if (genericSetting?.value) {
+            console.log(`[OpenAiService] Found generic global key (userApiToken) for ${prov}`);
+            return genericSetting.value;
+         }
       }
 
     } catch(e) { console.error("[OpenAiService] Error fetching global key:", e); }
@@ -1156,6 +1163,18 @@ export const handleOpenAi = async (
     return process.env.OPENAI_API_KEY || "";
   };
   const effectiveApiKey = await resolveApiKey(provider, openAiSettings.apiKey);
+
+  if (!effectiveApiKey) {
+     console.error(`[OpenAiService] Error: No API Key found for provider ${provider}`);
+     throw new Error(`Chave API não configurada globalmente para ${provider}. Verifique as Configurações.`);
+  }
+  console.log(
+    `[OpenAiService] Provider ${provider} using key: ${
+      typeof effectiveApiKey === "string" && effectiveApiKey.length > 6
+        ? effectiveApiKey.substring(0, 6) + "****"
+        : "invalid"
+    }`
+  );
 
   if (provider === "gemini") {
     // Configurar Gemini
@@ -1505,6 +1524,12 @@ export const handleOpenAi = async (
       const transcriptionApiKey = await (async () => {
         const voiceKey = (openAiSettings.voiceKey || "").trim();
         if (voiceKey !== "") return voiceKey;
+        
+        // Prioritize OpenAI key for transcription (Whisper) as requested
+        // This ensures we don't use OpenRouter key for direct OpenAI calls unless intended
+        const openaiKey = await resolveApiKey("openai");
+        if (openaiKey) return openaiKey;
+
         const base = await resolveApiKey(provider, openAiSettings.apiKey);
         // Se usar Azure para voz, permitir fallback de env
         if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") {
@@ -1637,7 +1662,7 @@ export const handleOpenAi = async (
           keepOnlySpecifiedChars(response!),
           `${publicFolder}/${fileNameWithOutExtension}`,
           voiceKeyResolved,
-          openAiSettings.voiceRegion,
+          openAiSettings.voiceRegion || "openai",
           openAiSettings.voice,
           "mp3"
         );
