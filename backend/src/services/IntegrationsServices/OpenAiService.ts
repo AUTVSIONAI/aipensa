@@ -1042,6 +1042,61 @@ const handleUpgradeAction = async (response: string) => {
   return response;
 };
 
+const handleImageGenerationAction = async (
+  response: string,
+  ticket: Ticket,
+  contact: Contact,
+  wbot: Session
+): Promise<string> => {
+  const imageRegex = /\[GENERATE_IMAGE\]([\s\S]*?)\[\/GENERATE_IMAGE\]/;
+  const match = response.match(imageRegex);
+
+  if (match && match[1]) {
+    try {
+      if (!(await verifyAdminPermission(contact))) {
+        return (
+          response.replace(match[0], "").trim() +
+          "\n\n⛔ *Acesso Negado*: Esta ação requer permissão de administrador (Tag: ADMIN)."
+        );
+      }
+
+      const jsonContent = match[1].trim();
+      const { prompt, size } = JSON.parse(jsonContent);
+
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+
+      const imageResponse = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: size || "1024x1024"
+      });
+
+      const imageUrl = imageResponse.data[0].url;
+
+      if (imageUrl) {
+        await wbot.sendMessage(ticket.contact.remoteJid, {
+          image: { url: imageUrl },
+          caption: `🎨 Imagem gerada com sucesso!\n\nDescrição: ${prompt}\n\nDeseja postar nas redes sociais? Responda com 'Sim' para eu preparar a postagem.`
+        });
+        
+        return response.replace(match[0], "").trim() + "\n\n✅ Imagem gerada e enviada!";
+      } else {
+        return response.replace(match[0], "").trim() + "\n\n❌ Falha ao gerar imagem.";
+      }
+    } catch (e) {
+      console.error("Erro ao gerar imagem DALL-E:", e);
+      return (
+        response.replace(match[0], "").trim() +
+        `\n\n❌ Erro ao gerar imagem: ${e.message}`
+      );
+    }
+  }
+  return response;
+};
+
 export const handleOpenAi = async (
   openAiSettings: IOpenAi,
   msg: proto.IWebMessageInfo,
