@@ -75,6 +75,33 @@ const UpdateCompanyService = async (
     if (Object.keys(invoiceUpdateData).length > 0) {
       await openInvoice.update(invoiceUpdateData);
     }
+  } else {
+    // If no open invoice exists, create one as "paid" to record the transaction history
+    if (typeof planId === "number") {
+        const plan = await Plan.findByPk(planId);
+        if (plan) {
+            await Invoices.create({
+                companyId: company.id,
+                dueDate: dueDate || new Date().toISOString().split('T')[0],
+                detail: plan.name,
+                status: 'paid', // Automatically mark as paid since admin is manually updating
+                value: Number(plan.amount?.replace(",", ".")),
+                users: plan.users,
+                connections: plan.connections,
+                queues: plan.queues,
+                useWhatsapp: plan.useWhatsapp,
+                useFacebook: plan.useFacebook,
+                useInstagram: plan.useInstagram,
+                useCampaigns: plan.useCampaigns,
+                useSchedules: plan.useSchedules,
+                useInternalChat: plan.useInternalChat,
+                useExternalApi: plan.useExternalApi,
+                useKanban: plan.useKanban,
+                useOpenAi: plan.useOpenAi,
+                useIntegrations: plan.useIntegrations
+            });
+        }
+    }
   }
 
   if (email) {

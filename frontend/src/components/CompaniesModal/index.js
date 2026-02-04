@@ -114,7 +114,13 @@ const CompanyModal = ({ open, onClose, companyId }) => {
 			if (!companyId) return;
 			try {
 				const { data } = await api.get(`/companies/listPlan/${companyId}`);
-				setCompany(prevState => ({ ...prevState, ...data }));
+				setCompany(prevState => ({ 
+					...prevState, 
+					...data,
+					planId: data.planId || "",
+					dueDate: data.dueDate ? data.dueDate.split('T')[0] : "",
+					recurrence: data.recurrence || "MENSAL",
+				}));
 			} catch (err) {
 				toastError(err);
 			}
