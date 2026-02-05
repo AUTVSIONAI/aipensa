@@ -182,9 +182,7 @@ const QueueIntegration = () => {
       const planConfigs = await getPlanCompany(undefined, companyId);
       if (!planConfigs.plan.useIntegrations) {
         toast.error("Esta empresa não possui permissão para acessar essa página! Faça um upgrade no seu plano.");
-        setTimeout(() => {
-          history.push(`/subscription`)
-        }, 1000);
+        // Não redirecionar, apenas mostrar erro
       }
     }
     fetchData();
@@ -384,38 +382,46 @@ const QueueIntegration = () => {
             onScroll={handleScroll}
           >
             <Grid container spacing={isMobile ? 1 : 2}>
-              {queueIntegration.map((integration) => (
-                <Grid item xs={12} sm={6} md={4} key={integration.id}>
-                  <Card
-                    variant="outlined"
-                    className={`${isMobile ? classes.mobileCard : ""} ${classes.card}`}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                  >
-                    <CardContent className={isMobile ? classes.mobileCardContent : null}>
-                      {integration.type === "dialogflow" && (
-                        <Avatar src={dialogflow} className={classes.avatar} />
-                      )}
-                      {integration.type === "n8n" && (
-                        <Avatar src={n8n} className={classes.avatar} />
-                      )}
-                      {integration.type === "webhook" && (
-                        <Avatar src={webhooks} className={classes.avatar} />
-                      )}
-                      {integration.type === "typebot" && (
-                        <Avatar src={typebot} className={classes.avatar} />
-                      )}
-                      {integration.type === "flowbuilder" && (
-                        <Avatar src={flowbuilder} className={classes.avatar} />
-                      )}
-                      <Typography variant={isMobile ? "subtitle1" : "body2"} color="textSecondary" align="center" style={{ marginTop: isMobile ? '8px' : '0' }}>
-                        {i18n.t("queueIntegration.table.name")}: {integration.name}
-                      </Typography>
-                    </CardContent>
-                    {renderCardActions(integration)}
-                  </Card>
+              {Array.isArray(queueIntegration) && queueIntegration.length > 0 ? (
+                queueIntegration.map((integration) => (
+                  <Grid item xs={12} sm={6} md={4} key={integration.id}>
+                    <Card
+                      variant="outlined"
+                      className={`${isMobile ? classes.mobileCard : ""} ${classes.card}`}
+                      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    >
+                      <CardContent className={isMobile ? classes.mobileCardContent : null}>
+                        {integration.type === "dialogflow" && (
+                          <Avatar src={dialogflow} className={classes.avatar} />
+                        )}
+                        {integration.type === "n8n" && (
+                          <Avatar src={n8n} className={classes.avatar} />
+                        )}
+                        {integration.type === "webhook" && (
+                          <Avatar src={webhooks} className={classes.avatar} />
+                        )}
+                        {integration.type === "typebot" && (
+                          <Avatar src={typebot} className={classes.avatar} />
+                        )}
+                        {integration.type === "flowbuilder" && (
+                          <Avatar src={flowbuilder} className={classes.avatar} />
+                        )}
+                        <Typography variant={isMobile ? "subtitle1" : "body2"} color="textSecondary" align="center" style={{ marginTop: isMobile ? '8px' : '0' }}>
+                          {i18n.t("queueIntegration.table.name")}: {integration.name}
+                        </Typography>
+                      </CardContent>
+                      {renderCardActions(integration)}
+                    </Card>
+                  </Grid>
+                ))
+              ) : (
+                <Grid item xs={12}>
+                    <Typography variant="body1" align="center" color="textSecondary" style={{ padding: "20px" }}>
+                        {i18n.t("queueIntegration.noIntegrations")}
+                    </Typography>
                 </Grid>
-              ))}
+              )}
               {loading && (
                 <Grid item xs={12}>
                   <Card variant="outlined" style={{ padding: "10px" }}>
