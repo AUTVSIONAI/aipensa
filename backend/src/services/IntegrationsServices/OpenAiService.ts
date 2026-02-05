@@ -103,11 +103,10 @@ const callOpenAI = async (
 ) => {
   // Lista de modelos de fallback para OpenRouter (focando em gratuitos/baratos)
   const FALLBACK_MODELS = [
-    "google/gemini-2.0-flash-exp:free",
+    "openrouter/free", // Seleciona automaticamente modelos gratuitos disponíveis
     "google/gemini-2.0-flash-lite-preview-02-05:free",
-    "mistralai/mistral-7b-instruct:free",
-    "huggingfaceh4/zephyr-7b-beta:free",
-    "meta-llama/llama-3-8b-instruct:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "deepseek/deepseek-r1:free",
     "openai/gpt-3.5-turbo" // Último recurso (pago)
   ];
 
@@ -1497,7 +1496,7 @@ export const handleOpenAi = async (
       const mimeType = msg.message.imageMessage.mimetype || "image/jpeg";
 
       if (openAiSettings.provider === "openrouter" && (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo")) {
-           openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
+           openAiSettings.model = "openrouter/free";
       }
       
       messagesOpenAi.push({
@@ -1510,7 +1509,7 @@ export const handleOpenAi = async (
   } else {
     // If OpenRouter and default model, switch to cheap/free model
     if (openAiSettings.provider === "openrouter" && (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo")) {
-        openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
+        openAiSettings.model = "openrouter/free";
     }
     messagesOpenAi.push({ role: "user", content: inputContent! });
   }
