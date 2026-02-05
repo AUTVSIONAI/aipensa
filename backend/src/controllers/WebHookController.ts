@@ -64,6 +64,10 @@ export const webHook = async (
               getTokenPage.companyId
             );
           });
+        } else {
+          console.warn(
+            `[WebHookController] Connection not found for channel ${channel} and Page/User ID ${entry.id}. Verify if the page is connected in Settings > Connections.`
+          );
         }
       });
 
