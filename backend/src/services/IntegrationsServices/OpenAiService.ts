@@ -1053,18 +1053,16 @@ const handleImageGenerationAction = async (
 
   if (match && match[1]) {
     try {
-      if (!(await verifyAdminPermission(contact))) {
-        return (
-          response.replace(match[0], "").trim() +
-          "\n\n⛔ *Acesso Negado*: Esta ação requer permissão de administrador (Tag: ADMIN)."
-        );
-      }
-
       const jsonContent = match[1].trim();
       const { prompt, size } = JSON.parse(jsonContent);
 
+      const openaiApiKey = await resolveApiKey("openai");
+      if (!openaiApiKey) {
+          throw new Error("Chave da OpenAI não configurada para geração de imagens.");
+      }
+
       const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY
+        apiKey: openaiApiKey
       });
 
       const imageResponse = await openai.images.generate({

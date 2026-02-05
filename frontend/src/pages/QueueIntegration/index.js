@@ -181,9 +181,9 @@ const QueueIntegration = () => {
     async function fetchData() {
       const planConfigs = await getPlanCompany(undefined, companyId);
       if (!planConfigs.plan.useIntegrations) {
-        toast.error("Esta empresa não possui permissão para acessar essa página! Estamos lhe redirecionando.");
+        toast.error("Esta empresa não possui permissão para acessar essa página! Faça um upgrade no seu plano.");
         setTimeout(() => {
-          history.push(`/`)
+          history.push(`/subscription`)
         }, 1000);
       }
     }
