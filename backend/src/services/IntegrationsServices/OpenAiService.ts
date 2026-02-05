@@ -1042,6 +1042,42 @@ const handleUpgradeAction = async (response: string) => {
   return response;
 };
 
+// Helper to resolve API Key
+const resolveApiKey = async (prov?: string, key?: string) => {
+  if (key && key.trim() !== "") return key;
+
+  // Check Global Settings (Company 1)
+  try {
+    let settingKey = "userApiToken"; // Default for OpenAI
+    if (prov === "openrouter") settingKey = "openrouterApiKey";
+    if (prov === "gemini") settingKey = "geminiApiKey";
+    if (prov === "external") settingKey = "externalAgentApiKey";
+
+    // Try fetching global setting
+    const setting = await Setting.findOne({ where: { companyId: 1, key: settingKey } });
+    if (setting?.value) {
+      console.log(`[OpenAiService] Found global key for ${prov}: ${settingKey}`);
+      return setting.value;
+    }
+    
+    // Fallback: check if 'userApiToken' is used for everything in some setups
+    // But only if we are not explicitly looking for openai (which already uses userApiToken)
+    if (prov !== "openai") {
+       const genericSetting = await Setting.findOne({ where: { companyId: 1, key: "userApiToken" } });
+       if (genericSetting?.value) {
+          console.log(`[OpenAiService] Found generic global key (userApiToken) for ${prov}`);
+          return genericSetting.value;
+       }
+    }
+
+  } catch(e) { console.error("[OpenAiService] Error fetching global key:", e); }
+
+  if (prov === "openrouter") return process.env.OPENROUTER_API_KEY || "";
+  if (prov === "gemini") return process.env.GEMINI_API_KEY || "";
+  if (prov === "external") return process.env.EXTERNAL_AGENT_API_KEY || "";
+  return process.env.OPENAI_API_KEY || "";
+};
+
 const handleImageGenerationAction = async (
   response: string,
   ticket: Ticket,
@@ -1181,40 +1217,6 @@ export const handleOpenAi = async (
 
   let aiClient: OpenAI | GoogleGenerativeAI | any;
   // Resolver chave da plataforma quando não informada
-  const resolveApiKey = async (prov?: string, key?: string) => {
-    if (key && key.trim() !== "") return key;
-
-    // Check Global Settings (Company 1)
-    try {
-      let settingKey = "userApiToken"; // Default for OpenAI
-      if (prov === "openrouter") settingKey = "openrouterApiKey";
-      if (prov === "gemini") settingKey = "geminiApiKey";
-      if (prov === "external") settingKey = "externalAgentApiKey";
-
-      // Try fetching global setting
-      const setting = await Setting.findOne({ where: { companyId: 1, key: settingKey } });
-      if (setting?.value) {
-        console.log(`[OpenAiService] Found global key for ${prov}: ${settingKey}`);
-        return setting.value;
-      }
-      
-      // Fallback: check if 'userApiToken' is used for everything in some setups
-      // But only if we are not explicitly looking for openai (which already uses userApiToken)
-      if (prov !== "openai") {
-         const genericSetting = await Setting.findOne({ where: { companyId: 1, key: "userApiToken" } });
-         if (genericSetting?.value) {
-            console.log(`[OpenAiService] Found generic global key (userApiToken) for ${prov}`);
-            return genericSetting.value;
-         }
-      }
-
-    } catch(e) { console.error("[OpenAiService] Error fetching global key:", e); }
-
-    if (prov === "openrouter") return process.env.OPENROUTER_API_KEY || "";
-    if (prov === "gemini") return process.env.GEMINI_API_KEY || "";
-    if (prov === "external") return process.env.EXTERNAL_AGENT_API_KEY || "";
-    return process.env.OPENAI_API_KEY || "";
-  };
   const effectiveApiKey = await resolveApiKey(provider, openAiSettings.apiKey);
 
   if (!effectiveApiKey) {
