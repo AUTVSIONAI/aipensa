@@ -1056,16 +1056,13 @@ async function resolveApiKey(prov?: string, key?: string) {
     // Try fetching global setting
     const setting = await Setting.findOne({ where: { companyId: 1, key: settingKey } });
     if (setting?.value) {
-      // console.log(`[OpenAiService] Found global key for ${prov}: ${settingKey}`);
       return setting.value;
     }
     
     // Fallback: check if 'userApiToken' is used for everything in some setups
-    // But only if we are not explicitly looking for openai (which already uses userApiToken)
     if (prov !== "openai") {
        const genericSetting = await Setting.findOne({ where: { companyId: 1, key: "userApiToken" } });
        if (genericSetting?.value) {
-          // console.log(`[OpenAiService] Found generic global key (userApiToken) for ${prov}`);
           return genericSetting.value;
        }
     }
@@ -1093,34 +1090,80 @@ const handleImageGenerationAction = async (
       const jsonContent = match[1].trim();
       const { prompt, size } = JSON.parse(jsonContent);
 
-      // User request: use voice/transcription key for image generation if available
-      let openaiApiKey = openAiSettings.voiceKey;
-      
-      if (!openaiApiKey || openaiApiKey.trim() === "") {
-          openaiApiKey = await resolveApiKey("openai");
+      let imageUrl: string | undefined;
+      let usedProvider = "openai";
+
+      // 1. Tentar OpenRouter primeiro (Economia)
+      try {
+        console.log("[handleImageGeneration] Tentando gerar imagem via OpenRouter...");
+        const openRouterKey = await resolveApiKey("openrouter");
+        
+        if (openRouterKey) {
+            const openaiRouter = new OpenAI({
+                apiKey: openRouterKey,
+                baseURL: "https://openrouter.ai/api/v1",
+                defaultHeaders: {
+                    "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
+                    "X-Title": "AIPENSA.COM"
+                }
+            });
+
+            // Tentar modelos do OpenRouter (ex: stabilityai/stable-diffusion-xl-base-1.0 ou auto)
+            // Nota: OpenRouter usa endpoint completions para alguns modelos, mas images.generate para outros se suportado.
+            // Se falhar, cairá no catch e tentará OpenAI.
+            const imageResponse = await openaiRouter.images.generate({
+                model: "stabilityai/stable-diffusion-xl-base-1.0", // Modelo mais barato/comum no OpenRouter
+                prompt: prompt,
+                n: 1,
+                size: size || "1024x1024"
+            });
+            
+            imageUrl = imageResponse.data[0].url;
+            usedProvider = "openrouter";
+            console.log("[handleImageGeneration] Sucesso via OpenRouter!");
+        }
+      } catch (e) {
+        console.warn("[handleImageGeneration] Falha no OpenRouter, tentando fallback para OpenAI:", e.message);
       }
 
-      if (!openaiApiKey) {
-          throw new Error("Chave da OpenAI não configurada para geração de imagens.");
+      // 2. Fallback para OpenAI (DALL-E 3) se OpenRouter falhou ou não tem chave
+      if (!imageUrl) {
+          console.log("[handleImageGeneration] Usando OpenAI (DALL-E 3) como fallback...");
+          
+          // Tentar chave de voz/transcrição primeiro (como solicitado anteriormente)
+          let openaiApiKey = openAiSettings.voiceKey;
+          
+          if (!openaiApiKey || openaiApiKey.trim() === "") {
+               // Tentar chave global de voz
+               try {
+                 const globalVoiceKey = await Setting.findOne({ where: { companyId: 1, key: "openaikeyaudio" } });
+                 if (globalVoiceKey?.value) openaiApiKey = globalVoiceKey.value;
+               } catch (err) {}
+          }
+
+          if (!openaiApiKey || openaiApiKey.trim() === "") {
+              openaiApiKey = await resolveApiKey("openai");
+          }
+
+          if (!openaiApiKey) {
+              throw new Error("Chave da OpenAI não configurada para geração de imagens (Fallback).");
+          }
+
+          const openai = new OpenAI({ apiKey: openaiApiKey });
+          const imageResponse = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: prompt,
+            n: 1,
+            size: size || "1024x1024"
+          });
+          imageUrl = imageResponse.data[0].url;
+          usedProvider = "openai";
       }
-
-      const openai = new OpenAI({
-        apiKey: openaiApiKey
-      });
-
-      const imageResponse = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: prompt,
-        n: 1,
-        size: size || "1024x1024"
-      });
-
-      const imageUrl = imageResponse.data[0].url;
 
       if (imageUrl) {
         await wbot.sendMessage(ticket.contact.remoteJid, {
           image: { url: imageUrl },
-          caption: `🎨 Imagem gerada com sucesso!\n\nDescrição: ${prompt}\n\nDeseja postar nas redes sociais? Responda com 'Sim' para eu preparar a postagem.`
+          caption: `🎨 Imagem gerada com sucesso (${usedProvider === "openrouter" ? "Via OpenRouter" : "Via DALL-E"})!\n\nDescrição: ${prompt}\n\nDeseja postar nas redes sociais? Responda com 'Sim' para eu preparar a postagem.`
         });
         
         return response.replace(match[0], "").trim() + "\n\n✅ Imagem gerada e enviada!";
@@ -1128,7 +1171,7 @@ const handleImageGenerationAction = async (
         return response.replace(match[0], "").trim() + "\n\n❌ Falha ao gerar imagem.";
       }
     } catch (e) {
-      console.error("Erro ao gerar imagem DALL-E:", e);
+      console.error("Erro ao gerar imagem:", e);
       return (
         response.replace(match[0], "").trim() +
         `\n\n❌ Erro ao gerar imagem: ${e.message}`
@@ -1207,22 +1250,6 @@ export const handleOpenAi = async (
     return;
   }
   if (msg.messageStubType) return;
-
-  // SMART PROVIDER SWITCH FOR IMAGES
-  // If user sends an image, force OpenAI provider if available, as OpenRouter often fails with vision
-  if (msg.message?.imageMessage) {
-      console.log("[handleOpenAi] Image detected. Checking if we should force OpenAI provider...");
-      try {
-        const openaiKey = await resolveApiKey("openai");
-        if (openaiKey && openaiKey.length > 10) {
-            console.log("[handleOpenAi] Forcing OpenAI provider (gpt-4o) for image analysis.");
-            openAiSettings.provider = "openai";
-            openAiSettings.model = "gpt-4o";
-        }
-      } catch (e) {
-        console.error("Error checking OpenAI key for image fallback:", e);
-      }
-  }
 
   // Definir provider padrão se não estiver definido
   const provider = openAiSettings.provider || "openai";
@@ -1439,21 +1466,23 @@ export const handleOpenAi = async (
       }
     }
 
-    if (msg.message?.imageMessage) {
+    // SMART PROVIDER SWITCH FOR IMAGES (INPUT/VISION)
+  // If user sends an image, prefer a Vision-capable model.
+  if (msg.message?.imageMessage) {
       const mediaUrl = mediaSent!.mediaUrl!.split("/").pop();
       const filePath = `${publicFolder}/${mediaUrl}`;
       const imageBuffer = fs.readFileSync(filePath);
       const base64Image = imageBuffer.toString("base64");
       const mimeType = msg.message.imageMessage.mimetype || "image/jpeg";
 
-      // Force Vision Model if current model is not vision-capable
-      const VISION_MODELS = ["gpt-4o", "gpt-4-turbo", "gpt-4-vision-preview"];
-      const isVisionModel = VISION_MODELS.some(m => (openAiSettings.model || "").includes(m));
-      
-      if (!isVisionModel) {
-          console.log(`[OpenAiService] Switching to gpt-4o for image analysis (current: ${openAiSettings.model})`);
-          openAiSettings.model = "gpt-4o";
+      // Se o provedor for OpenRouter, forçar um modelo Vision gratuito/barato se o atual não for específico
+      if (openAiSettings.provider === "openrouter" && (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo")) {
+           console.log("[handleOpenAi] Image detected + OpenRouter. Switching to free Vision model.");
+           openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
       }
+      
+      // Remove Forced OpenAI logic to respect user's "Use OpenRouter" wish, unless configured otherwise.
+      // Falls back via standard FALLBACK_MODELS if the primary fails.
 
       messagesOpenAi.push({
         role: "user",
@@ -1467,9 +1496,16 @@ export const handleOpenAi = async (
           }
         ]
       });
-    } else {
-      messagesOpenAi.push({ role: "user", content: bodyMessage! });
+  } else {
+    // TEXT MESSAGE LOGIC
+    // If OpenRouter and default model, switch to cheap/free model
+    if (openAiSettings.provider === "openrouter" && (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo")) {
+        console.log("[handleOpenAi] OpenRouter + Default Model detected. Switching to cheap/free model.");
+        openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
     }
+
+    messagesOpenAi.push({ role: "user", content: bodyMessage! });
+  }
 
     let response: string | undefined;
 

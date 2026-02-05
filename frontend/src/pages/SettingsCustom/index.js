@@ -463,7 +463,11 @@ const SettingsCustom = () => {
         const companyId = user.companyId;
         const company = await find(companyId);
         const settingList = await getAllSettings(companyId);
-        setSettings(settingList);
+        if (Array.isArray(settingList)) {
+          setSettings(settingList);
+        } else {
+          setSettings([]);
+        }
         setCompany(company);
         setSchedules(company.schedules);
 
@@ -488,6 +492,7 @@ const SettingsCustom = () => {
     const onSettingsEvent = (data) => {
       if (data.action === "update") {
         setSettings((prevState) => {
+          if (!Array.isArray(prevState)) return [data.setting];
           const aux = [...prevState];
           const settingIndex = aux.findIndex((s) => s.key === data.setting.key);
            if (settingIndex !== -1) {
