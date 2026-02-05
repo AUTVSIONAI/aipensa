@@ -1181,6 +1181,60 @@ const handleImageGenerationAction = async (
   return response;
 };
 
+const processAiActions = async (
+  response: string,
+  ticket: Ticket,
+  contact: Contact,
+  wbot: Session,
+  msg: proto.IWebMessageInfo,
+  openAiSettings: IOpenAi
+): Promise<string> => {
+  if (!response) return response;
+
+  // Processar ações de agendamento
+  response = await handleScheduleAction(response, ticket, contact);
+
+  // Processar ações de marketing
+  response = await handleMarketingAction(response, ticket, contact);
+
+  // Processar ações de catálogo
+  response = await handleCatalogAction(response, wbot, msg);
+
+  // Processar ações de social media
+  response = await handleSocialMediaAction(response, ticket, contact);
+
+  // Processar ações de postagem de vídeo
+  response = await handleVideoPostAction(
+    response,
+    ticket,
+    contact,
+    wbot,
+    msg
+  );
+
+  // Postar Status do WhatsApp
+  response = await handleStatusPostAction(
+    response,
+    ticket,
+    contact,
+    wbot,
+    msg
+  );
+
+  // Processar ações de pagamento PIX
+  response = await handlePixAction(response, ticket, contact, wbot);
+
+  // Processar geração de imagem DALL-E
+  if (response?.includes("[GENERATE_IMAGE]")) {
+     response = await handleImageGenerationAction(response, ticket, contact, wbot, openAiSettings);
+  }
+
+  // Processar ações de upgrade
+  response = await handleUpgradeAction(response);
+
+  return response;
+};
+
 export const handleOpenAi = async (
   openAiSettings: IOpenAi,
   msg: proto.IWebMessageInfo,
@@ -1273,45 +1327,24 @@ export const handleOpenAi = async (
      console.error(`[OpenAiService] Error: No API Key found for provider ${provider}`);
      throw new Error(`Chave API não configurada globalmente para ${provider}. Verifique as Configurações.`);
   }
-  console.log(
-    `[OpenAiService] Provider ${provider} using key: ${
-      typeof effectiveApiKey === "string" && effectiveApiKey.length > 6
-        ? effectiveApiKey.substring(0, 6) + "****"
-        : "invalid"
-    }`
-  );
-
+  
   if (provider === "gemini") {
     // Configurar Gemini
-    console.log(
-      "Initializing Gemini Service",
-      effectiveApiKey?.substring(0, 10) + "..."
-    );
     aiClient = new GoogleGenerativeAI(effectiveApiKey);
   } else if (provider === "openrouter") {
     // Configurar OpenRouter
-    console.log(
-      "Initializing OpenRouter Service",
-      effectiveApiKey?.substring(0, 10) + "..."
-    );
     aiClient = new OpenAI({
       apiKey: effectiveApiKey,
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
-        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com", // Optional, for including your app on openrouter.ai rankings.
-        "X-Title": "AIPENSA.COM" // Optional. Shows in rankings on openrouter.ai.
+        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com", 
+        "X-Title": "AIPENSA.COM"
       }
     });
   } else if (provider === "external") {
-    // Configurar Integração Externa (DireitaI / Outros)
-    // Não precisa inicializar cliente, usaremos axios diretamente
     console.log("Using External Provider for Ticket:", ticket.id);
   } else {
     // Configurar OpenAI (padrão)
-    console.log(
-      "Initializing OpenAI Service",
-      effectiveApiKey?.substring(0, 10) + "..."
-    );
     aiClient = new OpenAI({
       apiKey: effectiveApiKey
     });
@@ -1323,25 +1356,15 @@ export const handleOpenAi = async (
     limit: openAiSettings.maxMessages
   });
 
-  // Fetch Catalog for Context
+  // Fetch Catalog for Context (Simplified)
   let catalogContext = "";
   try {
     const ownerJid = wbot.user?.id;
     if (ownerJid) {
-      // Sanitize phone number: remove non-digits, remove suffix
-      const phoneNumber = ownerJid
-        .split("@")[0]
-        .split(":")[0]
-        .replace(/\D/g, "");
-      const catalogLink = `https://wa.me/c/${phoneNumber}`;
-
-      console.log(
-        `[OpenAiService] Fetching catalog for ${ownerJid} (Phone: ${phoneNumber})`
-      );
       const products = await getCatalog(wbot, ownerJid);
-      console.log(`[OpenAiService] Catalog fetched: ${products.length} items`);
-
       if (products && products.length > 0) {
+        const phoneNumber = ownerJid.split("@")[0].split(":")[0].replace(/\D/g, "");
+        const catalogLink = `https://wa.me/c/${phoneNumber}`;
         catalogContext = `\n\n🛍️ LINK GERAL DO CATÁLOGO: ${catalogLink}\n`;
         catalogContext += "🛍️ CATÁLOGO DE PRODUTOS DISPONÍVEIS:\n";
         products.forEach(p => {
@@ -1349,33 +1372,12 @@ export const handleOpenAi = async (
             style: "currency",
             currency: p.currency || "BRL"
           });
-          // Use provided URL or fallback to product deep link
-          // Note: WhatsApp Product Deep Links format: https://wa.me/p/{productId}/{phoneNumber}
           const productLink = p.url || `https://wa.me/p/${p.id}/${phoneNumber}`;
-
-          catalogContext += `- ID: ${p.id} | ${p.name} | ${price}\n`;
-          catalogContext += `  Link: ${productLink}\n`;
-          // Add image URL if available to context so AI knows it exists
+          catalogContext += `- ID: ${p.id} | ${p.name} | ${price}\n  Link: ${productLink}\n`;
           if (p.image) catalogContext += `  Img: ${p.image}\n`;
-
-          if (p.description)
-            catalogContext += `  Desc: ${p.description.substring(0, 100)}${
-              p.description.length > 100 ? "..." : ""
-            }\n`;
+          if (p.description) catalogContext += `  Desc: ${p.description.substring(0, 100)}${p.description.length > 100 ? "..." : ""}\n`;
         });
-        catalogContext +=
-          "\nINSTRUÇÕES DE VENDA:\n" +
-          "- Priorize recomendar produtos específicos que atendam à necessidade do cliente.\n" +
-          "- Se o cliente pedir o link de um produto, envie o Link específico listado acima ou use a tag [SEND_PRODUCT: ID].\n" +
-          "- A tag [SEND_PRODUCT: ID_DO_PRODUTO] envia um cartão interativo do produto. Use-a preferencialmente para destacar o produto.\n" +
-          "- Só envie o LINK GERAL DO CATÁLOGO se o cliente pedir explicitamente por 'catálogo completo' ou 'todos os produtos'.\n" +
-          "- NÃO envie o link geral e o produto específico na mesma mensagem para evitar duplicação.\n" +
-          "- Exemplo: 'Aqui está o pacote ideal para você! [SEND_PRODUCT: 12345]'\n" +
-          "- Não invente produtos que não estejam nesta lista.\n";
-      } else {
-        console.log(
-          `[OpenAiService] No products found in catalog for ${ownerJid}`
-        );
+        catalogContext += "\nINSTRUÇÕES DE VENDA:\n- Priorize recomendar produtos específicos.\n- Use [SEND_PRODUCT: ID] para enviar cartões.\n- Só envie link geral se pedido.\n";
       }
     }
   } catch (e) {
@@ -1392,82 +1394,101 @@ export const handleOpenAi = async (
   } tokens e cuide para não truncar o final.\nSempre que possível, mencione o nome dele para ser mais personalizado o atendimento e mais educado. Quando a resposta requer uma transferência para o setor de atendimento, comece sua resposta com 'Ação: Transferir para o setor de atendimento'.\n
   
   CAPACIDADES DE MARKETING (SUPERAGENT):
-  Você pode acessar dados de marketing (Meta/Facebook Ads) usando comandos JSON específicos.
-  IMPORTANTE: Estas ações só funcionam se o usuário tiver a tag "ADMIN".
-  - Para ver métricas (insights): Use a tag [MARKETING] { "action": "get_insights", "period": "last_7d" } [/MARKETING] (periodos: today, yesterday, last_7d, last_30d)
-  - Para listar campanhas: Use a tag [MARKETING] { "action": "get_campaigns", "status": "ACTIVE" } [/MARKETING] (status: ACTIVE, PAUSED)
+  [MARKETING] { "action": "get_insights", "period": "last_7d" } [/MARKETING]
+  [MARKETING] { "action": "get_campaigns", "status": "ACTIVE" } [/MARKETING]
   
   CAPACIDADES DE MÍDIA SOCIAL (SUPERAGENT):
-  Você pode publicar conteúdo no Facebook e Instagram (Feed).
-  IMPORTANTE: Esta ação só funciona se o usuário tiver a tag "ADMIN".
-  - Para publicar FOTO/TEXTO: Use a tag [POST_FEED] { "platform": "facebook", "message": "Texto do post", "image": "URL_da_imagem" } [/POST_FEED]
-  - Para agendar no Facebook: inclua "scheduledTime": "2026-02-01T15:00:00" (ISO/BRT) no JSON de [POST_FEED]
-  - Para agendar no Instagram: inclua "scheduledTime" em [POST_FEED]; usamos agendador interno para publicar no horário.
-  - Para publicar VÍDEO: Use a tag [POST_VIDEO] { "platform": "facebook", "caption": "Legenda do vídeo" } [/POST_VIDEO].
-    - O vídeo será pego automaticamente do anexo atual, da mensagem citada ou do último vídeo enviado.
-    - Gere uma legenda criativa, com emojis e hashtags, baseada no contexto.
-  - Plataformas: "facebook" ou "instagram".
-  - Se o usuário pedir para postar um produto do catálogo, pegue a URL da imagem do produto e a descrição, e use esta tag.
-  - Imagem é OBRIGATÓRIA para Instagram. Opcional para Facebook.
+  [POST_FEED] { "platform": "facebook", "message": "Texto", "image": "URL" } [/POST_FEED]
+  [POST_VIDEO] { "platform": "facebook", "caption": "Legenda" } [/POST_VIDEO]
   
   STATUS WHATSAPP:
-  - Para postar no Status: Use a tag [POST_STATUS] { "caption": "Legenda", "media": "image|video", "source": "chat|files", "file": "nome.ext" } [/POST_STATUS]
-  - Se 'source' = "chat": o agente usa a mídia atual/citada/última do histórico.
-  - Se 'source' = "files": o agente usa o arquivo salvo na aba Arquivos.
+  [POST_STATUS] { "caption": "Legenda", "media": "image|video", "source": "chat|files", "file": "nome.ext" } [/POST_STATUS]
 
   CAPACIDADES DE PAGAMENTO (SUPERAGENT):
-  Você pode solicitar pagamento via PIX nativo do WhatsApp.
-  - Para solicitar um pagamento: Use a tag [SEND_PIX] { "key": "chave-pix", "key_type": "cpf|cnpj|email|phone|random", "merchant_name": "Nome da Loja", "amount": 199.9, "title": "Produto/Serviço" } [/SEND_PIX]
-  - O cliente verá o fluxo de pagamento nativo e poderá pagar imediatamente.
+  [SEND_PIX] { "key": "chave", "amount": 199.9, ... } [/SEND_PIX]
 
   CAPACIDADES DE UPGRADE (SUPERAGENT):
-  - Se o usuário quiser contratar mais postagens, minutos de voz ou ativar um módulo, use a tag [UPGRADE_PLAN] { "type": "posts" } [/UPGRADE_PLAN].
-  - Types disponíveis: "posts", "voice", "agent".
-  - Use isso quando o usuário reclamar de limites ou pedir para contratar algo.
-
-  NÃO invente dados. Se o usuário perguntar sobre campanhas ou desempenho, use essas tags e aguarde a resposta do sistema.
+  [UPGRADE_PLAN] { "type": "posts" } [/UPGRADE_PLAN]
 
   IMAGE GENERATION (DALL-E):
-  You can generate images using DALL-E based on the user's prompt.
-  IMPORTANT: This action only works if the user has the "ADMIN" tag.
-  - To generate an image: Use the tag [GENERATE_IMAGE] { "prompt": "Description of the image", "size": "1024x1024" } [/GENERATE_IMAGE]
-  - After generating, ask the user if they want to post it to social media using the [POST_FEED] command.
+  [GENERATE_IMAGE] { "prompt": "Description", "size": "1024x1024" } [/GENERATE_IMAGE]
   
   ${catalogContext}
   
   ${openAiSettings.prompt}\n`;
 
   let messagesOpenAi = [];
+  let inputContent = bodyMessage;
+  let transcriptionText = "";
 
-  if (
-    msg.message?.conversation ||
-    msg.message?.extendedTextMessage?.text ||
-    msg.message?.imageMessage
-  ) {
-    console.log(`Processing text/image message with ${provider}`);
-    messagesOpenAi = [];
-    messagesOpenAi.push({ role: "system", content: promptSystem });
+  // 1. Process Input (Text or Audio)
+  if (msg.message?.audioMessage) {
+    console.log(`Processing audio message with ${provider}`);
+    let mediaUrl: string | undefined = mediaSent?.mediaUrl
+      ? mediaSent.mediaUrl.split("/").pop()
+      : undefined;
 
-    for (
-      let i = 0;
-      i < Math.min(openAiSettings.maxMessages, messages.length);
-      i++
-    ) {
-      const message = messages[i];
-      if (
-        message.mediaType === "conversation" ||
-        message.mediaType === "extendedTextMessage"
-      ) {
-        if (message.fromMe) {
-          messagesOpenAi.push({ role: "assistant", content: message.body });
-        } else {
-          messagesOpenAi.push({ role: "user", content: message.body });
-        }
-      }
+    // Fallback lookups for mediaUrl...
+    if (!mediaUrl) {
+      try {
+        const msgRecord = await Message.findOne({ where: { wid: msg.key.id, ticketId: ticket.id } });
+        mediaUrl = msgRecord?.mediaUrl?.split("/").pop();
+      } catch (e) {}
+    }
+    if (!mediaUrl) {
+      try {
+        const lastAudio = await Message.findOne({ where: { ticketId: ticket.id, mediaType: "audio" }, order: [["createdAt", "DESC"]] });
+        mediaUrl = lastAudio?.mediaUrl?.split("/").pop();
+      } catch (e) {}
     }
 
-    // SMART PROVIDER SWITCH FOR IMAGES (INPUT/VISION)
-  // If user sends an image, prefer a Vision-capable model.
+    if (!mediaUrl) {
+      await wbot.sendMessage(msg.key.remoteJid!, { text: "Desculpe, não consegui localizar o áudio." });
+      return;
+    }
+
+    const file = fs.createReadStream(`${publicFolder}/${mediaUrl}`) as any;
+
+    try {
+      const transcriptionApiKey = await (async () => {
+        const voiceKey = (openAiSettings.voiceKey || "").trim();
+        if (voiceKey !== "") return voiceKey;
+        const openaiKey = await resolveApiKey("openai");
+        if (openaiKey) return openaiKey;
+        const base = await resolveApiKey(provider, openAiSettings.apiKey);
+        if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") return process.env.AZURE_SPEECH_KEY || base;
+        return base;
+      })();
+
+      const transcriptionClient = new OpenAI({ apiKey: transcriptionApiKey });
+      const transcription = await transcriptionClient.audio.transcriptions.create({
+        model: "whisper-1",
+        file: file
+      });
+      transcriptionText = transcription.text;
+      inputContent = transcriptionText;
+    } catch (error) {
+      console.error(`Error transcribing audio:`, error);
+      await wbot.sendMessage(msg.key.remoteJid!, { text: "Desculpe, não consegui transcrever o áudio." });
+      return;
+    }
+  }
+
+  // 2. Build History
+  messagesOpenAi.push({ role: "system", content: promptSystem });
+
+  for (let i = 0; i < Math.min(openAiSettings.maxMessages, messages.length); i++) {
+    const message = messages[i];
+    if (message.mediaType === "conversation" || message.mediaType === "extendedTextMessage") {
+      if (message.fromMe) {
+        messagesOpenAi.push({ role: "assistant", content: message.body });
+      } else {
+        messagesOpenAi.push({ role: "user", content: message.body });
+      }
+    }
+  }
+
+  // 3. Add Current Message (Text/Audio/Image)
   if (msg.message?.imageMessage) {
       const mediaUrl = mediaSent!.mediaUrl!.split("/").pop();
       const filePath = `${publicFolder}/${mediaUrl}`;
@@ -1475,359 +1496,107 @@ export const handleOpenAi = async (
       const base64Image = imageBuffer.toString("base64");
       const mimeType = msg.message.imageMessage.mimetype || "image/jpeg";
 
-      // Se o provedor for OpenRouter, forçar um modelo Vision gratuito/barato se o atual não for específico
       if (openAiSettings.provider === "openrouter" && (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo")) {
-           console.log("[handleOpenAi] Image detected + OpenRouter. Switching to free Vision model.");
            openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
       }
       
-      // Remove Forced OpenAI logic to respect user's "Use OpenRouter" wish, unless configured otherwise.
-      // Falls back via standard FALLBACK_MODELS if the primary fails.
-
       messagesOpenAi.push({
         role: "user",
         content: [
-          { type: "text", text: bodyMessage || "Analise esta imagem." },
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:${mimeType};base64,${base64Image}`
-            }
-          }
+          { type: "text", text: inputContent || "Analise esta imagem." },
+          { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Image}` } }
         ]
       });
   } else {
-    // TEXT MESSAGE LOGIC
     // If OpenRouter and default model, switch to cheap/free model
     if (openAiSettings.provider === "openrouter" && (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo")) {
-        console.log("[handleOpenAi] OpenRouter + Default Model detected. Switching to cheap/free model.");
         openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
     }
-
-    messagesOpenAi.push({ role: "user", content: bodyMessage! });
+    messagesOpenAi.push({ role: "user", content: inputContent! });
   }
 
+  // 4. Call AI & Process Response
+  try {
     let response: string | undefined;
 
-    try {
-      // Chamar o provedor correto
-      if (provider === "gemini") {
-        response = await callGemini(aiClient, messagesOpenAi, openAiSettings);
-      } else if (provider === "external") {
-        const integrationUrl =
-          openAiSettings.model || "https://api.direitai.com/v1/agent/chat";
-        const integrationToken = openAiSettings.apiKey;
+    if (provider === "gemini") {
+      response = await callGemini(aiClient, messagesOpenAi, openAiSettings);
+    } else if (provider === "external") {
+      const integrationUrl = openAiSettings.model || "https://api.direitai.com/v1/agent/chat";
+      const payload = {
+        remoteJid: msg.key.remoteJid,
+        pushName: contact.name,
+        message: inputContent,
+        ticketId: ticket.id,
+        integrationId: openAiSettings.apiKey,
+        history: messagesOpenAi
+      };
+      const { data } = await axios.post(integrationUrl, payload);
+      response = data.response || data.message;
+      if (data.action === "transfer") {
+        response = `Ação: Transferir para o setor de atendimento ${response ? "\n" + response : ""}`;
+      }
+    } else {
+      response = await callOpenAI(aiClient, messagesOpenAi, openAiSettings);
+    }
 
-        const payload = {
-          remoteJid: msg.key.remoteJid,
-          pushName: contact.name,
-          message: bodyMessage,
-          ticketId: ticket.id,
-          integrationId: integrationToken,
-          history: messagesOpenAi // Optional: send history if needed
-        };
+    if (response?.includes("Ação: Transferir para o setor de atendimento")) {
+      await transferQueue(openAiSettings.queueId, ticket, contact);
+      response = response.replace("Ação: Transferir para o setor de atendimento", "").trim();
+    }
 
-        const { data } = await axios.post(integrationUrl, payload);
-        response = data.response || data.message;
+    // Process Actions (Shared Logic)
+    if (response) {
+      response = await processAiActions(response, ticket, contact, wbot, msg, openAiSettings);
+    }
 
-        if (data.action === "transfer") {
-          response = `Ação: Transferir para o setor de atendimento ${
-            response ? "\n" + response : ""
-          }`;
+    // 5. Send Response (Text or Audio)
+    if (response) {
+      if (msg.message?.audioMessage) {
+        // TTS Logic for Audio Response
+        const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
+        try {
+          const voiceKeyResolved = await (async () => {
+            const vKey = (openAiSettings.voiceKey || "").trim();
+            if (vKey !== "") return vKey;
+            const base = await resolveApiKey(provider, openAiSettings.apiKey);
+            if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") return process.env.AZURE_SPEECH_KEY || base;
+            return base;
+          })();
+
+          await convertTextToSpeechAndSaveToFile(
+            keepOnlySpecifiedChars(response!),
+            `${publicFolder}/${fileNameWithOutExtension}`,
+            voiceKeyResolved,
+            openAiSettings.voiceRegion || "openai",
+            openAiSettings.voice,
+            "mp3"
+          );
+          const sendMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+            audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
+            mimetype: "audio/mpeg",
+            ptt: true
+          });
+          await verifyMediaMessage(sendMessage!, ticket, contact, ticketTraking, false, false, wbot);
+          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
+          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
+        } catch (error) {
+          // Fallback to text if TTS fails
+          const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, { text: `\u200e ${response!}` });
+          await verifyMessage(sentMessage!, ticket, contact);
         }
       } else {
-        response = await callOpenAI(aiClient, messagesOpenAi, openAiSettings);
-      }
-
-      if (response?.includes("Ação: Transferir para o setor de atendimento")) {
-        console.log("Transferring to queue", openAiSettings.queueId);
-        await transferQueue(openAiSettings.queueId, ticket, contact);
-        response = response
-          .replace("Ação: Transferir para o setor de atendimento", "")
-          .trim();
-      }
-
-      if (response) {
-        // Processar ações de agendamento
-        response = await handleScheduleAction(response, ticket, contact);
-
-        // Processar ações de marketing
-        response = await handleMarketingAction(response, ticket, contact);
-
-        // Processar ações de catálogo
-        response = await handleCatalogAction(response, wbot, msg);
-
-        // Processar ações de social media
-        response = await handleSocialMediaAction(response, ticket, contact);
-
-        // Processar ações de postagem de vídeo
-        response = await handleVideoPostAction(
-          response,
-          ticket,
-          contact,
-          wbot,
-          msg
-        );
-
-        // Postar Status do WhatsApp
-        response = await handleStatusPostAction(
-          response,
-          ticket,
-          contact,
-          wbot,
-          msg
-        );
-
-      // Processar ações de pagamento PIX
-        response = await handlePixAction(response, ticket, contact, wbot);
-
-      // Processar geração de imagem DALL-E
-      if (response?.includes("[GENERATE_IMAGE]")) {
-         response = await handleImageGenerationAction(response, ticket, contact, wbot, openAiSettings);
-      }
-
-        // Processar ações de upgrade
-        response = await handleUpgradeAction(response);
-      }
-
-      // Verifica se a resposta foi processada (schedule ou marketing)
-      // Se ainda contiver tags (erro ou não processado), poderíamos limpar ou deixar como está.
-      // Vamos assumir que as funções acima já limpam as tags.
-
-      if (response) {
-        const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-          text: `\u200e ${response!}`
-        });
+        // Send Text Response
+        const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, { text: `\u200e ${response!}` });
         await verifyMessage(sentMessage!, ticket, contact);
       }
-    } catch (error) {
-      console.error(`Error calling ${provider}:`, error);
-      console.error(
-        "OpenAI/OpenRouter Error Details:",
-        JSON.stringify(error, Object.getOwnPropertyNames(error))
-      );
-      // Fallback: enviar mensagem de erro
-      await wbot.sendMessage(msg.key.remoteJid!, {
-        text: `Desculpe, ocorreu um erro temporário: ${
-          error.message || "Erro desconhecido"
-        }. Tente novamente em alguns instantes.`
-      });
-    }
-  } else if (msg.message?.audioMessage) {
-    console.log(`Processing audio message with ${provider}`);
-    let mediaUrl: string | undefined = mediaSent?.mediaUrl
-      ? mediaSent.mediaUrl.split("/").pop()
-      : undefined;
-
-    if (!mediaUrl) {
-      try {
-        const msgRecord = await Message.findOne({
-          where: { wid: msg.key.id, ticketId: ticket.id }
-        });
-        mediaUrl = msgRecord?.mediaUrl?.split("/").pop();
-      } catch (e) {
-        console.log("Fallback lookup by wid failed:", e);
-      }
     }
 
-    if (!mediaUrl) {
-      try {
-        const lastAudio = await Message.findOne({
-          where: { ticketId: ticket.id, mediaType: "audio" },
-          order: [["createdAt", "DESC"]]
-        });
-        mediaUrl = lastAudio?.mediaUrl?.split("/").pop();
-      } catch (e) {
-        console.log("Fallback lookup for last audio failed:", e);
-      }
-    }
-
-    if (!mediaUrl) {
-      console.error("Audio mediaUrl not found for transcription");
-      await wbot.sendMessage(msg.key.remoteJid!, {
-        text: "Desculpe, não consegui localizar o áudio para processar."
-      });
-      return;
-    }
-
-    const file = fs.createReadStream(`${publicFolder}/${mediaUrl}`) as any;
-
-    let transcriptionText: string;
-
-    try {
-      const transcriptionApiKey = await (async () => {
-        const voiceKey = (openAiSettings.voiceKey || "").trim();
-        if (voiceKey !== "") return voiceKey;
-        
-        // Prioritize OpenAI key for transcription (Whisper) as requested
-        // This ensures we don't use OpenRouter key for direct OpenAI calls unless intended
-        const openaiKey = await resolveApiKey("openai");
-        if (openaiKey) return openaiKey;
-
-        const base = await resolveApiKey(provider, openAiSettings.apiKey);
-        // Se usar Azure para voz, permitir fallback de env
-        if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") {
-          return process.env.AZURE_SPEECH_KEY || base;
-        }
-        return base;
-      })();
-
-      const transcriptionClient = new OpenAI({
-        apiKey: transcriptionApiKey
-      });
-
-      const transcription =
-        await transcriptionClient.audio.transcriptions.create({
-          model: "whisper-1",
-          file: file
-        });
-      transcriptionText = transcription.text;
-
-      messagesOpenAi = [];
-      messagesOpenAi.push({ role: "system", content: promptSystem });
-
-      for (
-        let i = 0;
-        i < Math.min(openAiSettings.maxMessages, messages.length);
-        i++
-      ) {
-        const message = messages[i];
-        if (
-          message.mediaType === "conversation" ||
-          message.mediaType === "extendedTextMessage"
-        ) {
-          if (message.fromMe) {
-            messagesOpenAi.push({ role: "assistant", content: message.body });
-          } else {
-            messagesOpenAi.push({ role: "user", content: message.body });
-          }
-        }
-      }
-      messagesOpenAi.push({ role: "user", content: transcriptionText });
-
-      let response: string | undefined;
-
-      // Chamar o provedor correto para resposta
-      if (provider === "gemini") {
-        response = await callGemini(aiClient, messagesOpenAi, openAiSettings);
-      } else if (provider === "external") {
-        const integrationUrl =
-          openAiSettings.model || "https://api.direitai.com/v1/agent/chat";
-        const integrationToken = openAiSettings.apiKey;
-
-        const payload = {
-          remoteJid: msg.key.remoteJid,
-          pushName: contact.name,
-          message: transcriptionText, // Send transcription as message
-          ticketId: ticket.id,
-          integrationId: integrationToken,
-          history: messagesOpenAi
-        };
-
-        const { data } = await axios.post(integrationUrl, payload);
-        response = data.response || data.message;
-
-        if (data.action === "transfer") {
-          response = `Ação: Transferir para o setor de atendimento ${
-            response ? "\n" + response : ""
-          }`;
-        }
-      } else {
-        response = await callOpenAI(aiClient, messagesOpenAi, openAiSettings);
-      }
-
-      if (response?.includes("Ação: Transferir para o setor de atendimento")) {
-        await transferQueue(openAiSettings.queueId, ticket, contact);
-        response = response
-          .replace("Ação: Transferir para o setor de atendimento", "")
-          .trim();
-      }
-
-      if (response) {
-        // Processar ações de agendamento
-        response = await handleScheduleAction(response, ticket, contact);
-
-        // Processar ações de marketing
-        response = await handleMarketingAction(response, ticket, contact);
-
-        // Processar ações de catálogo
-        response = await handleCatalogAction(response, wbot, msg);
-
-        // Processar ações de social media
-        response = await handleSocialMediaAction(response, ticket, contact);
-
-        // Processar ações de postagem de vídeo
-        response = await handleVideoPostAction(
-          response,
-          ticket,
-          contact,
-          wbot,
-          msg
-        );
-
-        // Postar Status do WhatsApp
-        response = await handleStatusPostAction(
-          response,
-          ticket,
-          contact,
-          wbot,
-          msg
-        );
-
-        // Processar ações de pagamento PIX
-        response = await handlePixAction(response, ticket, contact, wbot);
-
-        // Processar ações de upgrade
-        response = await handleUpgradeAction(response);
-      }
-      const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
-      try {
-        const voiceKeyResolved = await (async () => {
-          const vKey = (openAiSettings.voiceKey || "").trim();
-          if (vKey !== "") return vKey;
-          const base = await resolveApiKey(provider, openAiSettings.apiKey);
-          if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") {
-            return process.env.AZURE_SPEECH_KEY || base;
-          }
-          return base;
-        })();
-
-        await convertTextToSpeechAndSaveToFile(
-          keepOnlySpecifiedChars(response!),
-          `${publicFolder}/${fileNameWithOutExtension}`,
-          voiceKeyResolved,
-          openAiSettings.voiceRegion || "openai",
-          openAiSettings.voice,
-          "mp3"
-        );
-        const sendMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-          audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
-          mimetype: "audio/mpeg",
-          ptt: true
-        });
-        await verifyMediaMessage(
-          sendMessage!,
-          ticket,
-          contact,
-          ticketTraking,
-          false,
-          false,
-          wbot
-        );
-        deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
-        deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
-      } catch (error) {
-        const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
-          text: `\u200e ${response!}`
-        });
-        await verifyMessage(sentMessage!, ticket, contact);
-      }
-    } catch (error) {
-      console.error(`Error processing audio with ${provider}:`, error);
-      await wbot.sendMessage(msg.key.remoteJid!, {
-        text: "Desculpe, não consegui processar o áudio. Tente enviar uma mensagem de texto."
-      });
-    }
+  } catch (error) {
+    console.error(`Error calling ${provider}:`, error);
+    await wbot.sendMessage(msg.key.remoteJid!, {
+      text: `Desculpe, ocorreu um erro temporário: ${error.message || "Erro desconhecido"}. Tente novamente em alguns instantes.`
+    });
   }
   messagesOpenAi = [];
 };
