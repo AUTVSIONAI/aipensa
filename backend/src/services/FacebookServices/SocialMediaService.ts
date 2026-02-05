@@ -92,6 +92,33 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
   return { accessToken, businessId, adAccountId };
 };
 
+const handleFacebookError = (error: any) => {
+  const errorData = error.response?.data?.error || {};
+  const errorMessage = JSON.stringify(errorData);
+  
+  console.error("[SocialMediaService] Facebook API Error:", errorMessage);
+
+  if (errorMessage.includes("pages_read_engagement")) {
+    throw new Error(
+      "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
+    );
+  }
+  if (errorMessage.includes("instagram_manage_messages")) {
+    throw new Error(
+      "Erro de permissão: Faltando permissão 'instagram_manage_messages'. Reconecte a página."
+    );
+  }
+  if (errorMessage.includes("publish_to_groups")) {
+      throw new Error("Erro de permissão: Não é possível postar em grupos sem permissão explícita.");
+  }
+  if (errorData?.code === 190 || errorData?.code === 10) {
+     throw new Error("Sessão do Facebook expirada. Por favor, vá em Conexões e reconecte a página.");
+  }
+  
+  // Return original error if not handled
+  throw error;
+};
+
 export const publishToFacebook = async (
   companyId: number,
   pageId: string,
@@ -99,41 +126,45 @@ export const publishToFacebook = async (
   imageUrl?: string,
   scheduledTime?: string
 ): Promise<any> => {
-  const { accessToken } = await getFbConfig(companyId);
-  if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+  try {
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
-  const pageResp = await axios.get(
-    `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
-    {
-      params: { fields: "access_token", access_token: accessToken }
-    }
-  );
-  const pageAccessToken = pageResp.data.access_token;
-
-  const endpoint = imageUrl
-    ? `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/photos`
-    : `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed`;
-
-  const body: any = {
-    access_token: pageAccessToken,
-    message: message
-  };
-
-  if (imageUrl) {
-    body.url = imageUrl;
-    body.caption = message;
-    delete body.message;
-  }
-
-  if (scheduledTime) {
-    body.published = false;
-    body.scheduled_publish_time = Math.floor(
-      new Date(scheduledTime).getTime() / 1000
+    const pageResp = await axios.get(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
+      {
+        params: { fields: "access_token", access_token: accessToken }
+      }
     );
-  }
+    const pageAccessToken = pageResp.data.access_token;
 
-  const resp = await axios.post(endpoint, body);
-  return resp.data;
+    const endpoint = imageUrl
+      ? `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/photos`
+      : `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed`;
+
+    const body: any = {
+      access_token: pageAccessToken,
+      message: message
+    };
+
+    if (imageUrl) {
+      body.url = imageUrl;
+      body.caption = message;
+      delete body.message;
+    }
+
+    if (scheduledTime) {
+      body.published = false;
+      body.scheduled_publish_time = Math.floor(
+        new Date(scheduledTime).getTime() / 1000
+      );
+    }
+
+    const resp = await axios.post(endpoint, body);
+    return resp.data;
+  } catch (error) {
+    handleFacebookError(error);
+  }
 };
 
 export const publishVideoToFacebook = async (
@@ -142,27 +173,31 @@ export const publishVideoToFacebook = async (
   videoUrl: string,
   description: string
 ): Promise<any> => {
-  const { accessToken } = await getFbConfig(companyId);
-  if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+  try {
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
-  const pageResp = await axios.get(
-    `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
-    {
-      params: { fields: "access_token", access_token: accessToken }
-    }
-  );
-  const pageAccessToken = pageResp.data.access_token;
+    const pageResp = await axios.get(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
+      {
+        params: { fields: "access_token", access_token: accessToken }
+      }
+    );
+    const pageAccessToken = pageResp.data.access_token;
 
-  const endpoint = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/videos`;
+    const endpoint = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/videos`;
 
-  const body = {
-    access_token: pageAccessToken,
-    file_url: videoUrl,
-    description: description
-  };
+    const body = {
+      access_token: pageAccessToken,
+      file_url: videoUrl,
+      description: description
+    };
 
-  const resp = await axios.post(endpoint, body);
-  return resp.data;
+    const resp = await axios.post(endpoint, body);
+    return resp.data;
+  } catch (error) {
+    handleFacebookError(error);
+  }
 };
 
 const waitForInstagramMedia = async (
@@ -232,16 +267,7 @@ export const publishVideoToInstagram = async (
 
     return publishResp.data;
   } catch (error: any) {
-    const errorData = error.response?.data?.error || {};
-    if (JSON.stringify(errorData).includes("pages_read_engagement")) {
-      throw new Error(
-        "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
-      );
-    }
-    if (errorData?.code === 190 || errorData?.code === 10) {
-       throw new Error("Sessão do Facebook expirada. Por favor, vá em Conexões e reconecte a página.");
-    }
-    throw error;
+    handleFacebookError(error);
   }
 };
 
@@ -284,16 +310,7 @@ export const publishToInstagram = async (
 
     return publishResp.data;
   } catch (error: any) {
-    const errorData = error.response?.data?.error || {};
-    if (JSON.stringify(errorData).includes("pages_read_engagement")) {
-      throw new Error(
-        "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
-      );
-    }
-    if (errorData?.code === 190 || errorData?.code === 10) {
-       throw new Error("Sessão do Facebook expirada. Por favor, vá em Conexões e reconecte a página.");
-    }
-    throw error;
+    handleFacebookError(error);
   }
 };
 
@@ -320,18 +337,7 @@ export const sendInstagramDM = async (
 
     return resp.data;
   } catch (error: any) {
-    const errorData = error.response?.data?.error || {};
-    if (JSON.stringify(errorData).includes("pages_read_engagement")) {
-      throw new Error(
-        "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
-      );
-    }
-     if (JSON.stringify(errorData).includes("instagram_manage_messages")) {
-      throw new Error(
-        "Erro de permissão: Faltando permissão 'instagram_manage_messages'. Reconecte a página."
-      );
-    }
-    throw error;
+    handleFacebookError(error);
   }
 };
 
