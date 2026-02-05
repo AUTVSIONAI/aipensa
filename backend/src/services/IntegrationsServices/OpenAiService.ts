@@ -1043,7 +1043,7 @@ const handleUpgradeAction = async (response: string) => {
 };
 
 // Helper to resolve API Key
-const resolveApiKey = async (prov?: string, key?: string) => {
+async function resolveApiKey(prov?: string, key?: string) {
   if (key && key.trim() !== "") return key;
 
   // Check Global Settings (Company 1)
@@ -1056,7 +1056,7 @@ const resolveApiKey = async (prov?: string, key?: string) => {
     // Try fetching global setting
     const setting = await Setting.findOne({ where: { companyId: 1, key: settingKey } });
     if (setting?.value) {
-      console.log(`[OpenAiService] Found global key for ${prov}: ${settingKey}`);
+      // console.log(`[OpenAiService] Found global key for ${prov}: ${settingKey}`);
       return setting.value;
     }
     
@@ -1065,7 +1065,7 @@ const resolveApiKey = async (prov?: string, key?: string) => {
     if (prov !== "openai") {
        const genericSetting = await Setting.findOne({ where: { companyId: 1, key: "userApiToken" } });
        if (genericSetting?.value) {
-          console.log(`[OpenAiService] Found generic global key (userApiToken) for ${prov}`);
+          // console.log(`[OpenAiService] Found generic global key (userApiToken) for ${prov}`);
           return genericSetting.value;
        }
     }
@@ -1076,7 +1076,7 @@ const resolveApiKey = async (prov?: string, key?: string) => {
   if (prov === "gemini") return process.env.GEMINI_API_KEY || "";
   if (prov === "external") return process.env.EXTERNAL_AGENT_API_KEY || "";
   return process.env.OPENAI_API_KEY || "";
-};
+}
 
 const handleImageGenerationAction = async (
   response: string,
@@ -1207,6 +1207,22 @@ export const handleOpenAi = async (
     return;
   }
   if (msg.messageStubType) return;
+
+  // SMART PROVIDER SWITCH FOR IMAGES
+  // If user sends an image, force OpenAI provider if available, as OpenRouter often fails with vision
+  if (msg.message?.imageMessage) {
+      console.log("[handleOpenAi] Image detected. Checking if we should force OpenAI provider...");
+      try {
+        const openaiKey = await resolveApiKey("openai");
+        if (openaiKey && openaiKey.length > 10) {
+            console.log("[handleOpenAi] Forcing OpenAI provider (gpt-4o) for image analysis.");
+            openAiSettings.provider = "openai";
+            openAiSettings.model = "gpt-4o";
+        }
+      } catch (e) {
+        console.error("Error checking OpenAI key for image fallback:", e);
+      }
+  }
 
   // Definir provider padrão se não estiver definido
   const provider = openAiSettings.provider || "openai";

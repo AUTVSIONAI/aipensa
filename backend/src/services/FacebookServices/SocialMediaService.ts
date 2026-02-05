@@ -238,6 +238,9 @@ export const publishVideoToInstagram = async (
         "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
       );
     }
+    if (errorData?.code === 190 || errorData?.code === 10) {
+       throw new Error("Sessão do Facebook expirada. Por favor, vá em Conexões e reconecte a página.");
+    }
     throw error;
   }
 };
@@ -286,6 +289,9 @@ export const publishToInstagram = async (
       throw new Error(
         "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
       );
+    }
+    if (errorData?.code === 190 || errorData?.code === 10) {
+       throw new Error("Sessão do Facebook expirada. Por favor, vá em Conexões e reconecte a página.");
     }
     throw error;
   }
