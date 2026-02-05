@@ -138,6 +138,7 @@ const callOpenAI = async (
         temperature: openAiSettings.temperature
       });
 
+      console.log(`[callOpenAI] Success with model: ${currentModel}`);
       return chat.choices[0].message?.content;
     } catch (error) {
       console.error(
@@ -1307,6 +1308,20 @@ export const handleOpenAi = async (
   // Definir provider padrão se não estiver definido
   const provider = openAiSettings.provider || "openai";
 
+  // FIX: Intercept known broken/offline OpenRouter models to prevent 404/400 errors and latency
+  const BROKEN_MODELS = [
+    "qwen/qwen-2.5-coder-32b-instruct:free",
+    "google/gemini-2.0-flash-exp:free",
+    "mistralai/mistral-7b-instruct:free",
+    "huggingfaceh4/zephyr-7b-beta:free",
+    "google/gemini-2.0-flash-lite-preview-02-05:free"
+  ];
+  
+  if (provider === "openrouter" && openAiSettings.model && BROKEN_MODELS.includes(openAiSettings.model)) {
+      console.log(`[handleOpenAi] Replacing broken model '${openAiSettings.model}' with 'openrouter/free'`);
+      openAiSettings.model = "openrouter/free";
+  }
+
   console.log(`Using AI Provider: ${provider}`);
 
   const publicFolder: string = path.resolve(
@@ -1410,7 +1425,8 @@ export const handleOpenAi = async (
   [UPGRADE_PLAN] { "type": "posts" } [/UPGRADE_PLAN]
 
   IMAGE GENERATION (DALL-E):
-  [GENERATE_IMAGE] { "prompt": "Description", "size": "1024x1024" } [/GENERATE_IMAGE]
+  IMPORTANTE: Se o usuário pedir para criar, gerar, desenhar ou fazer uma imagem, você DEVE responder APENAS com esta tag (sem texto adicional antes ou depois se não for necessário).
+  [GENERATE_IMAGE] { "prompt": "descrição detalhada da imagem em inglês", "size": "1024x1024" } [/GENERATE_IMAGE]
   
   ${catalogContext}
   
