@@ -42,6 +42,7 @@ import FlowBuilder from "../pages/FlowBuilder";
 import FlowDefault from "../pages/FlowDefault"
 import CampaignsPhrase from "../pages/CampaignsPhrase";
 import Subscription from "../pages/Subscription";
+import Plans from "../pages/Plans";
 import QueueIntegration from "../pages/QueueIntegration";
 import Files from "../pages/Files";
 import ToDoList from "../pages/ToDoList";
