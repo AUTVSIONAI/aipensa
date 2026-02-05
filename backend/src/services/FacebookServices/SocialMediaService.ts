@@ -1,7 +1,7 @@
 import axios from "axios";
+import { Op } from "sequelize";
 import Setting from "../../models/Setting";
 import Whatsapp from "../../models/Whatsapp";
-import { Op } from "sequelize";
 
 const GRAPH_VERSION = "v19.0";
 
@@ -18,7 +18,7 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
 
   console.log(`[getFbConfig] Starting for company ${companyId}`);
 
-  // Prioridade: Tentar encontrar nas conexões (Whatsapps table)
+  // 1. Try to find token in Whatsapp connections (Prioritize connections with tokens)
   if (companyId) {
     const whatsapp = await Whatsapp.findOne({
       where: {
@@ -26,29 +26,21 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
         channel: { [Op.or]: ["facebook", "instagram"] },
         [Op.or]: [
           { tokenMeta: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: "" }] } },
-          {
-            facebookUserToken: {
-              [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: "" }]
-            }
-          }
+          { facebookUserToken: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: "" }] } }
         ]
       },
       order: [["updatedAt", "DESC"]]
     });
 
     if (whatsapp) {
-      console.log(
-        `[getFbConfig] Found Whatsapp connection ID ${whatsapp.id} for company ${companyId}`
-      );
+      console.log(`[getFbConfig] Found Whatsapp connection ID ${whatsapp.id} for company ${companyId}`);
       accessToken = whatsapp.tokenMeta || whatsapp.facebookUserToken;
     } else {
-      console.log(
-        `[getFbConfig] No Whatsapp connection found for company ${companyId}`
-      );
+      console.log(`[getFbConfig] No Whatsapp connection found for company ${companyId}`);
     }
   }
 
-  // Fallback: Setting table
+  // 2. Fallback: Check Settings table
   if (!accessToken && companyId) {
     console.log(`[getFbConfig] Checking Settings table for fallback token`);
     const at = await Setting.findOne({
@@ -57,33 +49,26 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
     accessToken = at?.value || null;
   }
 
+  // 3. Get Business ID and Ad Account ID from Settings
   if (companyId) {
-    const bid = await Setting.findOne({
-      where: { companyId, key: "facebook_business_id" }
-    });
-    const act = await Setting.findOne({
-      where: { companyId, key: "facebook_ad_account_id" }
-    });
+    const bid = await Setting.findOne({ where: { companyId, key: "facebook_business_id" } });
+    const act = await Setting.findOne({ where: { companyId, key: "facebook_ad_account_id" } });
+    
     if (!businessId) businessId = bid?.value || null;
     if (!adAccountId) adAccountId = act?.value || null;
   }
 
+  // 4. Try to fetch Ad Account ID if not set but we have a token
   if (accessToken && !adAccountId) {
     try {
-      const resp = await axios.get(
-        `https://graph.facebook.com/${GRAPH_VERSION}/me/adaccounts`,
-        {
-          params: { access_token: accessToken, fields: "account_id" }
-        }
-      );
+      const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/adaccounts`, {
+        params: { access_token: accessToken, fields: "account_id" }
+      });
       if (resp.data?.data?.length > 0) {
         adAccountId = resp.data.data[0].account_id;
       }
-    } catch (err) {
-      console.error(
-        "[SocialMediaService] Error fetching ad accounts:",
-        err.message
-      );
+    } catch (err: any) {
+      console.error("[SocialMediaService] Error fetching ad accounts:", err.message);
     }
   }
 
@@ -92,6 +77,7 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
   return { accessToken, businessId, adAccountId };
 };
 
+// Helper to centralize Facebook Error Handling
 const handleFacebookError = (error: any) => {
   const errorData = error.response?.data?.error || {};
   const errorMessage = JSON.stringify(errorData);
@@ -115,7 +101,7 @@ const handleFacebookError = (error: any) => {
      throw new Error("Sessão do Facebook expirada. Por favor, vá em Conexões e reconecte a página.");
   }
   
-  // Return original error if not handled
+  // Re-throw original error if not handled specifically
   throw error;
 };
 
@@ -130,12 +116,10 @@ export const publishToFacebook = async (
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
-    const pageResp = await axios.get(
-      `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
-      {
-        params: { fields: "access_token", access_token: accessToken }
-      }
-    );
+    // Get Page Access Token
+    const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`, {
+      params: { fields: "access_token", access_token: accessToken }
+    });
     const pageAccessToken = pageResp.data.access_token;
 
     const endpoint = imageUrl
@@ -155,9 +139,7 @@ export const publishToFacebook = async (
 
     if (scheduledTime) {
       body.published = false;
-      body.scheduled_publish_time = Math.floor(
-        new Date(scheduledTime).getTime() / 1000
-      );
+      body.scheduled_publish_time = Math.floor(new Date(scheduledTime).getTime() / 1000);
     }
 
     const resp = await axios.post(endpoint, body);
@@ -177,12 +159,10 @@ export const publishVideoToFacebook = async (
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
-    const pageResp = await axios.get(
-      `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
-      {
-        params: { fields: "access_token", access_token: accessToken }
-      }
-    );
+    // Get Page Access Token
+    const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`, {
+      params: { fields: "access_token", access_token: accessToken }
+    });
     const pageAccessToken = pageResp.data.access_token;
 
     const endpoint = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/videos`;
@@ -200,23 +180,17 @@ export const publishVideoToFacebook = async (
   }
 };
 
-const waitForInstagramMedia = async (
-  creationId: string,
-  accessToken: string
-) => {
+const waitForInstagramMedia = async (creationId: string, accessToken: string) => {
   let attempts = 0;
   while (attempts < 20) {
     // Try for 40 seconds
-    const statusResp = await axios.get(
-      `https://graph.facebook.com/${GRAPH_VERSION}/${creationId}`,
-      {
-        params: { fields: "status_code,status", access_token: accessToken }
-      }
-    );
+    const statusResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${creationId}`, {
+      params: { fields: "status_code,status", access_token: accessToken }
+    });
     const status = statusResp.data.status_code;
+    
     if (status === "FINISHED") return;
-    if (status === "ERROR")
-      throw new Error("Instagram Video Processing Failed");
+    if (status === "ERROR") throw new Error("Instagram Video Processing Failed");
 
     await new Promise(r => setTimeout(r, 2000)); // Wait 2s
     attempts++;
@@ -235,7 +209,7 @@ export const publishVideoToInstagram = async (
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     // 1. Create Container
-    const containerParams: any = {
+    const containerParams = {
       access_token: accessToken,
       video_url: videoUrl,
       media_type: "VIDEO",
@@ -254,7 +228,7 @@ export const publishVideoToInstagram = async (
     await waitForInstagramMedia(creationId, accessToken);
 
     // 2. Publish Container
-    const publishParams: any = {
+    const publishParams = {
       access_token: accessToken,
       creation_id: creationId
     };
@@ -266,7 +240,7 @@ export const publishVideoToInstagram = async (
     );
 
     return publishResp.data;
-  } catch (error: any) {
+  } catch (error) {
     handleFacebookError(error);
   }
 };
@@ -282,7 +256,7 @@ export const publishToInstagram = async (
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     // 1. Create Container
-    const containerParams: any = {
+    const containerParams = {
       access_token: accessToken,
       image_url: imageUrl,
       caption: caption
@@ -297,7 +271,7 @@ export const publishToInstagram = async (
     const creationId = createContainer.data.id;
 
     // 2. Publish Container
-    const publishParams: any = {
+    const publishParams = {
       access_token: accessToken,
       creation_id: creationId
     };
@@ -309,7 +283,7 @@ export const publishToInstagram = async (
     );
 
     return publishResp.data;
-  } catch (error: any) {
+  } catch (error) {
     handleFacebookError(error);
   }
 };
@@ -336,7 +310,7 @@ export const sendInstagramDM = async (
     );
 
     return resp.data;
-  } catch (error: any) {
+  } catch (error) {
     handleFacebookError(error);
   }
 };
@@ -346,17 +320,14 @@ export const getConnectedPages = async (companyId: number): Promise<any[]> => {
   if (!accessToken) return [];
 
   try {
-    const resp = await axios.get(
-      `https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`,
-      {
-        params: {
-          access_token: accessToken,
-          fields: "id,name,access_token,instagram_business_account{id,username}"
-        }
+    const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`, {
+      params: {
+        access_token: accessToken,
+        fields: "id,name,access_token,instagram_business_account{id,username}"
       }
-    );
+    });
     return resp.data.data || [];
-  } catch (e) {
+  } catch (e: any) {
     console.error("[SocialMediaService] Error fetching pages:", e.message);
     return [];
   }
