@@ -50,6 +50,7 @@ import clinicChatRoutes from "./clinicChatRoutes";
 import marketingRoutes from "./marketingRoutes";
 import * as WebHooksController from "../controllers/WebHookController";
 import instagramRoutes from "./instagramRoutes";
+import huggingFaceRoutes from "./huggingFaceRoutes";
 
 import hubChannelRoutes from "../HubEcosystem/routes/hubChannelRoutes";
 import hubMessageRoutes from "../HubEcosystem/routes/hubMessageRoutes";
@@ -115,6 +116,7 @@ routes.post("/webhooks/instagram", WebHooksController.webHook);
 // Healthcheck
 routes.get("/health", (req, res) => res.json({ ok: true }));
 routes.use(instagramRoutes);
+routes.use(huggingFaceRoutes);
 
 // HubEcosystem
 routes.use(hubChannelRoutes);

@@ -35,6 +35,7 @@ import {
   incrementUsage,
   checkPlanFeature
 } from "../UsageTrackingServices/UsageTrackingService";
+import GenerateImageService from "../HuggingFaceService/GenerateImageService";
 
 type Session = WASocket & {
   id?: number;
@@ -1093,9 +1094,23 @@ const handleImageGenerationAction = async (
       let imageUrl: string | undefined;
       let usedProvider = "openai";
 
-      // 1. Tentar OpenRouter primeiro (Economia)
+      // 0. Tentar Hugging Face (Prioridade Definida pelo Usuário)
       try {
-        console.log("[handleImageGeneration] Tentando gerar imagem via OpenRouter...");
+        if (process.env.HUGGINGFACE_API_KEY) {
+           console.log("[handleImageGeneration] Tentando gerar imagem via Hugging Face...");
+           const result = await GenerateImageService({ prompt });
+           imageUrl = result.url;
+           usedProvider = "huggingface";
+           console.log("[handleImageGeneration] Sucesso via Hugging Face!");
+        }
+      } catch (e) {
+        console.warn("[handleImageGeneration] Falha no Hugging Face:", e.message);
+      }
+
+      // 1. Tentar OpenRouter primeiro (Economia)
+      if (!imageUrl) {
+        try {
+          console.log("[handleImageGeneration] Tentando gerar imagem via OpenRouter...");
         const openRouterKey = await resolveApiKey("openrouter");
         
         if (openRouterKey) {
@@ -1124,6 +1139,7 @@ const handleImageGenerationAction = async (
         }
       } catch (e) {
         console.warn("[handleImageGeneration] Falha no OpenRouter, tentando fallback para OpenAI:", e.message);
+      }
       }
 
       // 2. Fallback para OpenAI (DALL-E 3) se OpenRouter falhou ou não tem chave
