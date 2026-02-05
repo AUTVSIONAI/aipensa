@@ -1082,7 +1082,8 @@ const handleImageGenerationAction = async (
   response: string,
   ticket: Ticket,
   contact: Contact,
-  wbot: Session
+  wbot: Session,
+  openAiSettings: IOpenAi
 ): Promise<string> => {
   const imageRegex = /\[GENERATE_IMAGE\]([\s\S]*?)\[\/GENERATE_IMAGE\]/;
   const match = response.match(imageRegex);
@@ -1092,7 +1093,13 @@ const handleImageGenerationAction = async (
       const jsonContent = match[1].trim();
       const { prompt, size } = JSON.parse(jsonContent);
 
-      const openaiApiKey = await resolveApiKey("openai");
+      // User request: use voice/transcription key for image generation if available
+      let openaiApiKey = openAiSettings.voiceKey;
+      
+      if (!openaiApiKey || openaiApiKey.trim() === "") {
+          openaiApiKey = await resolveApiKey("openai");
+      }
+
       if (!openaiApiKey) {
           throw new Error("Chave da OpenAI não configurada para geração de imagens.");
       }
