@@ -391,35 +391,70 @@ export default function Options(props) {
   }, [oldSettings]);
 
   useEffect(() => {
-    for (const [key, value] of Object.entries(settings)) {
-      if (key === "userRating") setUserRating(value);
-      if (key === "scheduleType") setScheduleType(value);
-      if (key === "chatBotType") setChatBotType(value);
-      if (key === "acceptCallWhatsapp") setAcceptCallWhatsapp(value);
-      if (key === "userRandom") setUserRandom(value);
-      if (key === "sendGreetingMessageOneQueues") setSendGreetingMessageOneQueues(value);
-      if (key === "sendSignMessage") setSendSignMessage(value);
-      if (key === "sendFarewellWaitingTicket") setSendFarewellWaitingTicket(value);
-      if (key === "sendGreetingAccepted") setSendGreetingAccepted(value);
-      if (key === "sendQueuePosition") setSendQueuePosition(value);
-      if (key === "acceptAudioMessageContact") setAcceptAudioMessageContact(value);
-      if (key === "enableLGPD") setEnableLGPD(value);
-      if (key === "requiredTag") setRequiredTag(value);
-      if (key === "lgpdDeleteMessage") setLGPDDeleteMessage(value);
-      if (key === "lgpdHideNumber") setLGPDHideNumber(value);
-      if (key === "lgpdConsent") setLGPDConsent(value);
-      if (key === "lgpdMessage") setLGPDMessage(value);
-      if (key === "sendMsgTransfTicket") setSettingsTransfTicket(value);
-      if (key === "lgpdLink") setLGPDLink(value);
-      if (key === "DirectTicketsToWallets") setDirectTicketsToWallets(value);
-      if (key === "closeTicketOnTransfer") setCloseTicketOnTransfer(value);
-      if (key === "transferMessage") setTransferMessage(value);
-      if (key === "greetingAcceptedMessage") setGreetingAcceptedMessage(value);
-      if (key === "AcceptCallWhatsappMessage") setAcceptCallWhatsappMessage(value);
-      if (key === "sendQueuePositionMessage") setSendQueuePositionMessage(value);
-      if (key === "showNotificationPending") setShowNotificationPending(value);
-      if (key === "notificameHub") setNotificameHubToken(value);
-      if (key === "enableAutoStatus") setEnableAutoStatus(value);
+    if (Array.isArray(settings)) {
+      settings.forEach((setting) => {
+        const { key, value } = setting;
+        if (key === "userRating") setUserRating(value);
+        if (key === "scheduleType") setScheduleType(value);
+        if (key === "chatBotType") setChatBotType(value);
+        if (key === "acceptCallWhatsapp") setAcceptCallWhatsapp(value);
+        if (key === "userRandom") setUserRandom(value);
+        if (key === "sendGreetingMessageOneQueues") setSendGreetingMessageOneQueues(value);
+        if (key === "sendSignMessage") setSendSignMessage(value);
+        if (key === "sendFarewellWaitingTicket") setSendFarewellWaitingTicket(value);
+        if (key === "sendGreetingAccepted") setSendGreetingAccepted(value);
+        if (key === "sendQueuePosition") setSendQueuePosition(value);
+        if (key === "acceptAudioMessageContact") setAcceptAudioMessageContact(value);
+        if (key === "enableLGPD") setEnableLGPD(value);
+        if (key === "requiredTag") setRequiredTag(value);
+        if (key === "lgpdDeleteMessage") setLGPDDeleteMessage(value);
+        if (key === "lgpdHideNumber") setLGPDHideNumber(value);
+        if (key === "lgpdConsent") setLGPDConsent(value);
+        if (key === "lgpdMessage") setLGPDMessage(value);
+        if (key === "sendMsgTransfTicket") setSettingsTransfTicket(value);
+        if (key === "lgpdLink") setLGPDLink(value);
+        if (key === "DirectTicketsToWallets") setDirectTicketsToWallets(value);
+        if (key === "closeTicketOnTransfer") setCloseTicketOnTransfer(value);
+        if (key === "transferMessage") setTransferMessage(value);
+        if (key === "greetingAcceptedMessage") setGreetingAcceptedMessage(value);
+        if (key === "AcceptCallWhatsappMessage") setAcceptCallWhatsappMessage(value);
+        if (key === "sendQueuePositionMessage") setSendQueuePositionMessage(value);
+        if (key === "showNotificationPending") setShowNotificationPending(value);
+        if (key === "notificameHub") setNotificameHubToken(value);
+        if (key === "enableAutoStatus") setEnableAutoStatus(value);
+      });
+    } else if (settings && typeof settings === "object") {
+      // Fallback for object format
+      for (const [key, value] of Object.entries(settings)) {
+        if (key === "userRating") setUserRating(value);
+        if (key === "scheduleType") setScheduleType(value);
+        if (key === "chatBotType") setChatBotType(value);
+        if (key === "acceptCallWhatsapp") setAcceptCallWhatsapp(value);
+        if (key === "userRandom") setUserRandom(value);
+        if (key === "sendGreetingMessageOneQueues") setSendGreetingMessageOneQueues(value);
+        if (key === "sendSignMessage") setSendSignMessage(value);
+        if (key === "sendFarewellWaitingTicket") setSendFarewellWaitingTicket(value);
+        if (key === "sendGreetingAccepted") setSendGreetingAccepted(value);
+        if (key === "sendQueuePosition") setSendQueuePosition(value);
+        if (key === "acceptAudioMessageContact") setAcceptAudioMessageContact(value);
+        if (key === "enableLGPD") setEnableLGPD(value);
+        if (key === "requiredTag") setRequiredTag(value);
+        if (key === "lgpdDeleteMessage") setLGPDDeleteMessage(value);
+        if (key === "lgpdHideNumber") setLGPDHideNumber(value);
+        if (key === "lgpdConsent") setLGPDConsent(value);
+        if (key === "lgpdMessage") setLGPDMessage(value);
+        if (key === "sendMsgTransfTicket") setSettingsTransfTicket(value);
+        if (key === "lgpdLink") setLGPDLink(value);
+        if (key === "DirectTicketsToWallets") setDirectTicketsToWallets(value);
+        if (key === "closeTicketOnTransfer") setCloseTicketOnTransfer(value);
+        if (key === "transferMessage") setTransferMessage(value);
+        if (key === "greetingAcceptedMessage") setGreetingAcceptedMessage(value);
+        if (key === "AcceptCallWhatsappMessage") setAcceptCallWhatsappMessage(value);
+        if (key === "sendQueuePositionMessage") setSendQueuePositionMessage(value);
+        if (key === "showNotificationPending") setShowNotificationPending(value);
+        if (key === "notificameHub") setNotificameHubToken(value);
+        if (key === "enableAutoStatus") setEnableAutoStatus(value);
+      }
     }
   }, [settings]);
 

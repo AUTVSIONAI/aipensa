@@ -448,7 +448,7 @@ const SettingsCustom = () => {
   const [schedules, setSchedules] = useState([]);
   const [company, setCompany] = useState({});
   const [loading, setLoading] = useState(false);
-  const [settings, setSettings] = useState({});
+  const [settings, setSettings] = useState([]);
   const [schedulesEnabled, setSchedulesEnabled] = useState(false);
 
   const { find, updateSchedules } = useCompanies();

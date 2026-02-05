@@ -1105,7 +1105,7 @@ export default function PlansManager() {
             users: data.users || 0,
             connections: data.connections || 0,
             queues: data.queues || 0,
-            amount: data.amount ? Number(data.amount).toLocaleString('pt-br', { minimumFractionDigits: 2 }) : "00.00",
+            amount: data.amount ? String(data.amount).replace('.', ',') : "0,00",
             useWhatsapp,
             useFacebook,
             useInstagram,

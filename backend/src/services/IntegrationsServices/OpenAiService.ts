@@ -1423,6 +1423,15 @@ export const handleOpenAi = async (
       const base64Image = imageBuffer.toString("base64");
       const mimeType = msg.message.imageMessage.mimetype || "image/jpeg";
 
+      // Force Vision Model if current model is not vision-capable
+      const VISION_MODELS = ["gpt-4o", "gpt-4-turbo", "gpt-4-vision-preview"];
+      const isVisionModel = VISION_MODELS.some(m => (openAiSettings.model || "").includes(m));
+      
+      if (!isVisionModel) {
+          console.log(`[OpenAiService] Switching to gpt-4o for image analysis (current: ${openAiSettings.model})`);
+          openAiSettings.model = "gpt-4o";
+      }
+
       messagesOpenAi.push({
         role: "user",
         content: [
@@ -1515,7 +1524,7 @@ export const handleOpenAi = async (
 
       // Processar geração de imagem DALL-E
       if (response?.includes("[GENERATE_IMAGE]")) {
-         response = await handleImageGenerationAction(response, ticket, contact, wbot);
+         response = await handleImageGenerationAction(response, ticket, contact, wbot, openAiSettings);
       }
 
         // Processar ações de upgrade
