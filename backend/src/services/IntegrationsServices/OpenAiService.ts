@@ -278,6 +278,13 @@ const handleStatusPostAction = async (
 
   if (match && match[1]) {
     try {
+      if (!(await verifyAdminPermission(contact))) {
+        return (
+          response.replace(match[0], "").trim() +
+          "\n\n⛔ Ação restrita: requer tag ADMIN."
+        );
+      }
+
       const companySettings = await CompaniesSettings.findOne({
         where: { companyId: ticket.companyId }
       });
@@ -306,112 +313,17 @@ const handleStatusPostAction = async (
 
       const jsonContent = match[1].trim();
       const postData = JSON.parse(jsonContent);
-      const { caption, source, file, media } = postData;
-
-      const statusJid = "status@broadcast";
-
-      let buffer: Buffer | null = null;
-      let localFilePath: string | null = null;
-      const publicFolder: string = path.resolve(
-        __dirname,
-        "..",
-        "..",
-        "..",
-        "public",
-        `company${ticket.companyId}`
-      );
-
-      // Fonte: chat (pegar mídia atual, citada ou última)
-      if (source === "chat") {
-        // 1. Atual
-        if (msg.message?.imageMessage || msg.message?.videoMessage) {
-          buffer = (await downloadMediaMessage(
-            msg,
-            "buffer",
-            {},
-            { logger, reuploadRequest: wbot.updateMediaMessage }
-          )) as Buffer;
-        }
-        // 2. Citada
-        else if (
-          msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
-            ?.imageMessage ||
-          msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
-            ?.videoMessage
-        ) {
-          const quoted = msg.message.extendedTextMessage.contextInfo;
-          const pseudoMsg: any = {
-            message: quoted.quotedMessage,
-            key: {
-              remoteJid: msg.key.remoteJid,
-              id: quoted.stanzaId
-            }
-          };
-          buffer = (await downloadMediaMessage(
-            pseudoMsg,
-            "buffer",
-            {},
-            { logger, reuploadRequest: wbot.updateMediaMessage }
-          )) as Buffer;
-        }
-        // 3. Última do histórico
-        else {
-          const lastMedia = await Message.findOne({
-            where: {
-              ticketId: ticket.id,
-              fromMe: false,
-              mediaType: media === "video" ? "video" : "image"
-            },
-            order: [["createdAt", "DESC"]]
-          });
-          if (lastMedia?.mediaUrl) {
-            localFilePath = path.resolve(
-              publicFolder,
-              lastMedia.mediaUrl.split("/").pop() || ""
-            );
-          }
-        }
-      }
-      // Fonte: arquivos (pasta pública da empresa)
-      else if (source === "files" && file) {
-        localFilePath = path.resolve(publicFolder, file);
-      }
-
-      // Envio do Status
-      if (media === "video") {
-        if (buffer) {
-          await wbot.sendMessage(statusJid, { video: buffer, caption });
-        } else if (localFilePath) {
-          await wbot.sendMessage(statusJid, {
-            video: { url: localFilePath },
-            caption
-          });
-        } else {
-          return (
-            response.replace(match[0], "").trim() +
-            "\n\n(Erro: Nenhum vídeo encontrado para postar no Status)"
-          );
-        }
-      } else {
-        if (buffer) {
-          await wbot.sendMessage(statusJid, { image: buffer, caption });
-        } else if (localFilePath) {
-          await wbot.sendMessage(statusJid, {
-            image: { url: localFilePath },
-            caption
-          });
-        } else {
-          return (
-            response.replace(match[0], "").trim() +
-            "\n\n(Erro: Nenhuma imagem encontrada para postar no Status)"
-          );
-        }
-      }
-
-      await incrementUsage(ticket.companyId, "limitPosts", 1);
+      const dataWebhook: any = Object.assign({}, ticket.dataWebhook || {});
+      dataWebhook.pendingStatusPost = {
+        caption: postData.caption || "",
+        source: postData.source || "chat",
+        file: postData.file || null,
+        media: postData.media || "image"
+      };
+      await ticket.update({ dataWebhook });
       return (
         response.replace(match[0], "").trim() +
-        "\n\n✅ Status postado com sucesso!"
+        "\n\nConfirma publicar este Status? Responda 'sim' ou 'não'."
       );
     } catch (e) {
       console.error("Erro ao postar Status no WhatsApp:", e);
@@ -1432,6 +1344,277 @@ export const handleOpenAi = async (
     "public",
     `company${ticket.companyId}`
   );
+
+  const normalize = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
+  const webhookData: any = Object.assign({}, ticket.dataWebhook || {});
+  const textNorm = normalize(bodyMessage || "");
+
+  if (webhookData.pendingStatusPost) {
+    const accept =
+      /^(s|sim|confirmo|pode postar|ok|manda|enviar)$/i.test(textNorm) ||
+      textNorm.includes("confirmar") ||
+      textNorm.includes("confirmo");
+    const reject =
+      /^(n|nao|não|cancela|cancelar)$/i.test(textNorm) ||
+      textNorm.includes("cancelar");
+
+    if (accept || reject) {
+      if (reject) {
+        delete webhookData.pendingStatusPost;
+        await ticket.update({ dataWebhook: webhookData });
+        const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+          text: "Cancelado."
+        });
+        await verifyMessage(sentMessage!, ticket, contact);
+        return;
+      }
+
+      try {
+        const statusJid = "status@broadcast";
+        const { caption, source, file, media } = webhookData.pendingStatusPost;
+
+        let buffer: Buffer | null = null;
+        let localFilePath: string | null = null;
+
+        if (source === "chat") {
+          if (msg.message?.imageMessage || msg.message?.videoMessage) {
+            buffer = (await downloadMediaMessage(
+              msg,
+              "buffer",
+              {},
+              { logger, reuploadRequest: wbot.updateMediaMessage }
+            )) as Buffer;
+          } else if (
+            msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
+              ?.imageMessage ||
+            msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
+              ?.videoMessage
+          ) {
+            const quoted = msg.message.extendedTextMessage.contextInfo;
+            const pseudoMsg: any = {
+              message: quoted.quotedMessage,
+              key: { remoteJid: msg.key.remoteJid, id: quoted.stanzaId }
+            };
+            buffer = (await downloadMediaMessage(
+              pseudoMsg,
+              "buffer",
+              {},
+              { logger, reuploadRequest: wbot.updateMediaMessage }
+            )) as Buffer;
+          } else {
+            const lastMedia = await Message.findOne({
+              where: {
+                ticketId: ticket.id,
+                fromMe: false,
+                mediaType: media === "video" ? "video" : "image"
+              },
+              order: [["createdAt", "DESC"]]
+            });
+            if (lastMedia?.mediaUrl) {
+              localFilePath = path.resolve(
+                publicFolder,
+                lastMedia.mediaUrl.split("/").pop() || ""
+              );
+            }
+          }
+        } else if (source === "files" && file) {
+          localFilePath = path.resolve(publicFolder, file);
+        }
+
+        let savedPath: string | null = null;
+
+        if (media === "video") {
+          if (buffer) {
+            const name = `${ticket.id}_${Date.now()}.mp4`;
+            savedPath = path.resolve(publicFolder, name);
+            fs.writeFileSync(savedPath, buffer);
+            await wbot.sendMessage(statusJid, {
+              video: { url: savedPath },
+              caption
+            });
+          } else if (localFilePath) {
+            savedPath = localFilePath;
+            await wbot.sendMessage(statusJid, {
+              video: { url: localFilePath },
+              caption
+            });
+          } else {
+            const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+              text: "(Erro: Nenhum vídeo encontrado para postar no Status)"
+            });
+            await verifyMessage(sentMessage!, ticket, contact);
+            delete webhookData.pendingStatusPost;
+            await ticket.update({ dataWebhook: webhookData });
+            return;
+          }
+        } else {
+          if (buffer) {
+            const name = `${ticket.id}_${Date.now()}.jpg`;
+            savedPath = path.resolve(publicFolder, name);
+            fs.writeFileSync(savedPath, buffer);
+            await wbot.sendMessage(statusJid, {
+              image: { url: savedPath },
+              caption
+            });
+          } else if (localFilePath) {
+            savedPath = localFilePath;
+            await wbot.sendMessage(statusJid, {
+              image: { url: localFilePath },
+              caption
+            });
+          } else {
+            const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+              text: "(Erro: Nenhuma imagem encontrada para postar no Status)"
+            });
+            await verifyMessage(sentMessage!, ticket, contact);
+            delete webhookData.pendingStatusPost;
+            await ticket.update({ dataWebhook: webhookData });
+            return;
+          }
+        }
+
+        await incrementUsage(ticket.companyId, "limitPosts", 1);
+
+        webhookData.pendingSocialPost = {
+          message: caption || "",
+          image: media !== "video" ? savedPath : null,
+          video: media === "video" ? savedPath : null
+        };
+        delete webhookData.pendingStatusPost;
+        await ticket.update({ dataWebhook: webhookData });
+
+        const ok = await wbot.sendMessage(msg.key.remoteJid!, {
+          text:
+            "✅ Status publicado. Deseja postar nas redes sociais? Responda 'facebook', 'instagram' ou 'sim'."
+        });
+        await verifyMessage(ok!, ticket, contact);
+        return;
+      } catch (e) {
+        const errMsg = await wbot.sendMessage(msg.key.remoteJid!, {
+          text: "❌ Erro ao postar o Status."
+        });
+        await verifyMessage(errMsg!, ticket, contact);
+        delete webhookData.pendingStatusPost;
+        await ticket.update({ dataWebhook: webhookData });
+        return;
+      }
+    }
+  } else if (webhookData.pendingSocialPost) {
+    const wantsFb = textNorm.includes("facebook");
+    const wantsIg = textNorm.includes("instagram");
+    const wantsAll =
+      /^(s|sim|ok|posta|postar|manda)$/i.test(textNorm) ||
+      textNorm.includes("ambas") ||
+      textNorm.includes("tudo");
+
+    if (wantsFb || wantsIg || wantsAll) {
+      try {
+        const pages = await getConnectedPages(ticket.companyId);
+        if (pages.length === 0) {
+          const sent = await wbot.sendMessage(msg.key.remoteJid!, {
+            text: "(Erro: Nenhuma página conectada.)"
+          });
+          await verifyMessage(sent!, ticket, contact);
+        } else {
+          const page = pages[0];
+          if (wantsFb || wantsAll) {
+            if (webhookData.pendingSocialPost.video) {
+              await publishVideoToFacebook(
+                ticket.companyId,
+                page.id,
+                webhookData.pendingSocialPost.video,
+                webhookData.pendingSocialPost.message
+              );
+            } else {
+              await publishToFacebook(
+                ticket.companyId,
+                page.id,
+                webhookData.pendingSocialPost.message,
+                webhookData.pendingSocialPost.image || undefined
+              );
+            }
+          }
+          if (wantsIg || wantsAll) {
+            const withInsta = pages.find(
+              p => p.instagram_business_account && p.instagram_business_account.id
+            );
+            if (withInsta) {
+              if (webhookData.pendingSocialPost.video) {
+                await publishVideoToInstagram(
+                  ticket.companyId,
+                  withInsta.instagram_business_account.id,
+                  webhookData.pendingSocialPost.video,
+                  webhookData.pendingSocialPost.message
+                );
+              } else if (webhookData.pendingSocialPost.image) {
+                await publishToInstagram(
+                  ticket.companyId,
+                  withInsta.instagram_business_account.id,
+                  webhookData.pendingSocialPost.image,
+                  webhookData.pendingSocialPost.message
+                );
+              }
+            } else {
+              const sent = await wbot.sendMessage(msg.key.remoteJid!, {
+                text: "(Erro: Nenhuma conta de Instagram conectada.)"
+              });
+              await verifyMessage(sent!, ticket, contact);
+            }
+          }
+          const done = await wbot.sendMessage(msg.key.remoteJid!, {
+            text: "✅ Publicação concluída nas redes selecionadas."
+          });
+          await verifyMessage(done!, ticket, contact);
+        }
+      } catch (e) {
+        const err = await wbot.sendMessage(msg.key.remoteJid!, {
+          text: "❌ Erro ao publicar nas redes sociais."
+        });
+        await verifyMessage(err!, ticket, contact);
+      }
+      delete webhookData.pendingSocialPost;
+      await ticket.update({ dataWebhook: webhookData });
+      return;
+    }
+  } else {
+    const wantsCheap =
+      textNorm.includes("mais barato") ||
+      (textNorm.includes("barato") && textNorm.includes("mais"));
+    const wantsLink =
+      textNorm.includes("link") || textNorm.includes("url") || textNorm.includes("acesso");
+    const mentionsCatalog =
+      textNorm.includes("catalogo") ||
+      textNorm.includes("catálogo") ||
+      textNorm.includes("pacote") ||
+      textNorm.includes("produto");
+
+    if (wantsCheap && wantsLink && mentionsCatalog) {
+      try {
+        const ownerJid = wbot.user?.id;
+        if (!ownerJid || !msg.key.remoteJid) throw new Error("whatsapp session not ready");
+        const catalog = await getCatalog(wbot, ownerJid);
+        let cheapest: any = null;
+        catalog?.forEach((p: any) => {
+          const price = p.price || p.amount || 0;
+          if (!cheapest || price < (cheapest.price || cheapest.amount || 0)) cheapest = p;
+        });
+        if (cheapest) {
+          const phoneNumber = ownerJid.split(":")[0].split("@")[0];
+          const link =
+            cheapest.url || `https://wa.me/p/${cheapest.id}/${phoneNumber}`;
+          const sent = await wbot.sendMessage(msg.key.remoteJid, { text: link });
+          await verifyMessage(sent!, ticket, contact);
+          return;
+        }
+      } catch (e) {}
+    }
+  }
 
   let aiClient: OpenAI | GoogleGenerativeAI | any;
   // Resolver chave da plataforma quando não informada
