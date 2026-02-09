@@ -1463,18 +1463,26 @@ export const handleOpenAi = async (
             )) as Buffer;
           } else {
             const lastMedia = await Message.findOne({
-              where: {
-                ticketId: ticket.id,
-                fromMe: false,
-                mediaType: media === "video" ? "video" : "image"
-              },
-              order: [["createdAt", "DESC"]]
-            });
-            if (lastMedia?.mediaUrl) {
-              const fileName = lastMedia.mediaUrl.split("/").pop() || "";
-              localFilePath = path.resolve(publicFolder, fileName);
-              console.log(`[handleOpenAi] Found last media: ${lastMedia.mediaUrl} -> ${localFilePath}`);
+            where: {
+              ticketId: ticket.id,
+              // fromMe: false, // Permite imagens enviadas pelo bot (geradas por IA)
+              mediaType: media === "video" ? "video" : "image"
+            },
+            order: [["createdAt", "DESC"]]
+          });
+          if (lastMedia?.mediaUrl) {
+            const fileName = lastMedia.mediaUrl.split("/").pop() || "";
+            
+            // Fix: Check if image is from 'generated' folder or 'company' folder
+            if (lastMedia.mediaUrl.includes("/generated/")) {
+               const generatedFolder = path.resolve(__dirname, "..", "..", "..", "public", "generated");
+               localFilePath = path.resolve(generatedFolder, fileName);
+            } else {
+               localFilePath = path.resolve(publicFolder, fileName);
             }
+            
+            console.log(`[handleOpenAi] Found last media: ${lastMedia.mediaUrl} -> ${localFilePath}`);
+          }
           }
         } else if (source === "files" && file) {
           localFilePath = path.resolve(publicFolder, file);

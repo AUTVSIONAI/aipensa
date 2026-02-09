@@ -56,7 +56,7 @@ const GenerateImageService = async ({
     const filePath = path.join(publicFolder, fileName);
     fs.writeFileSync(filePath, buffer);
 
-    const backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
+    const backendUrl = process.env.BACKEND_URL || "https://api.aipensa.com";
     const url = `${backendUrl}/public/generated/${fileName}`;
 
     console.log(`[HuggingFaceService] Image generated successfully: ${url}`);
