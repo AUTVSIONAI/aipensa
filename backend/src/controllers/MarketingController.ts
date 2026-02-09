@@ -347,6 +347,21 @@ export const getFeed = async (
       return res.status(400).json({ error: "pageId é obrigatório" });
     }
 
+    // Fix: Tenta encontrar a conexão específica para este pageId para usar o token correto
+    // (Page Token em vez de User Token ou Token de outra página)
+    if (!req.query.accessToken) {
+      const specificConnection = await Whatsapp.findOne({
+        where: {
+          companyId,
+          facebookPageUserId: pageId.toString()
+        }
+      });
+
+      if (specificConnection && specificConnection.facebookUserToken) {
+        accessToken = specificConnection.facebookUserToken;
+      }
+    }
+
     // Detectar se é um ID de Instagram (geralmente numérico, mas vamos confiar no frontend enviar o ID correto)
     // Se o frontend enviar platform, melhor.
     const platform = (req.query.platform as string) || "facebook";

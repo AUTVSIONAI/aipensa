@@ -86,10 +86,18 @@ const verifyAdminPermission = async (contact: Contact): Promise<boolean> => {
       include: [{ model: Tag, as: "tags" }]
     });
 
-    if (!contactWithTags || !contactWithTags.tags) return false;
+    if (!contactWithTags || !contactWithTags.tags) {
+      console.log(`[verifyAdminPermission] Contact ${contact.id} has no tags.`);
+      return false;
+    }
+
+    const tags = contactWithTags.tags.map(t => t.name);
+    console.log(`[verifyAdminPermission] Contact ${contact.id} tags (raw): ${JSON.stringify(tags)}`);
 
     // Check for "ADMIN" or "admin" tag
-    return contactWithTags.tags.some(t => t.name.toUpperCase() === "ADMIN");
+    const hasPermission = contactWithTags.tags.some(t => t.name.trim().toUpperCase() === "ADMIN");
+    console.log(`[verifyAdminPermission] Contact ${contact.id} has permission: ${hasPermission}`);
+    return hasPermission;
   } catch (e) {
     console.error("Error verifying admin permission:", e);
     return false;
@@ -627,6 +635,8 @@ const handleSocialMediaAction = async (
       const postData = JSON.parse(jsonContent);
       const { platform, message, image, scheduledTime } = postData;
 
+      console.log(`[OpenAiService] Processing Social Media Action: Platform=${platform}, Image=${image}`);
+
       if (!platform || !message) {
         return (
           response.replace(match[0], "").trim() +
@@ -1059,8 +1069,23 @@ const handleImageGenerationAction = async (
   wbot: Session,
   openAiSettings: IOpenAi
 ): Promise<string> => {
-  const imageRegex = /\[GENERATE_IMAGE\]([\s\S]*?)\[\/GENERATE_IMAGE\]/;
-  const match = response.match(imageRegex);
+  let imageRegex = /\[GENERATE_IMAGE\]([\s\S]*?)\[\/GENERATE_IMAGE\]/;
+  let match = response.match(imageRegex);
+
+  // Fallback for partial/cut-off tags (e.g. [/G or missing closing)
+  if (!match) {
+      const partialRegex = /\[GENERATE_IMAGE\]([\s\S]*)/;
+      const partialMatch = response.match(partialRegex);
+      if (partialMatch && partialMatch[1]) {
+          // Try to extract JSON from the rest of the string
+          const potentialJson = partialMatch[1].trim();
+          // Simple check: does it look like it has a closing brace?
+          if (potentialJson.includes("}")) {
+              match = partialMatch;
+              // We'll try to parse safely below
+          }
+      }
+  }
 
   if (match && match[1]) {
     try {
@@ -1068,7 +1093,14 @@ const handleImageGenerationAction = async (
          return response.replace(match[0], "").trim() + "\n\n⛔ *Acesso Negado*: A geração de imagens requer permissão de administrador (Tag: ADMIN).";
       }
 
-      const jsonContent = match[1].trim();
+      // Clean up the content to ensure valid JSON
+      let jsonContent = match[1].trim();
+      // Remove any trailing characters after the last } if we are in fallback mode
+      const lastBrace = jsonContent.lastIndexOf("}");
+      if (lastBrace !== -1) {
+          jsonContent = jsonContent.substring(0, lastBrace + 1);
+      }
+
       const { prompt, size } = JSON.parse(jsonContent);
 
       let imageUrl: string | undefined;
@@ -1248,6 +1280,24 @@ const processAiActions = async (
   return response;
 };
 
+// Helper to sanitize AI response (remove reasoning/Chain-of-Thought)
+const sanitizeResponse = (response: string): string => {
+  if (!response) return "";
+  
+  // Remove <think> tags (DeepSeek R1, etc.)
+  let sanitized = response.replace(/<think>[\s\S]*?<\/think>/gi, "");
+  
+  // Remove [THOUGHT] tags
+  sanitized = sanitized.replace(/\[THOUGHT\][\s\S]*?\[\/THOUGHT\]/gi, "");
+  
+  // Remove specific "Okay, the user asked me..." patterns if they appear at the start
+  // (Heuristic for models that leak internal monologue without tags)
+  const monologueRegex = /^(Okay|Alright|Let me|I need to|The user wants|First, I will|Here is the plan)[\s\S]{0,200}(:|so|then|I will)[\s\S]*?\n\n/i;
+  // Use caution with heuristics, only apply if it looks very much like a monologue
+  
+  return sanitized.trim();
+};
+
 export const handleOpenAi = async (
   openAiSettings: IOpenAi,
   msg: proto.IWebMessageInfo,
@@ -1356,6 +1406,7 @@ export const handleOpenAi = async (
   const textNorm = normalize(bodyMessage || "");
 
   if (webhookData.pendingStatusPost) {
+    console.log(`[handleOpenAi] Processing pendingStatusPost for ticket ${ticket.id}. Input: ${textNorm}`);
     const accept =
       /^(s|sim|confirmo|pode postar|ok|manda|enviar)$/i.test(textNorm) ||
       textNorm.includes("confirmar") ||
@@ -1366,6 +1417,7 @@ export const handleOpenAi = async (
 
     if (accept || reject) {
       if (reject) {
+        console.log(`[handleOpenAi] User rejected status post.`);
         delete webhookData.pendingStatusPost;
         await ticket.update({ dataWebhook: webhookData });
         const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
@@ -1375,9 +1427,11 @@ export const handleOpenAi = async (
         return;
       }
 
+      console.log(`[handleOpenAi] User accepted status post. Proceeding...`);
       try {
         const statusJid = "status@broadcast";
         const { caption, source, file, media } = webhookData.pendingStatusPost;
+        console.log(`[handleOpenAi] Status Post Data:`, webhookData.pendingStatusPost);
 
         let buffer: Buffer | null = null;
         let localFilePath: string | null = null;
@@ -1417,14 +1471,14 @@ export const handleOpenAi = async (
               order: [["createdAt", "DESC"]]
             });
             if (lastMedia?.mediaUrl) {
-              localFilePath = path.resolve(
-                publicFolder,
-                lastMedia.mediaUrl.split("/").pop() || ""
-              );
+              const fileName = lastMedia.mediaUrl.split("/").pop() || "";
+              localFilePath = path.resolve(publicFolder, fileName);
+              console.log(`[handleOpenAi] Found last media: ${lastMedia.mediaUrl} -> ${localFilePath}`);
             }
           }
         } else if (source === "files" && file) {
           localFilePath = path.resolve(publicFolder, file);
+          console.log(`[handleOpenAi] Using file source: ${file} -> ${localFilePath}`);
         }
 
         let savedPath: string | null = null;
@@ -1481,10 +1535,17 @@ export const handleOpenAi = async (
 
         await incrementUsage(ticket.companyId, "limitPosts", 1);
 
+        let publicUrl: string | null = null;
+        if (savedPath) {
+          const fileName = path.basename(savedPath);
+          const backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
+          publicUrl = `${backendUrl}/public/company${ticket.companyId}/${fileName}`;
+        }
+
         webhookData.pendingSocialPost = {
           message: caption || "",
-          image: media !== "video" ? savedPath : null,
-          video: media === "video" ? savedPath : null
+          image: media !== "video" ? publicUrl : null,
+          video: media === "video" ? publicUrl : null
         };
         delete webhookData.pendingStatusPost;
         await ticket.update({ dataWebhook: webhookData });
@@ -1496,8 +1557,9 @@ export const handleOpenAi = async (
         await verifyMessage(ok!, ticket, contact);
         return;
       } catch (e) {
+        console.error(`[handleOpenAi] Error posting status:`, e);
         const errMsg = await wbot.sendMessage(msg.key.remoteJid!, {
-          text: "❌ Erro ao postar o Status."
+          text: `❌ Erro ao postar o Status: ${e.message || e}`
         });
         await verifyMessage(errMsg!, ticket, contact);
         delete webhookData.pendingStatusPost;
@@ -1506,6 +1568,7 @@ export const handleOpenAi = async (
       }
     }
   } else if (webhookData.pendingSocialPost) {
+    console.log(`[handleOpenAi] Processing pendingSocialPost. Input: ${textNorm}`);
     const wantsFb = textNorm.includes("facebook");
     const wantsIg = textNorm.includes("instagram");
     const wantsAll =
@@ -1803,11 +1866,18 @@ export const handleOpenAi = async (
            const isVision = (m?: string) => {
               if (!m) return false;
               const lower = m.toLowerCase();
-              return lower.includes("vision") || lower.includes("gemini") || lower.includes("claude-3") || lower.includes("gpt-4o") || lower.includes("gpt-4-turbo");
+              return lower.includes("vision") || 
+                     lower.includes("gemini") || 
+                     lower.includes("claude-3") || 
+                     lower.includes("gpt-4o") || 
+                     lower.includes("gpt-4-turbo") ||
+                     lower.includes("llama-3.2") ||
+                     lower.includes("vl"); // Vision Language
            };
 
            if (!openAiSettings.model || !isVision(openAiSettings.model) || openAiSettings.model === "openrouter/free") {
                 console.log(`[handleOpenAi] Model '${openAiSettings.model}' may not support vision. Switching to free vision model.`);
+                // Fallback to a reliable free vision model on OpenRouter
                 openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
            }
       }
@@ -1850,6 +1920,11 @@ export const handleOpenAi = async (
       }
     } else {
       response = await callOpenAI(aiClient, messagesOpenAi, openAiSettings);
+    }
+
+    // Sanitize Response (remove <think> tags, etc.)
+    if (response) {
+        response = sanitizeResponse(response);
     }
 
     if (response?.includes("Ação: Transferir para o setor de atendimento")) {

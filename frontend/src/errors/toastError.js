@@ -5,6 +5,21 @@ import { isString } from 'lodash';
 const toastError = err => {
 	const errorMsg = err.response?.data?.error;
 	if (errorMsg) {
+		if (typeof errorMsg === 'object') {
+			const message = errorMsg.message || errorMsg.error?.message || JSON.stringify(errorMsg);
+			toast.error(message, {
+				toastId: typeof message === 'string' ? message : 'error-object',
+				autoClose: 2000,
+				hideProgressBar: false,
+				closeOnClick: true,
+				pauseOnHover: false,
+				draggable: true,
+				progress: undefined,
+				theme: "light",
+			});
+			return;
+		}
+
 		if (i18n.exists(`backendErrors.${errorMsg}`)) {
 			toast.error(i18n.t(`backendErrors.${errorMsg}`), {
 				toastId: errorMsg,

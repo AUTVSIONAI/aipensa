@@ -12,6 +12,7 @@ interface GenerateImageRequest {
 interface GenerateImageResponse {
   url: string;
   fileName: string;
+  filePath: string;
 }
 
 const GenerateImageService = async ({
@@ -49,6 +50,7 @@ const GenerateImageService = async ({
     const publicFolder = path.resolve(__dirname, "..", "..", "..", "public", "generated");
     if (!fs.existsSync(publicFolder)) {
       fs.mkdirSync(publicFolder, { recursive: true });
+      fs.chmodSync(publicFolder, 0o777);
     }
 
     const filePath = path.join(publicFolder, fileName);
@@ -58,8 +60,9 @@ const GenerateImageService = async ({
     const url = `${backendUrl}/public/generated/${fileName}`;
 
     console.log(`[HuggingFaceService] Image generated successfully: ${url}`);
+    console.log(`[HuggingFaceService] Saved to: ${filePath}`);
 
-    return { url, fileName };
+    return { url, fileName, filePath };
   } catch (error: any) {
     console.error("[HuggingFaceService] Error generating image:", error.response?.data || error.message);
     throw new Error(`Failed to generate image: ${error.message}`);
