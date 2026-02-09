@@ -101,23 +101,20 @@ app.use(
   cors({
     credentials: true,
     origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      const allowedDomains = [
-        ...allowedOrigins,
-        "https://aipensa.com",
-        "https://www.aipensa.com",
-        "https://api.aipensa.com"
-      ].map(normalizeOrigin).filter(Boolean);
-      const normalizedOrigin = normalizeOrigin(origin);
-      const isAllowed =
-        !!normalizedOrigin &&
-        (allowedDomains.includes(normalizedOrigin) ||
-          allowedDomains.some(domain => normalizedOrigin.startsWith(domain)) ||
-          normalizedOrigin.includes("aipensa.com"));
+
+      // Check if origin is allowed
+      const isAllowed = 
+        allowedOrigins.includes(origin) ||
+        origin.includes("aipensa.com") ||
+        origin.includes("api.aipensa.com") ||
+        origin.includes("localhost");
+
       if (isAllowed) {
         callback(null, true);
       } else {
-        callback(null, true);
+        callback(null, true); // Fallback: allow all for now to fix CORS issues
       }
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

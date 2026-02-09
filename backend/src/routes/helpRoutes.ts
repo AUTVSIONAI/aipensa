@@ -5,7 +5,7 @@ import * as HelpController from "../controllers/HelpController";
 
 const routes = express.Router();
 
-routes.get("/helps/list", isAuth, HelpController.findList);
+routes.get("/helps/list", HelpController.findList);
 
 routes.get("/helps", isAuth, HelpController.index);
 
