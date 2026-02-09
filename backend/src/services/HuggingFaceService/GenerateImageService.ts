@@ -5,6 +5,8 @@ import { v4 as uuidv4 } from "uuid";
 
 interface GenerateImageRequest {
   prompt: string;
+  apiKey?: string;
+  model?: string;
 }
 
 interface GenerateImageResponse {
@@ -13,25 +15,27 @@ interface GenerateImageResponse {
 }
 
 const GenerateImageService = async ({
-  prompt
+  prompt,
+  apiKey,
+  model
 }: GenerateImageRequest): Promise<GenerateImageResponse> => {
-  const apiKey = process.env.HUGGINGFACE_API_KEY;
-  const model = process.env.HUGGINGFACE_MODEL || "stabilityai/stable-diffusion-3.5-large"; // Default model if not set
+  const resolvedApiKey = apiKey || process.env.HUGGINGFACE_API_KEY;
+  const resolvedModel = model || process.env.HUGGINGFACE_MODEL || "stabilityai/stable-diffusion-3.5-large"; // Default model if not set
 
-  if (!apiKey) {
-    throw new Error("HUGGINGFACE_API_KEY is not defined in environment variables.");
+  if (!resolvedApiKey) {
+    throw new Error("HUGGINGFACE_API_KEY is not defined in environment variables or settings.");
   }
 
-  const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+  const apiUrl = `https://api-inference.huggingface.co/models/${resolvedModel}`;
 
   try {
-    console.log(`[HuggingFaceService] Generating image with model ${model}...`);
+    console.log(`[HuggingFaceService] Generating image with model ${resolvedModel}...`);
     const response = await axios.post(
       apiUrl,
       { inputs: prompt },
       {
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${resolvedApiKey}`,
           "Content-Type": "application/json"
         },
         responseType: "arraybuffer" // Important for image data

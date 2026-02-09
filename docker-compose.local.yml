@@ -38,6 +38,7 @@ services:
       DB_USER: zapcash_user
       DB_PASS: zapcash_secure_password
       DB_NAME: zapcash_db
+      ENV_TOKEN: wtV
       JWT_SECRET: local_secret
       JWT_REFRESH_SECRET: local_refresh_secret
       REDIS_URI: redis://:zapcash_redis_pass@redis:6379

@@ -650,6 +650,13 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
               </Tooltip>
               <Collapse in={openCampaignSubmenu && !collapsed} timeout="auto" unmountOnExit className={classes.submenu}>
                   <ListItemLink
+                    to="/agent-setup"
+                    primary="Canal & Robô"
+                    icon={<AndroidIcon />}
+                    tooltip={collapsed}
+                    onClick={drawerClose}
+                  />
+                  <ListItemLink
                     to="/phrase-lists"
                     primary={"Fluxo de Campanha"}
                     icon={<CampaignIcon />}
@@ -727,13 +734,6 @@ const MainListItems = ({ collapsed, drawerClose, onExpand }) => {
               </ListItem>
             </Tooltip>
             <Collapse in={openAdministrationSubmenu && !collapsed} timeout="auto" unmountOnExit className={classes.submenu}>
-              <ListItemLink
-                to="/agent-setup"
-                primary="Canal & Robô"
-                icon={<AndroidIcon />}
-                tooltip={collapsed}
-                onClick={drawerClose}
-              />
               <ListItemLink
                 to="/queue-integration"
                 primary={i18n.t("mainDrawer.listItems.queueIntegration")}

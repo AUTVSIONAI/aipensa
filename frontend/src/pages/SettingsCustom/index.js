@@ -977,10 +977,12 @@ const SettingsCustom = () => {
                           scrollButtons="auto"
                         >
                           <Tab value="atendimento" label="Atendimento" />
-                          <Tab value="comportamento" label="Comportamento & Mensagens" />
-                          <Tab value="privacidade" label="Privacidade & Regras" />
-                          <Tab value="lgpd" label="LGPD" />
-                          <Tab value="custom" label="Mensagens Personalizadas" />
+                          <Tab value="mercadopago" label="Mercado Pago" />
+                          <Tab value="stripe" label="Stripe" />
+                          <Tab value="asaas" label="Asaas" />
+                          <Tab value="pix" label="Configuração Pix" />
+                          <Tab value="openai" label="OpenAI & LLM" />
+                          <Tab value="outros" label="Outros" />
                         </Tabs>
                       </Box>
                         <div className={classes.sectionNavRow}>
@@ -1107,13 +1109,7 @@ const SettingsCustom = () => {
                                 scheduleTypeChanged={(value) => setSchedulesEnabled(value === "company")} 
                                 user={user}
                                 density={optionsDensity}
-                            activeSection={
-                              optionsSubTab === "atendimento" ? "settings-section-atendimento" :
-                              optionsSubTab === "comportamento" ? "settings-section-comportamento" :
-                              optionsSubTab === "privacidade" ? "settings-section-privacidade" :
-                              optionsSubTab === "lgpd" ? "settings-lgpd" :
-                              optionsSubTab === "custom" ? "settings-custom-messages" : undefined
-                            }
+                                settingsTab={optionsSubTab}
                             />
                         </Paper>
                     </div>

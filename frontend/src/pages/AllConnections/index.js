@@ -539,7 +539,7 @@ const AllConnections = () => {
                           appId={process.env.REACT_APP_FACEBOOK_APP_ID}
                           autoLoad={false}
                           fields="name,email,picture"
-                          version="13.0"
+                          version="19.0"
                           scope="public_profile,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management"
                           redirectUri={window.location.origin}
                           callback={responseFacebook}
@@ -547,6 +547,7 @@ const AllConnections = () => {
                             <MenuItem
                               disabled={!process.env.REACT_APP_FACEBOOK_APP_ID}
                               onClick={(e) => {
+                                console.log("Facebook Login Clicked (AllConnections). AppID:", process.env.REACT_APP_FACEBOOK_APP_ID);
                                 if (!process.env.REACT_APP_FACEBOOK_APP_ID) return;
                                 renderProps.onClick(e);
                                 popupState.close();
@@ -567,7 +568,7 @@ const AllConnections = () => {
                           appId={process.env.REACT_APP_FACEBOOK_APP_ID}
                           autoLoad={false}
                           fields="name,email,picture"
-                          version="13.0"
+                          version="19.0"
                           scope="public_profile,instagram_basic,instagram_manage_messages,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management"
                           redirectUri={window.location.origin}
                           callback={responseInstagram}
@@ -575,6 +576,7 @@ const AllConnections = () => {
                             <MenuItem
                               disabled={!process.env.REACT_APP_FACEBOOK_APP_ID}
                               onClick={(e) => {
+                                console.log("Instagram Login Clicked (AllConnections). AppID:", process.env.REACT_APP_FACEBOOK_APP_ID);
                                 if (!process.env.REACT_APP_FACEBOOK_APP_ID) return;
                                 renderProps.onClick(e);
                                 popupState.close();

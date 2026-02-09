@@ -1043,6 +1043,70 @@ const handleUpgradeAction = async (response: string) => {
   return response;
 };
 
+const handleLinkAction = async (
+  response: string,
+  wbot: Session,
+  msg: proto.IWebMessageInfo,
+  ticket: Ticket,
+  contact: Contact,
+  openAiSettings: IOpenAi
+): Promise<string> => {
+  const linkRegex = /\[SEND_LINK\]([\s\S]*?)\[\/SEND_LINK\]/;
+  const match = response.match(linkRegex);
+
+  if (match && match[1]) {
+    try {
+      const url = match[1].trim();
+      if (msg.key.remoteJid) {
+         const sentMessage = await wbot.sendMessage(msg.key.remoteJid, { text: url });
+         await verifyMessage(sentMessage!, ticket, contact);
+
+         const publicFolder: string = path.resolve(
+           __dirname,
+           "..",
+           "..",
+           "..",
+           "public",
+           `company${ticket.companyId}`
+         );
+
+         const fileNameWithOutExtension = `${ticket.id}_${Date.now()}_link`;
+         try {
+           const voiceKeyResolved = await (async () => {
+             const vKey = (openAiSettings.voiceKey || "").trim();
+             if (vKey !== "") return vKey;
+             const base = await resolveApiKey("openai", openAiSettings.apiKey);
+             if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") return process.env.AZURE_SPEECH_KEY || base;
+             return base;
+           })();
+
+           await convertTextToSpeechAndSaveToFile(
+             keepOnlySpecifiedChars(`Enviei o link por texto. Confira: ${url}`),
+             `${publicFolder}/${fileNameWithOutExtension}`,
+             voiceKeyResolved,
+             openAiSettings.voiceRegion || "openai",
+             openAiSettings.voice,
+             "mp3"
+           );
+           await wbot.sendMessage(msg.key.remoteJid!, {
+             audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
+             mimetype: "audio/mpeg",
+             ptt: true
+           });
+           deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
+           deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
+         } catch (err) {
+           // ignore TTS failures
+         }
+      }
+      return response.replace(match[0], "").trim() + "\n\n✅ Link enviado.";
+    } catch (e) {
+      console.error("Error sending link via AI:", e);
+    }
+  }
+  return response;
+};
+
 // Helper to resolve API Key
 async function resolveApiKey(prov?: string, key?: string) {
   if (key && key.trim() !== "") return key;
@@ -1088,6 +1152,10 @@ const handleImageGenerationAction = async (
 
   if (match && match[1]) {
     try {
+      if (!(await verifyAdminPermission(contact))) {
+         return response.replace(match[0], "").trim() + "\n\n⛔ *Acesso Negado*: A geração de imagens requer permissão de administrador (Tag: ADMIN).";
+      }
+
       const jsonContent = match[1].trim();
       const { prompt, size } = JSON.parse(jsonContent);
 
@@ -1096,9 +1164,22 @@ const handleImageGenerationAction = async (
 
       // 0. Tentar Hugging Face (Prioridade Definida pelo Usuário)
       try {
-        if (process.env.HUGGINGFACE_API_KEY) {
+        let hfKey = process.env.HUGGINGFACE_API_KEY;
+        let hfModel = process.env.HUGGINGFACE_MODEL;
+
+        try {
+           const settingKey = await Setting.findOne({ where: { companyId: 1, key: "huggingFaceApiKey" } });
+           if (settingKey?.value) hfKey = settingKey.value;
+           
+           const settingModel = await Setting.findOne({ where: { companyId: 1, key: "huggingFaceModel" } });
+           if (settingModel?.value) hfModel = settingModel.value;
+        } catch(err) {
+           console.error("[handleImageGeneration] Error fetching global HF settings:", err);
+        }
+
+        if (hfKey) {
            console.log("[handleImageGeneration] Tentando gerar imagem via Hugging Face...");
-           const result = await GenerateImageService({ prompt });
+           const result = await GenerateImageService({ prompt, apiKey: hfKey, model: hfModel });
            imageUrl = result.url;
            usedProvider = "huggingface";
            console.log("[handleImageGeneration] Sucesso via Hugging Face!");
@@ -1107,7 +1188,7 @@ const handleImageGenerationAction = async (
         console.warn("[handleImageGeneration] Falha no Hugging Face:", e.message);
       }
 
-      // 1. Tentar OpenRouter primeiro (Economia)
+      // 1. Tentar OpenRouter primeiro (Economia) - Somente se não gerou via HF
       if (!imageUrl) {
         try {
           console.log("[handleImageGeneration] Tentando gerar imagem via OpenRouter...");
@@ -1177,9 +1258,10 @@ const handleImageGenerationAction = async (
       }
 
       if (imageUrl) {
+        // const providerLabel = usedProvider === "huggingface" ? "Via Hugging Face" : (usedProvider === "openrouter" ? "Via OpenRouter" : "Via DALL-E");
         await wbot.sendMessage(ticket.contact.remoteJid, {
           image: { url: imageUrl },
-          caption: `🎨 Imagem gerada com sucesso (${usedProvider === "openrouter" ? "Via OpenRouter" : "Via DALL-E"})!\n\nDescrição: ${prompt}\n\nDeseja postar nas redes sociais? Responda com 'Sim' para eu preparar a postagem.`
+          caption: `🎨 Imagem gerada com sucesso!\n\nDescrição: ${prompt}\n\nDeseja postar nas redes sociais? Responda com 'Sim' para eu preparar a postagem.`
         });
         
         return response.replace(match[0], "").trim() + "\n\n✅ Imagem gerada e enviada!";
@@ -1227,6 +1309,9 @@ const processAiActions = async (
     wbot,
     msg
   );
+
+  // Enviar links solicitados
+  response = await handleLinkAction(response, wbot, msg, ticket, contact, openAiSettings);
 
   // Postar Status do WhatsApp
   response = await handleStatusPostAction(
@@ -1329,8 +1414,7 @@ export const handleOpenAi = async (
     "qwen/qwen-2.5-coder-32b-instruct:free",
     "google/gemini-2.0-flash-exp:free",
     "mistralai/mistral-7b-instruct:free",
-    "huggingfaceh4/zephyr-7b-beta:free",
-    "google/gemini-2.0-flash-lite-preview-02-05:free"
+    "huggingfaceh4/zephyr-7b-beta:free"
   ];
   
   if (provider === "openrouter" && openAiSettings.model && BROKEN_MODELS.includes(openAiSettings.model)) {
@@ -1440,6 +1524,10 @@ export const handleOpenAi = async (
   CAPACIDADES DE UPGRADE (SUPERAGENT):
   [UPGRADE_PLAN] { "type": "posts" } [/UPGRADE_PLAN]
 
+  CAPACIDADES DE LINK (SUPERAGENT):
+  [SEND_LINK] https://seu-site.com [/SEND_LINK]
+  (IMPORTANTE: Ao usar esta tag, adicione sempre uma confirmação verbal amigável no final da resposta, por exemplo: "Aqui está o link que você pediu.")
+
   IMAGE GENERATION (DALL-E):
   IMPORTANTE: Se o usuário pedir para criar, gerar, desenhar ou fazer uma imagem, você DEVE responder APENAS com esta tag (sem texto adicional antes ou depois se não for necessário).
   [GENERATE_IMAGE] { "prompt": "descrição detalhada da imagem em inglês", "size": "1024x1024" } [/GENERATE_IMAGE]
@@ -1527,8 +1615,18 @@ export const handleOpenAi = async (
       const base64Image = imageBuffer.toString("base64");
       const mimeType = msg.message.imageMessage.mimetype || "image/jpeg";
 
-      if (openAiSettings.provider === "openrouter" && (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo")) {
-           openAiSettings.model = "openrouter/free";
+      if (openAiSettings.provider === "openrouter") {
+           // Ensure we use a vision-capable model if the current one is likely text-only
+           const isVision = (m?: string) => {
+              if (!m) return false;
+              const lower = m.toLowerCase();
+              return lower.includes("vision") || lower.includes("gemini") || lower.includes("claude-3") || lower.includes("gpt-4o") || lower.includes("gpt-4-turbo");
+           };
+
+           if (!openAiSettings.model || !isVision(openAiSettings.model) || openAiSettings.model === "openrouter/free") {
+                console.log(`[handleOpenAi] Model '${openAiSettings.model}' may not support vision. Switching to free vision model.`);
+                openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
+           }
       }
       
       messagesOpenAi.push({

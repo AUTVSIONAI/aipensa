@@ -49,11 +49,12 @@ app.set("queues", {
   sendScheduledMessages
 });
 
-const normalizeOrigin = (value?: string) =>
-  value ? value.replace(/\/$/, "") : value;
-const allowedOrigins = [normalizeOrigin(process.env.FRONTEND_URL)].filter(
-  Boolean
-);
+const normalizeOrigin = (value?: string) => (value ? value.replace(/\/$/, "") : value);
+const allowedOrigins = [
+  normalizeOrigin(process.env.FRONTEND_URL),
+  "http://localhost:3000",
+  "http://localhost:3001"
+].filter(Boolean);
 
 // Configuração do BullBoard
 if (
@@ -100,29 +101,34 @@ app.use(
   cors({
     credentials: true,
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
       const allowedDomains = [
-        process.env.FRONTEND_URL, 
-        "https://aipensa.com", 
+        ...allowedOrigins,
+        "https://aipensa.com",
         "https://www.aipensa.com",
         "https://api.aipensa.com"
       ].map(normalizeOrigin).filter(Boolean);
-
-      // Simple check to allow any subdomain or main domain
-      const isAllowed = allowedDomains.some(domain => origin.startsWith(domain)) || 
-                        origin.includes("aipensa.com") || 
-                        allowedDomains.includes(normalizeOrigin(origin));
-
+      const normalizedOrigin = normalizeOrigin(origin);
+      const isAllowed =
+        !!normalizedOrigin &&
+        (allowedDomains.includes(normalizedOrigin) ||
+          allowedDomains.some(domain => normalizedOrigin.startsWith(domain)) ||
+          normalizedOrigin.includes("aipensa.com"));
       if (isAllowed) {
         callback(null, true);
       } else {
-        // Fallback: allow all but this might fail with credentials: true if not handled by the browser correctly
-        // Better to be explicit. For now, let's allow it to debug.
         callback(null, true);
       }
-    }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Authorization",
+      "Content-Type",
+      "X-Requested-With",
+      "Accept",
+      "Origin"
+    ],
+    optionsSuccessStatus: 200
   })
 );
 app.use(cookieParser());

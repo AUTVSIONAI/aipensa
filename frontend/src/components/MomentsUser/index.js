@@ -1,4 +1,4 @@
-import React, { Fragment, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useHistory } from "react-router-dom";
 import api from "../../services/api";
 import { i18n } from "../../translate/i18n";
@@ -7,7 +7,7 @@ import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { ReportProblem, VisibilityOutlined } from "@mui/icons-material";
 import { toast } from "react-toastify";
-import { yellow, green, blue, orange, red } from "@mui/material/colors";
+import { yellow, green } from "@mui/material/colors";
 import { 
   Avatar, 
   CardHeader, 
@@ -19,7 +19,6 @@ import {
   Paper, 
   Typography, 
   makeStyles, 
-  Badge, 
   Grid, 
   Tooltip,
   Box,
@@ -28,7 +27,6 @@ import {
   Button,
   IconButton,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Slide,
@@ -357,51 +355,44 @@ const DashboardManage = () => {
   const isMountedRef = useRef(false);
 
   const [tickets, setTickets] = useState([]);
-  const [update, setUpdate] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [openImageModal, setOpenImageModal] = useState(false);
   const companyId = user.companyId;
 
-  const userQueueIds = user.queues.map((q) => q.id);
-  const [selectedQueueIds] = useState(userQueueIds || []);
+  const fetchTickets = useCallback(async (showLoading = true) => {
+    try {
+      if (isMountedRef.current && showLoading) setLoading(true);
+      const { data } = await api.get("/usersMoments");
+      if (isMountedRef.current) {
+        setTickets(data);
+        if (showLoading) setLoading(false);
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        if (showLoading) setLoading(false);
+        if (err.response?.status !== 500) {
+          toastError(err);
+        } else {
+          toast.error(`${i18n.t("frontEndErrors.getUsers")}`);
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     isMountedRef.current = true;
+    fetchTickets(true);
     return () => {
       isMountedRef.current = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        if (isMountedRef.current) setLoading(true);
-        const { data } = await api.get("/usersMoments");
-        if (isMountedRef.current) {
-          setTickets(data);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (isMountedRef.current) {
-          setLoading(false);
-          if (err.response?.status !== 500) {
-            toastError(err);
-          } else {
-            toast.error(`${i18n.t("frontEndErrors.getUsers")}`);
-          }
-        }
-      }
-    };
-
-    fetchTickets();
-  }, []);
+  }, [fetchTickets]);
 
   useEffect(() => {
     const onAppMessage = (data) => {
       if (data.action === "create" || data.action === "update" || data.action === "delete") {
-        fetchTickets();
+        fetchTickets(false);
       }
     };
 
@@ -412,19 +403,7 @@ const DashboardManage = () => {
       socket.off(`company-${companyId}-ticket`, onAppMessage);
       socket.off(`company-${companyId}-appMessage`, onAppMessage);
     };
-  }, [socket, companyId]);
-
-  const fetchTickets = async () => {
-    try {
-      const { data } = await api.get("/usersMoments");
-      if (isMountedRef.current) {
-        setTickets(data);
-        setUpdate(!update);
-      }
-    } catch (err) {
-      if (isMountedRef.current) toastError(err);
-    }
-  };
+  }, [socket, companyId, fetchTickets]);
 
   const handleOpenDialog = (ticket) => {
     setSelectedTicket(ticket);
@@ -797,7 +776,7 @@ const DashboardManage = () => {
         </Box>
       );
     }
-  }, [update, loading]);
+  }, [tickets, loading, classes, companyId, history, user]);
 
   const MomentsPending = useMemo(() => {
     if (loading) return null;
@@ -907,7 +886,7 @@ const DashboardManage = () => {
       );
     }
     return null;
-  }, [update, loading]);
+  }, [tickets, loading, classes, history]);
 
   return (
     <ThemeProvider theme={theme}>

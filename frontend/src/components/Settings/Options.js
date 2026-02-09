@@ -215,7 +215,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function Options(props) {
-  const { oldSettings, settings, scheduleTypeChanged, user, density = "comfortable", activeSection } = props;
+  const { oldSettings, settings, scheduleTypeChanged, user, density = "comfortable", activeSection, settingsTab } = props;
 
   const classes = useStyles({ density });
   const [userRating, setUserRating] = useState("disabled");
@@ -281,6 +281,13 @@ export default function Options(props) {
   // OPENROUTER API KEY
   const [openroutertokenType, setopenroutertokenType] = useState('');
   const [loadingopenroutertokenType, setLoadingopenroutertokenType] = useState(false);
+
+  // HUGGING FACE
+  const [huggingFaceApiKey, setHuggingFaceApiKey] = useState('');
+  const [loadingHuggingFaceApiKey, setLoadingHuggingFaceApiKey] = useState(false);
+
+  const [huggingFaceModel, setHuggingFaceModel] = useState('');
+  const [loadingHuggingFaceModel, setLoadingHuggingFaceModel] = useState(false);
 
   // LGPD
   const [enableLGPD, setEnableLGPD] = useState("disabled");
@@ -349,6 +356,8 @@ export default function Options(props) {
   const { update: updateasaastoken } = useSettings();
   const { update: updateopenaitoken } = useSettings();
   const { update: updateopenroutertoken } = useSettings();
+  const { update: updateHuggingFaceApiKey } = useSettings();
+  const { update: updateHuggingFaceModel } = useSettings();
   const { update } = useCompanySettings();
 
   const isSuper = () => {
@@ -387,6 +396,12 @@ export default function Options(props) {
 
       const openroutertokenType = oldSettings.find((s) => s.key === 'globalOpenRouterKey');
       if (openroutertokenType) setopenroutertokenType(openroutertokenType.value);
+
+      const hfKey = oldSettings.find((s) => s.key === 'huggingFaceApiKey');
+      if (hfKey) setHuggingFaceApiKey(hfKey.value);
+
+      const hfModel = oldSettings.find((s) => s.key === 'huggingFaceModel');
+      if (hfModel) setHuggingFaceModel(hfModel.value);
     }
   }, [oldSettings]);
 
@@ -422,6 +437,8 @@ export default function Options(props) {
         if (key === "showNotificationPending") setShowNotificationPending(value);
         if (key === "notificameHub") setNotificameHubToken(value);
         if (key === "enableAutoStatus") setEnableAutoStatus(value);
+        if (key === "huggingFaceApiKey") setHuggingFaceApiKey(value);
+        if (key === "huggingFaceModel") setHuggingFaceModel(value);
       });
     } else if (settings && typeof settings === "object") {
       // Fallback for object format
@@ -454,6 +471,8 @@ export default function Options(props) {
         if (key === "showNotificationPending") setShowNotificationPending(value);
         if (key === "notificameHub") setNotificameHubToken(value);
         if (key === "enableAutoStatus") setEnableAutoStatus(value);
+        if (key === "huggingFaceApiKey") setHuggingFaceApiKey(value);
+        if (key === "huggingFaceModel") setHuggingFaceModel(value);
       }
     }
   }, [settings]);
@@ -558,6 +577,28 @@ export default function Options(props) {
     await updateopenroutertoken({ key: 'globalOpenRouterKey', value: openroutertokenType });
     toast.success('Operação atualizada com sucesso.');
     setLoadingopenroutertokenType(false);
+  }
+
+  async function handleChangeHuggingFaceApiKey(value) {
+    setHuggingFaceApiKey(value);
+  }
+
+  async function handleBlurHuggingFaceApiKey() {
+    setLoadingHuggingFaceApiKey(true);
+    await updateHuggingFaceApiKey({ key: 'huggingFaceApiKey', value: huggingFaceApiKey });
+    toast.success('Operação atualizada com sucesso.');
+    setLoadingHuggingFaceApiKey(false);
+  }
+
+  async function handleChangeHuggingFaceModel(value) {
+    setHuggingFaceModel(value);
+  }
+
+  async function handleBlurHuggingFaceModel() {
+    setLoadingHuggingFaceModel(true);
+    await updateHuggingFaceModel({ key: 'huggingFaceModel', value: huggingFaceModel });
+    toast.success('Operação atualizada com sucesso.');
+    setLoadingHuggingFaceModel(false);
   }
 
   async function handleChangeUserRating(value) {
@@ -766,7 +807,7 @@ export default function Options(props) {
 
   return (
     <>
-      {show("settings-section-atendimento") && (
+      {settingsTab === "atendimento" && (
       <div id="settings-section-atendimento" className={classes.sectionBlock}>
         <div className={classes.sectionHeader}>
           <div
@@ -865,7 +906,7 @@ export default function Options(props) {
       </div>
       )}
 
-      {show("settings-section-comportamento") && (
+      {settingsTab === "atendimento" && (
       <div id="settings-section-comportamento" className={classes.sectionBlock}>
         <div className={classes.sectionHeader}>
           <div
@@ -969,7 +1010,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-accept-call-whatsapp">
               <div className={classes.switchContainer}>
                 <Switch
@@ -984,7 +1025,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-send-sign-message">
               <div className={classes.switchContainer}>
                 <Switch
@@ -998,7 +1039,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-send-greeting-one-queue">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1013,7 +1054,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
           
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-enable-auto-status">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1028,7 +1069,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-send-queue-position">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1043,7 +1084,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-send-farewell-waiting">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1057,7 +1098,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-accept-audio-message-contact">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1075,7 +1116,7 @@ export default function Options(props) {
       </div>
       )}
 
-      {show("settings-section-privacidade") && (
+      {settingsTab === "atendimento" && (
       <div id="settings-section-privacidade" className={classes.sectionBlock}>
         <div className={classes.sectionHeader}>
           <div
@@ -1100,7 +1141,7 @@ export default function Options(props) {
           <Typography variant="body2" color="textSecondary">Garante conformidade e disciplina operacional.</Typography>
         </Box>
         <Grid spacing={2} container>
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-enable-lgpd">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1115,7 +1156,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-required-tag">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1130,7 +1171,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-close-ticket-on-transfer">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1145,7 +1186,7 @@ export default function Options(props) {
             </FormControl>
           </Grid>
 
-          <Grid xs={12} sm={6} md={6} lg={6} item>
+          <Grid xs={12} sm={12} md={12} item>
             <FormControl className={classes.selectContainer} id="settings-option-show-notification-pending">
               <div className={classes.switchContainer}>
                 <Switch
@@ -1163,8 +1204,8 @@ export default function Options(props) {
       </div>
       )}
 
-      {enableLGPD === "enabled" && show("settings-lgpd") && (
-        <div id="settings-lgpd" className={classes.sectionBlock}>
+      {enableLGPD === "enabled" && settingsTab === "outros" && (
+      <div id="settings-lgpd" className={classes.sectionBlock}>
           <div className={classes.sectionHeader}>
             <div
               className={classes.sectionHeaderIcon}
@@ -1233,7 +1274,7 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             {/* LGPD Manter ou não mensagem deletada pelo contato */}
-            <Grid xs={12} sm={6} md={6} lg={6} item>
+            <Grid xs={12} sm={12} md={12} item>
               <FormControl className={classes.selectContainer}>
                 <InputLabel id="lgpdDeleteMessage-label">{i18n.t("settings.settings.LGPD.obfuscateMessageDelete")}</InputLabel>
                 <Select
@@ -1253,7 +1294,7 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             {/* LGPD Sempre solicitar confirmação / consentimento dos dados */}
-            <Grid xs={12} sm={6} md={6} lg={6} item>
+            <Grid xs={12} sm={12} md={12} item>
               <FormControl className={classes.selectContainer}>
                 <InputLabel id="lgpdConsent-label">{i18n.t("settings.settings.LGPD.alwaysConsent")}</InputLabel>
                 <Select
@@ -1273,7 +1314,7 @@ export default function Options(props) {
               </FormControl>
             </Grid>
             {/* LGPD Ofuscar número telefone para usuários */}
-            <Grid xs={12} sm={6} md={6} lg={6} item>
+            <Grid xs={12} sm={12} md={12} item>
               <FormControl className={classes.selectContainer}>
                 <InputLabel id="lgpdHideNumber-label">{i18n.t("settings.settings.LGPD.obfuscatePhoneUser")}</InputLabel>
                 <Select
@@ -1296,7 +1337,7 @@ export default function Options(props) {
         </div>
       )}
 
-      {isSuper() ? (
+      {isSuper() && settingsTab === "pix" && (
         <>
           <div id="settings-payment-efi" className={classes.sectionBlock}>
             <div className={classes.sectionHeader}>
@@ -1381,8 +1422,11 @@ export default function Options(props) {
               </Grid>
             </Grid>
           </div>
+        </>
+      )}
 
-          <div id="settings-payment-mercadopago" className={classes.sectionBlock}>
+      {isSuper() && settingsTab === "mercadopago" && (
+        <div id="settings-payment-mercadopago" className={classes.sectionBlock}>
             <div className={classes.sectionHeader}>
               <div
                 className={classes.sectionHeaderIcon}
@@ -1423,8 +1467,10 @@ export default function Options(props) {
                 </FormControl>
               </Grid>
             </Grid>
-          </div>
+        </div>
+      )}
 
+      {isSuper() && settingsTab === "stripe" && (
           <div id="settings-payment-stripe" className={classes.sectionBlock}>
             <div className={classes.sectionHeader}>
               <div
@@ -1467,7 +1513,9 @@ export default function Options(props) {
               </Grid>
             </Grid>
           </div>
+      )}
 
+      {isSuper() && settingsTab === "asaas" && (
           <div id="settings-payment-asaas" className={classes.sectionBlock}>
             <div className={classes.sectionHeader}>
               <div
@@ -1510,7 +1558,10 @@ export default function Options(props) {
               </Grid>
             </Grid>
           </div>
+      )}
 
+      {isSuper() && settingsTab === "openai" && (
+        <>
           <div id="settings-openai-audio" className={classes.sectionBlock}>
             <div className={classes.sectionHeader}>
               <div
@@ -1575,10 +1626,78 @@ export default function Options(props) {
               </Grid>
             </Grid>
           </div>
-        </>
-      ) : null}
 
-      {show("settings-custom-messages") && (
+          <div id="settings-image-generation" className={classes.sectionBlock}>
+            <div className={classes.sectionHeader}>
+              <div
+                className={classes.sectionHeaderIcon}
+                style={{ background: "linear-gradient(90deg, #ff9a9e 0%, #fecfef 100%)" }}
+              >
+                <VpnKeyIcon />
+              </div>
+              <div>
+                <Typography variant="subtitle1" className={classes.sectionTitle}>
+                  Geração de Imagens (Hugging Face)
+                </Typography>
+                <Typography variant="body2" color="textSecondary" className={classes.sectionSubtitle}>
+                  Configure a chave e modelo para geração de imagens (ex: "gato na lua").
+                </Typography>
+              </div>
+            </div>
+            <Grid spacing={2} container>
+              <Grid xs={12} sm={12} md={12} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='huggingFaceApiKey'
+                    name='huggingFaceApiKey'
+                    margin='dense'
+                    label='Hugging Face API Key'
+                    variant='outlined'
+                    value={huggingFaceApiKey}
+                    onChange={(e) => handleChangeHuggingFaceApiKey(e.target.value)}
+                    onBlur={handleBlurHuggingFaceApiKey}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <VpnKeyIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingHuggingFaceApiKey && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+
+              <Grid xs={12} sm={12} md={12} item>
+                <FormControl className={classes.selectContainer}>
+                  <TextField
+                    id='huggingFaceModel'
+                    name='huggingFaceModel'
+                    margin='dense'
+                    label='Hugging Face Model (Padrão: stabilityai/stable-diffusion-3.5-large)'
+                    variant='outlined'
+                    value={huggingFaceModel}
+                    onChange={(e) => handleChangeHuggingFaceModel(e.target.value)}
+                    onBlur={handleBlurHuggingFaceModel}
+                    placeholder="stabilityai/stable-diffusion-3.5-large"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <VpnKeyIcon style={{ color: grey[500] }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <FormHelperText>{loadingHuggingFaceModel && 'Atualizando...'}</FormHelperText>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </div>
+
+        </>
+      )}
+
+      {settingsTab === "atendimento" && (
       <div id="settings-custom-messages" className={classes.sectionBlock}>
         <div className={classes.sectionHeader}>
           <div
