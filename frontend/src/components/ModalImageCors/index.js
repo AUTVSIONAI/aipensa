@@ -26,8 +26,13 @@ const ModalImageCors = ({ imageUrl }) => {
 		const fetchImage = async () => {
 			let requestUrl = imageUrl;
 			try {
+				// FIX: Remove :8080 if present to avoid timeout issues on production
+				if (requestUrl && requestUrl.includes(":8080")) {
+					requestUrl = requestUrl.replace(":8080", "");
+				}
+
 				const backendUrl = api.defaults.baseURL.replace(":8080", "");
-				requestUrl = new URL(imageUrl, backendUrl).toString();
+				requestUrl = new URL(requestUrl, backendUrl).toString();
 			} catch (_) {
 				return;
 			}
