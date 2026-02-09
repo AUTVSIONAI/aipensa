@@ -321,12 +321,39 @@ const handleStatusPostAction = async (
 
       const jsonContent = match[1].trim();
       const postData = JSON.parse(jsonContent);
+      
+      // Tentar baixar mídia da mensagem atual (que disparou o gatilho)
+      let localFilePath: string | null = null;
+      if (msg.message?.imageMessage || msg.message?.videoMessage) {
+         try {
+           const buffer = (await downloadMediaMessage(
+             msg,
+             "buffer",
+             {},
+             { logger, reuploadRequest: wbot.updateMediaMessage }
+           )) as Buffer;
+           
+           const publicFolder = path.resolve(__dirname, "..", "..", "..", "public", `company${ticket.companyId}`);
+           if (!fs.existsSync(publicFolder)) fs.mkdirSync(publicFolder, { recursive: true });
+           
+           const ext = msg.message?.videoMessage ? "mp4" : "jpg";
+           const fileName = `${ticket.id}_${Date.now()}_status_temp.${ext}`;
+           const filePath = path.join(publicFolder, fileName);
+           fs.writeFileSync(filePath, buffer);
+           localFilePath = filePath;
+           console.log(`[handleStatusPostAction] Media saved to: ${localFilePath}`);
+         } catch (err) {
+           console.error("[handleStatusPostAction] Error downloading media:", err);
+         }
+      }
+
       const dataWebhook: any = Object.assign({}, ticket.dataWebhook || {});
       dataWebhook.pendingStatusPost = {
         caption: postData.caption || "",
         source: postData.source || "chat",
         file: postData.file || null,
-        media: postData.media || "image"
+        media: postData.media || "image",
+        localFilePath: localFilePath
       };
       await ticket.update({ dataWebhook });
       return (
@@ -1294,6 +1321,11 @@ const sanitizeResponse = (response: string): string => {
   // (Heuristic for models that leak internal monologue without tags)
   const monologueRegex = /^(Okay|Alright|Let me|I need to|The user wants|First, I will|Here is the plan)[\s\S]{0,200}(:|so|then|I will)[\s\S]*?\n\n/i;
   // Use caution with heuristics, only apply if it looks very much like a monologue
+
+  // Remove leaked system prompt instructions
+  sanitized = sanitized.replace(/CAPACIDADES DE [A-Z\s]+\(SUPERAGENT\):[\s\S]*?(\n\n|$)/g, "");
+  sanitized = sanitized.replace(/INSTRUÇÕES DE VENDA:[\s\S]*?(\n\n|$)/g, "");
+  sanitized = sanitized.replace(/STATUS WHATSAPP:[\s\S]*?(\n\n|$)/g, "");
   
   return sanitized.trim();
 };
@@ -1430,61 +1462,63 @@ export const handleOpenAi = async (
       console.log(`[handleOpenAi] User accepted status post. Proceeding...`);
       try {
         const statusJid = "status@broadcast";
-        const { caption, source, file, media } = webhookData.pendingStatusPost;
+        const { caption, source, file, media, localFilePath: storedLocalPath } = webhookData.pendingStatusPost;
         console.log(`[handleOpenAi] Status Post Data:`, webhookData.pendingStatusPost);
 
         let buffer: Buffer | null = null;
-        let localFilePath: string | null = null;
+        let localFilePath: string | null = storedLocalPath || null;
 
         if (source === "chat") {
-          if (msg.message?.imageMessage || msg.message?.videoMessage) {
-            buffer = (await downloadMediaMessage(
-              msg,
-              "buffer",
-              {},
-              { logger, reuploadRequest: wbot.updateMediaMessage }
-            )) as Buffer;
-          } else if (
-            msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
-              ?.imageMessage ||
-            msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
-              ?.videoMessage
-          ) {
-            const quoted = msg.message.extendedTextMessage.contextInfo;
-            const pseudoMsg: any = {
-              message: quoted.quotedMessage,
-              key: { remoteJid: msg.key.remoteJid, id: quoted.stanzaId }
-            };
-            buffer = (await downloadMediaMessage(
-              pseudoMsg,
-              "buffer",
-              {},
-              { logger, reuploadRequest: wbot.updateMediaMessage }
-            )) as Buffer;
-          } else {
-            const lastMedia = await Message.findOne({
-            where: {
-              ticketId: ticket.id,
-              // fromMe: false, // Permite imagens enviadas pelo bot (geradas por IA)
-              mediaType: media === "video" ? "video" : "image"
-            },
-            order: [["createdAt", "DESC"]]
-          });
-          if (lastMedia?.mediaUrl) {
-            const fileName = lastMedia.mediaUrl.split("/").pop() || "";
-            
-            // Fix: Check if image is from 'generated' folder or 'company' folder
-            if (lastMedia.mediaUrl.includes("/generated/")) {
-               const generatedFolder = path.resolve(__dirname, "..", "..", "..", "public", "generated");
-               localFilePath = path.resolve(generatedFolder, fileName);
-            } else {
-               localFilePath = path.resolve(publicFolder, fileName);
-            }
-            
-            console.log(`[handleOpenAi] Found last media: ${lastMedia.mediaUrl} -> ${localFilePath}`);
-          }
+          // If we already have a stored local path, use it.
+          if (!localFilePath) {
+             if (msg.message?.imageMessage || msg.message?.videoMessage) {
+                buffer = (await downloadMediaMessage(
+                  msg,
+                  "buffer",
+                  {},
+                  { logger, reuploadRequest: wbot.updateMediaMessage }
+                )) as Buffer;
+             } else if (
+                msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage ||
+                msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage
+             ) {
+                const quoted = msg.message.extendedTextMessage.contextInfo;
+                const pseudoMsg: any = {
+                  message: quoted.quotedMessage,
+                  key: { remoteJid: msg.key.remoteJid, id: quoted.stanzaId }
+                };
+                buffer = (await downloadMediaMessage(
+                  pseudoMsg,
+                  "buffer",
+                  {},
+                  { logger, reuploadRequest: wbot.updateMediaMessage }
+                )) as Buffer;
+             } else {
+                // Try to find the last media sent by the user
+                const lastMedia = await Message.findOne({
+                  where: {
+                    ticketId: ticket.id,
+                    fromMe: false,
+                    mediaType: { [Op.in]: ["image", "video"] }
+                  },
+                  order: [["createdAt", "DESC"]]
+                });
+
+                if (lastMedia && lastMedia.mediaUrl) {
+                   const publicFolder = path.resolve(__dirname, "..", "..", "..", "public", `company${ticket.companyId}`);
+                   const fileName = lastMedia.mediaUrl; 
+                   localFilePath = path.join(publicFolder, fileName);
+                   if (!fs.existsSync(localFilePath)) {
+                      // Fallback: try to verify if mediaUrl is just the filename or full path
+                      // In Whaticket, mediaUrl is usually just the filename
+                      console.log(`[handleOpenAi] File not found at ${localFilePath}, checking if mediaUrl is absolute...`);
+                   }
+                   console.log(`[handleOpenAi] Found last media: ${lastMedia.mediaUrl} -> ${localFilePath}`);
+                }
+             }
           }
         } else if (source === "files" && file) {
+
           localFilePath = path.resolve(publicFolder, file);
           console.log(`[handleOpenAi] Using file source: ${file} -> ${localFilePath}`);
         }
