@@ -36,6 +36,7 @@ import {
   checkPlanFeature
 } from "../UsageTrackingServices/UsageTrackingService";
 import GenerateImageService from "../HuggingFaceService/GenerateImageService";
+import { Op } from "sequelize";
 
 type Session = WASocket & {
   id?: number;
