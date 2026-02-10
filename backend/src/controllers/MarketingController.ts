@@ -498,16 +498,23 @@ export const likePost = async (
 
     const tokenToUse = pageAccessToken || accessToken;
 
-    const resp = await axios.post(
-      `https://graph.facebook.com/${GRAPH_VERSION}/${objectId}/likes`,
-      null,
-      {
-        params: { access_token: tokenToUse }
-      }
-    );
+    console.log(`[Marketing] Liking object: ${objectId}`);
 
-    return res.json(resp.data);
+    try {
+      const resp = await axios.post(
+        `https://graph.facebook.com/${GRAPH_VERSION}/${objectId}/likes`,
+        null,
+        {
+          params: { access_token: tokenToUse }
+        }
+      );
+      return res.json(resp.data);
+    } catch (err: any) {
+       console.error(`[Marketing] Like failed: ${err.message}. Data:`, err.response?.data);
+       return res.status(400).json({ error: err.response?.data?.error?.message || err.message });
+    }
   } catch (error: any) {
+    console.error("[Marketing] Like critical error:", error);
     return res
       .status(400)
       .json({ error: error?.response?.data || error.message });

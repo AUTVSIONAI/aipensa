@@ -11,21 +11,8 @@ export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        const allowedOrigins = [
-          "https://aipensa.com",
-          "https://www.aipensa.com",
-          "https://api.aipensa.com",
-          "http://localhost:3000",
-          "http://localhost:3001"
-        ];
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.includes("aipensa.com") || origin.includes("localhost")) {
-          callback(null, true);
-        } else {
-          callback(null, true);
-        }
+        // Permitir todas as origens em produção temporariamente para resolver CORS
+        return callback(null, true);
       },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
