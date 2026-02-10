@@ -46,7 +46,7 @@ const isAuthCompany = async (
     // Only Super Admins can access company management routes via JWT
     if (user.super) {
       req.user = {
-        id: user.id,
+        id: user.id.toString(),
         profile: user.profile,
         companyId: user.companyId
       };
@@ -57,7 +57,7 @@ const isAuthCompany = async (
     const requestCompanyId = req.params.id ? parseInt(req.params.id, 10) : null;
     if (requestCompanyId && requestCompanyId === user.companyId) {
        req.user = {
-        id: user.id,
+        id: user.id.toString(),
         profile: user.profile,
         companyId: user.companyId
       };
