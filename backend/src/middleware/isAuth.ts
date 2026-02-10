@@ -26,6 +26,7 @@ const isAuth = async (
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
+    console.warn("[isAuth] Missing Auth Header");
     throw new AppError("ERR_SESSION_EXPIRED", 401);
   }
 
@@ -49,6 +50,7 @@ const isAuth = async (
       companyId
     };
   } catch (err: any) {
+    console.warn(`[isAuth] Token verification failed: ${err.message}`);
     if (err.name === "TokenExpiredError" || err.message === "jwt expired") {
       throw new AppError("ERR_SESSION_EXPIRED", 401);
     }

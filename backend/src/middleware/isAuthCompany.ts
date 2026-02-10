@@ -65,12 +65,14 @@ const isAuthCompany = async (
     }
     
     // If not super and not own company, deny access
+    console.warn(`[isAuthCompany] Access denied. User: ${user.id}, Profile: ${user.profile}, Company: ${user.companyId}, Target: ${requestCompanyId}`);
     throw new AppError("ERR_FORBIDDEN", 403);
 
   } catch (err) {
     if (err instanceof AppError) {
        throw err;
     }
+    console.warn(`[isAuthCompany] Verification failed: ${err instanceof Error ? err.message : "Unknown"}`);
     // If both checks fail, return 401
     throw new AppError(
       "ERR_SESSION_EXPIRED", 

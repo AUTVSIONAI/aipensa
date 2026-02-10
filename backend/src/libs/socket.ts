@@ -24,7 +24,7 @@ export const initIO = (httpServer: Server): SocketIO => {
         if (allowedOrigins.indexOf(origin) !== -1 || origin.includes("aipensa.com") || origin.includes("localhost")) {
           callback(null, true);
         } else {
-          callback(null, true); // Fallback: allow all for now
+          callback(null, true);
         }
       },
       credentials: true,

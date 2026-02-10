@@ -376,7 +376,7 @@ export const getFeed = async (
 
     let url = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed`;
     let fields =
-      "id,message,created_time,full_picture,permalink_url,comments.summary(true).limit(25){id,message,created_time,from},likes.summary(true)";
+      "id,message,created_time,full_picture,permalink_url,comments.summary(true).limit(25){id,message,created_time},likes.summary(true)";
 
     if (platform === "instagram") {
       url = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/media`;
@@ -420,6 +420,18 @@ export const getFeed = async (
           platform: "instagram"
         };
       } else {
+        // Map Facebook comments to include a placeholder 'from' if missing, 
+        // since we removed it from the query to avoid 400 errors.
+        const mappedComments = item.comments?.data?.map((c: any) => ({
+             ...c,
+             from: c.from || { name: "Facebook User" }
+        })) || [];
+        
+        // Update item with mapped comments
+        if (item.comments) {
+            item.comments.data = mappedComments;
+        }
+        
         return { ...item, platform: "facebook" };
       }
     });
