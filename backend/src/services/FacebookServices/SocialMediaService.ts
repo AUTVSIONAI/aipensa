@@ -2,6 +2,7 @@ import axios from "axios";
 import { Op } from "sequelize";
 import Setting from "../../models/Setting";
 import Whatsapp from "../../models/Whatsapp";
+import Jimp from "jimp";
 
 const GRAPH_VERSION = "v19.0";
 
@@ -108,6 +109,38 @@ const handleFacebookError = (error: any) => {
   
   // Re-throw original error if not handled specifically
   throw error;
+};
+
+const validateImageForInstagram = async (imageUrl: string): Promise<void> => {
+  try {
+    console.log(`[validateImageForInstagram] Validating: ${imageUrl}`);
+    const image = await Jimp.read(imageUrl);
+    const width = image.bitmap.width;
+    const height = image.bitmap.height;
+    const ratio = width / height;
+
+    console.log(`[validateImageForInstagram] Dimensions: ${width}x${height}, Ratio: ${ratio.toFixed(2)}`);
+
+    // Instagram Feed Image Aspect Ratio: Must be within 4:5 (0.8) and 1.91:1 (1.91)
+    const minRatio = 0.8;
+    const maxRatio = 1.91;
+
+    if (ratio < minRatio || ratio > maxRatio) {
+      throw new Error(`Aspect Ratio inválido: ${ratio.toFixed(2)}. O Instagram requer proporção entre 4:5 (0.8) e 1.91:1.`);
+    }
+    
+    const mime = image.getMIME();
+    if (mime !== "image/jpeg" && mime !== "image/jpg") {
+         // Opcional: Converter para JPG aqui se necessário, mas por enquanto vamos validar.
+         // throw new Error(`Formato inválido: ${mime}. O Instagram requer JPG.`);
+         console.warn(`[validateImageForInstagram] Warning: MIME type is ${mime}. Instagram prefers JPG.`);
+    }
+
+  } catch (error) {
+    console.error(`[validateImageForInstagram] Error: ${error.message}`);
+    // Re-throw with clear message
+    throw new Error(`Falha na validação da imagem (Jimp): ${error.message}`);
+  }
 };
 
 export const publishToFacebook = async (
