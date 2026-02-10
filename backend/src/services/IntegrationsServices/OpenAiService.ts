@@ -666,6 +666,25 @@ const handleSocialMediaAction = async (
       const postData = JSON.parse(jsonContent);
       const { platform, message, image, scheduledTime } = postData;
 
+      // Resolve image URL if it's a local filename
+      if (image && !image.startsWith("http")) {
+        const publicFolder = path.resolve(
+          __dirname,
+          "..",
+          "..",
+          "..",
+          "public",
+          `company${ticket.companyId}`
+        );
+        const filePath = path.join(publicFolder, image);
+        if (fs.existsSync(filePath)) {
+          image = `${process.env.BACKEND_URL}/public/company${ticket.companyId}/${image}`;
+          console.log(`[OpenAiService] Resolved local image to public URL: ${image}`);
+        } else {
+           console.warn(`[OpenAiService] Image file not found: ${filePath}`);
+        }
+      }
+
       console.log(`[OpenAiService] Processing Social Media Action: Platform=${platform}, Image=${image}`);
 
       if (!platform || !message) {
