@@ -87,16 +87,15 @@ if (
 app.use(compression()); // Compressão HTTP
 app.use(bodyParser.json({ limit: "5mb" })); // Aumentar o limite de carga para 5 MB
 app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
-// app.use(
-//   cors({
-//     credentials: true,
-//     origin: (origin, cb) => {
-//       // Permitir todas as origens em produção temporariamente para resolver CORS
-//       // TODO: Restringir novamente após estabilizar
-//       return cb(null, true);
-//     }
-//   })
-// );
+app.use(
+  cors({
+    credentials: true,
+    origin: (origin, cb) => {
+      // Permitir todas as origens em produção temporariamente para resolver CORS
+      return cb(null, true);
+    }
+  })
+);
 app.use(
   cors({
     credentials: true,

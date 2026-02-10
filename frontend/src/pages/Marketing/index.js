@@ -33,10 +33,10 @@ const useStyles = makeStyles((theme) => ({
   root: {
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(8),
-    minHeight: "100vh",
-    // height: "100%", // Removed to allow scrolling and prevent white bottom on overflow
+    height: "calc(100vh - 48px)",
     display: "flex",
     flexDirection: "column",
+    overflowY: "auto",
     backgroundAttachment: "fixed",
     background:
       theme.palette.type === "dark"

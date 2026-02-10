@@ -388,13 +388,30 @@ export const getFeed = async (
         "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count,comments.limit(25){id,text,timestamp,username}";
     }
 
-    const resp = await axios.get(url, {
-      params: {
-        access_token: accessToken,
-        fields: fields,
-        limit: 10
-      }
-    });
+    let resp;
+    try {
+      resp = await axios.get(url, {
+        params: {
+          access_token: accessToken,
+          fields: fields,
+          limit: 10
+        }
+      });
+    } catch (err: any) {
+      console.warn(`[Marketing] First attempt to fetch feed failed: ${err.message}. Retrying with simple fields.`);
+      // Retry with simpler fields (no comments expansion) to avoid 400 on restricted posts
+      const simpleFields = platform === "instagram" 
+        ? "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count"
+        : "id,message,created_time,full_picture,permalink_url";
+        
+      resp = await axios.get(url, {
+        params: {
+          access_token: accessToken,
+          fields: simpleFields,
+          limit: 10
+        }
+      });
+    }
 
     // Normalizar dados para o frontend
     const data = resp.data.data.map((item: any) => {
