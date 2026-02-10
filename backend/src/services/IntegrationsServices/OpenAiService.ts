@@ -705,6 +705,15 @@ const handleSocialMediaAction = async (
 
       let result = "";
 
+      // Ensure Image URL is Public and Valid
+      let finalImageUrl = image;
+      if (image && !image.startsWith("http")) {
+         // Se for nome de arquivo local, converte para URL pública do backend
+         const publicUrl = `${process.env.BACKEND_URL}/public/company${ticket.companyId}/${image}`;
+         finalImageUrl = publicUrl;
+         console.log(`[OpenAiService] Converted local image to public URL: ${finalImageUrl}`);
+      }
+
       if (platform === "facebook") {
         // Use first page
         const page = pages[0];
@@ -712,7 +721,7 @@ const handleSocialMediaAction = async (
           ticket.companyId,
           page.id,
           message,
-          image,
+          finalImageUrl,
           scheduledTime
         );
         if (scheduledTime) {
@@ -730,7 +739,7 @@ const handleSocialMediaAction = async (
             const payload = {
               platform: "instagram",
               message,
-              image
+              image: finalImageUrl
             };
             await CreateScheduleService({
               body: `__SOCIAL_POST__${JSON.stringify(payload)}`,
@@ -756,7 +765,7 @@ const handleSocialMediaAction = async (
               "\n\n(Erro: Nenhuma conta de Instagram conectada à página)"
             );
           }
-          if (!image) {
+          if (!finalImageUrl) {
             return (
               response.replace(match[0], "").trim() +
               "\n\n(Erro: Imagem é obrigatória para Instagram)"
@@ -765,7 +774,7 @@ const handleSocialMediaAction = async (
           await publishToInstagram(
             ticket.companyId,
             pageWithInsta.instagram_business_account.id,
-            image,
+            finalImageUrl,
             message
           );
           result = `Postado com sucesso no Instagram @${pageWithInsta.instagram_business_account.username}!`;

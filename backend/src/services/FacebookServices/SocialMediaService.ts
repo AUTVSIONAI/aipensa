@@ -214,16 +214,22 @@ export const publishVideoToInstagram = async (
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     // 1. Create Container
-    const containerBody = {
+    const containerParams: any = {
       access_token: accessToken,
-      video_url: videoUrl,
-      media_type: "VIDEO",
       caption: caption
     };
 
+    if (videoUrl) {
+      containerParams.video_url = videoUrl;
+      containerParams.media_type = "VIDEO";
+    }
+
     const createContainer = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-      containerBody
+      null, // POST body vazio pois parâmetros estão na query string para POST simples, ou deveriam estar no body se fosse form-data.
+            // A documentação do Graph API aceita query params para media creation simples.
+            // Mas para evitar erro "Specifying multiple ids...", vamos garantir que seja enviado corretamente.
+      { params: containerParams }
     );
 
     const creationId = createContainer.data.id;
@@ -232,14 +238,15 @@ export const publishVideoToInstagram = async (
     await waitForInstagramMedia(creationId, accessToken);
 
     // 2. Publish Container
-    const publishBody = {
+    const publishParams = {
       access_token: accessToken,
       creation_id: creationId
     };
 
     const publishResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-      publishBody
+      null,
+      { params: publishParams }
     );
 
     return publishResp.data;
@@ -258,8 +265,12 @@ export const publishToInstagram = async (
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
+    console.log(`[publishToInstagram] Creating container for image: ${imageUrl}`);
+
     // 1. Create Container
-    const containerBody = {
+    // ATENÇÃO: Para image_url, deve ser enviado via query params ou body form-urlencoded.
+    // O erro "Specifying multiple ids" ocorre quando o parser do Facebook confunde os parâmetros.
+    const containerParams = {
       access_token: accessToken,
       image_url: imageUrl,
       caption: caption
@@ -267,22 +278,26 @@ export const publishToInstagram = async (
 
     const createContainer = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-      containerBody
+      null,
+      { params: containerParams }
     );
 
     const creationId = createContainer.data.id;
+    console.log(`[publishToInstagram] Container created: ${creationId}`);
 
     // 2. Publish Container
-    const publishBody = {
+    const publishParams = {
       access_token: accessToken,
       creation_id: creationId
     };
 
     const publishResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-      publishBody
+      null,
+      { params: publishParams }
     );
 
+    console.log(`[publishToInstagram] Published successfully: ${publishResp.data.id}`);
     return publishResp.data;
   } catch (error) {
     handleFacebookError(error);
