@@ -161,6 +161,10 @@ export const insights = async (
       "[Marketing] Erro em insights:",
       error?.response?.data || error.message
     );
+    const fbError = error?.response?.data?.error;
+    if (fbError) {
+        console.error(`[Marketing] FB Error Detail: Code=${fbError.code}, Subcode=${fbError.error_subcode}, Message=${fbError.message}`);
+    }
     return res
       .status(400)
       .json({ error: error?.response?.data || error.message });
@@ -200,9 +204,13 @@ export const pages = async (req: Request, res: Response): Promise<Response> => {
     return res.json(resp.data);
   } catch (error: any) {
     console.error(
-      "[Marketing] Erro em getFeed:",
+      "[Marketing] Erro em pages:",
       error?.response?.data || error.message
     );
+    const fbError = error?.response?.data?.error;
+    if (fbError) {
+        console.error(`[Marketing] FB Error Detail (Pages): Code=${fbError.code}, Subcode=${fbError.error_subcode}, Message=${fbError.message}`);
+    }
     return res
       .status(400)
       .json({ error: error?.response?.data || error.message });
@@ -422,6 +430,10 @@ export const getFeed = async (
       "[Marketing] Erro em getFeed:",
       error?.response?.data || error.message
     );
+    const fbError = error?.response?.data?.error;
+    if (fbError) {
+        console.error(`[Marketing] FB Error Detail (Feed): Code=${fbError.code}, Subcode=${fbError.error_subcode}, Message=${fbError.message}`);
+    }
     return res
       .status(400)
       .json({ error: error?.response?.data || error.message });

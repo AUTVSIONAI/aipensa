@@ -52,11 +52,25 @@ const isAuthCompany = async (
       };
       return next();
     }
+
+    // Allow Company Admin to access their own company data
+    const requestCompanyId = req.params.id ? parseInt(req.params.id, 10) : null;
+    if (requestCompanyId && requestCompanyId === user.companyId) {
+       req.user = {
+        id: user.id,
+        profile: user.profile,
+        companyId: user.companyId
+      };
+      return next();
+    }
     
-    // If not super, deny access (or check specific permissions if needed later)
+    // If not super and not own company, deny access
     throw new AppError("ERR_FORBIDDEN", 403);
 
   } catch (err) {
+    if (err instanceof AppError) {
+       throw err;
+    }
     // If both checks fail, return 401
     throw new AppError(
       "ERR_SESSION_EXPIRED", 
