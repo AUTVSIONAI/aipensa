@@ -1166,35 +1166,11 @@ const handleImageGenerationAction = async (
       if (!imageUrl) {
         try {
           console.log("[handleImageGeneration] Tentando gerar imagem via OpenRouter...");
-        const openRouterKey = await resolveApiKey("openrouter");
+          // Move resolveApiKey call inside try or before, but ensure variable scope
+          const openRouterKey = await resolveApiKey("openrouter");
         
-        if (openRouterKey) {
-            const openaiRouter = new OpenAI({
-                apiKey: openRouterKey,
-                baseURL: "https://openrouter.ai/api/v1",
-                defaultHeaders: {
-                    "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
-                    "X-Title": "AIPENSA.COM"
-                }
-            });
-
-            // Tentar modelos do OpenRouter (ex: stabilityai/stable-diffusion-xl-base-1.0 ou auto)
-            // Nota: OpenRouter usa endpoint completions para alguns modelos, mas images.generate para outros se suportado.
-            // Se falhar, cairá no catch e tentará OpenAI.
-            const imageResponse = await openaiRouter.images.generate({
-                model: "google/gemini-2.0-flash-lite-preview-02-05:free", // Tenta Gemini 2.0 Flash Lite Free primeiro (suporta geração de imagem em alguns endpoints)
-                prompt: prompt,
-                n: 1,
-                size: size || "1024x1024"
-            });
-            
-            imageUrl = imageResponse.data[0].url;
-            usedProvider = "openrouter-gemini";
-            console.log("[handleImageGeneration] Sucesso via OpenRouter (Gemini)!");
-
-        } catch (e) {
-             console.warn("[handleImageGeneration] Falha no OpenRouter (Gemini), tentando Stability AI...", e.message);
-             try {
+          if (openRouterKey) {
+            try {
                 const openaiRouter = new OpenAI({
                     apiKey: openRouterKey,
                     baseURL: "https://openrouter.ai/api/v1",
@@ -1204,18 +1180,48 @@ const handleImageGenerationAction = async (
                     }
                 });
 
+                // Tentar modelos do OpenRouter (ex: stabilityai/stable-diffusion-xl-base-1.0 ou auto)
+                // Nota: OpenRouter usa endpoint completions para alguns modelos, mas images.generate para outros se suportado.
+                // Se falhar, cairá no catch e tentará OpenAI.
                 const imageResponse = await openaiRouter.images.generate({
-                    model: "stabilityai/stable-diffusion-xl-base-1.0", 
+                    model: "google/gemini-2.0-flash-lite-preview-02-05:free", // Tenta Gemini 2.0 Flash Lite Free primeiro
                     prompt: prompt,
                     n: 1,
                     size: size || "1024x1024"
                 });
+                
                 imageUrl = imageResponse.data[0].url;
-                usedProvider = "openrouter-stability";
-                console.log("[handleImageGeneration] Sucesso via OpenRouter (Stability)!");
-             } catch(err) {
-                 console.warn("[handleImageGeneration] Falha no OpenRouter (Stability):", err.message);
-             }
+                usedProvider = "openrouter-gemini";
+                console.log("[handleImageGeneration] Sucesso via OpenRouter (Gemini)!");
+
+            } catch (e) {
+                 console.warn("[handleImageGeneration] Falha no OpenRouter (Gemini), tentando Stability AI...", e.message);
+                 try {
+                    const openaiRouter = new OpenAI({
+                        apiKey: openRouterKey,
+                        baseURL: "https://openrouter.ai/api/v1",
+                        defaultHeaders: {
+                            "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
+                            "X-Title": "AIPENSA.COM"
+                        }
+                    });
+
+                    const imageResponse = await openaiRouter.images.generate({
+                        model: "stabilityai/stable-diffusion-xl-base-1.0", 
+                        prompt: prompt,
+                        n: 1,
+                        size: size || "1024x1024"
+                    });
+                    imageUrl = imageResponse.data[0].url;
+                    usedProvider = "openrouter-stability";
+                    console.log("[handleImageGeneration] Sucesso via OpenRouter (Stability)!");
+                 } catch(err) {
+                     console.warn("[handleImageGeneration] Falha no OpenRouter (Stability):", err.message);
+                 }
+            }
+          }
+        } catch (e) {
+             console.warn("[handleImageGeneration] Erro geral no bloco OpenRouter:", e.message);
         }
       }
 

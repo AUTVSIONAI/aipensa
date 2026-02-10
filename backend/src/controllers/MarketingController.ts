@@ -376,7 +376,7 @@ export const getFeed = async (
 
     let url = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed`;
     let fields =
-      "id,message,created_time,full_picture,permalink_url,comments.summary(true).limit(5){id,message,created_time,from},likes.summary(true)";
+      "id,message,created_time,full_picture,permalink_url,comments.summary(true).limit(25){id,message,created_time,from},likes.summary(true)";
 
     if (platform === "instagram") {
       url = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/media`;
@@ -385,7 +385,7 @@ export const getFeed = async (
       // media_url = full_picture
       // permalink = permalink_url
       fields =
-        "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count,comments.limit(5){id,text,timestamp,username}";
+        "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count,comments.limit(25){id,text,timestamp,username}";
     }
 
     const resp = await axios.get(url, {

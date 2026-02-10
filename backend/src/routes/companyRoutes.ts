@@ -1,5 +1,6 @@
 import express from "express";
 import isAuth from "../middleware/isAuth";
+import isAuthCompany from "../middleware/isAuthCompany";
 
 import * as CompanyController from "../controllers/CompanyController";
 
@@ -20,7 +21,7 @@ companyRoutes.delete("/companies/:id", isAuth, CompanyController.remove);
 // Rota para listar o plano da empresa
 companyRoutes.get(
   "/companies/listPlan/:id",
-  isAuth,
+  isAuthCompany,
   CompanyController.listPlan
 );
 companyRoutes.get("/companiesPlan", isAuth, CompanyController.indexPlan);
