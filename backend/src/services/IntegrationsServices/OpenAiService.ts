@@ -664,7 +664,7 @@ const handleSocialMediaAction = async (
       console.log("[OpenAiService] Social Media JSON:", jsonContent);
 
       const postData = JSON.parse(jsonContent);
-      const { platform, message, image, scheduledTime } = postData;
+      let { platform, message, image, scheduledTime } = postData;
 
       // Resolve image URL if it's a local filename
       if (image && !image.startsWith("http")) {
@@ -1570,7 +1570,11 @@ export const handleOpenAi = async (
 
                 if (lastMedia && lastMedia.mediaUrl) {
                    const publicFolder = path.resolve(__dirname, "..", "..", "..", "public", `company${ticket.companyId}`);
-                   const fileName = lastMedia.mediaUrl; 
+                   let fileName = lastMedia.mediaUrl;
+                   if (fileName.startsWith("http") || fileName.startsWith("https")) {
+                       const parts = fileName.split("/");
+                       fileName = parts[parts.length - 1];
+                   }
                    localFilePath = path.join(publicFolder, fileName);
                    if (!fs.existsSync(localFilePath)) {
                       // Fallback: try to verify if mediaUrl is just the filename or full path

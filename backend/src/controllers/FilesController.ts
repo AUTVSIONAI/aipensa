@@ -98,9 +98,9 @@ export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  if (req.user.profile !== "admin") {
-    throw new AppError("ERR_NO_PERMISSION", 403);
-  }
+  // if (req.user.profile !== "admin") {
+  //   throw new AppError("ERR_NO_PERMISSION", 403);
+  // }
 
   const { fileId } = req.params;
   const fileData = req.body;

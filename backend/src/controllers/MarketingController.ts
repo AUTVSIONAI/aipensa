@@ -223,15 +223,16 @@ export const publishContent = async (
 ): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
+    const userProfile = (req as any).user?.profile;
 
-    if (!(await checkPlan(companyId, "useAutoPosts"))) {
+    if (userProfile !== "admin" && !(await checkPlan(companyId, "useAutoPosts"))) {
       return res.status(403).json({
         error: "ERR_PLAN_LIMIT",
         message: "Seu plano não permite postagem automática."
       });
     }
 
-    if (!(await checkPlanLimit(companyId, "limitPosts", "POST"))) {
+    if (userProfile !== "admin" && !(await checkPlanLimit(companyId, "limitPosts", "POST"))) {
       return res.status(403).json({
         error: "ERR_PLAN_LIMIT",
         message: "Limite mensal de postagens atingido."
@@ -941,11 +942,11 @@ export const sendInstagramMessage = async (
 ): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
-    const { instagramId, recipientId, message } = req.body;
+    const { instagramId, recipientId, message, attachment } = req.body;
 
-    if (!instagramId || !recipientId || !message) {
+    if (!instagramId || !recipientId || (!message && !attachment)) {
       return res.status(400).json({
-        error: "Faltando parâmetros: instagramId, recipientId ou message."
+        error: "Faltando parâmetros: instagramId, recipientId ou message/attachment."
       });
     }
 
@@ -953,7 +954,8 @@ export const sendInstagramMessage = async (
       companyId,
       instagramId,
       recipientId,
-      message
+      message,
+      attachment
     );
 
     return res.json(result);

@@ -121,25 +121,25 @@ const validateImageForInstagram = async (imageUrl: string): Promise<void> => {
 
     console.log(`[validateImageForInstagram] Dimensions: ${width}x${height}, Ratio: ${ratio.toFixed(2)}`);
 
-    // Instagram Feed Image Aspect Ratio: Must be within 4:5 (0.8) and 1.91:1 (1.91)
-    const minRatio = 0.8;
-    const maxRatio = 1.91;
+    // Accepted ratios: 1:1 (1), 4:5 (0.8), 1.91:1 (1.91)
+    // Tolerance +/- 0.05
+    const validRatios = [1.0, 0.8, 1.91];
+    const isValid = validRatios.some(r => Math.abs(ratio - r) < 0.05);
 
-    if (ratio < minRatio || ratio > maxRatio) {
-      throw new Error(`Aspect Ratio inválido: ${ratio.toFixed(2)}. O Instagram requer proporção entre 4:5 (0.8) e 1.91:1.`);
+    if (!isValid) {
+      // Tentar ajustar? Por enquanto, apenas erro.
+      throw new Error(`Aspect Ratio inválido: ${ratio.toFixed(2)}. Permitidos: 1:1 (Quadrado), 4:5 (Vertical), 1.91:1 (Horizontal).`);
     }
     
     const mime = image.getMIME();
     if (mime !== "image/jpeg" && mime !== "image/jpg") {
-         // Opcional: Converter para JPG aqui se necessário, mas por enquanto vamos validar.
-         // throw new Error(`Formato inválido: ${mime}. O Instagram requer JPG.`);
-         console.warn(`[validateImageForInstagram] Warning: MIME type is ${mime}. Instagram prefers JPG.`);
+         throw new Error(`Formato inválido: ${mime}. O Instagram requer JPG.`);
     }
 
   } catch (error) {
     console.error(`[validateImageForInstagram] Error: ${error.message}`);
-    // Re-throw with clear message
-    throw new Error(`Falha na validação da imagem (Jimp): ${error.message}`);
+    // Se falhar o download ou leitura, lançamos erro para ser capturado e retornado ao usuário
+    throw new Error(`Falha na validação da imagem: ${error.message}`);
   }
 };
 
@@ -296,6 +296,9 @@ export const publishToInstagram = async (
 
     console.log(`[publishToInstagram] Creating container for image: ${imageUrl}`);
 
+    // Validate Image Aspect Ratio and Format
+    await validateImageForInstagram(imageUrl);
+
     // 1. Create Container
     const containerParams = {
       access_token: accessToken,
@@ -333,15 +336,36 @@ export const sendInstagramDM = async (
   companyId: number,
   instagramId: string,
   recipientId: string,
-  text: string
+  text: string,
+  attachment?: { url: string; type: "image" | "video" | "audio" }
 ): Promise<any> => {
   try {
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
+    const messagePayload: any = {};
+    
+    if (text) {
+        messagePayload.text = text;
+    }
+
+    if (attachment) {
+        messagePayload.attachment = {
+            type: attachment.type,
+            payload: { 
+                url: attachment.url,
+                is_reusable: true
+            }
+        };
+    }
+
+    if (!text && !attachment) {
+        throw new Error("Message must have text or attachment");
+    }
+
     const params = {
       recipient: { id: recipientId },
-      message: { text: text },
+      message: messagePayload,
       access_token: accessToken
     };
 

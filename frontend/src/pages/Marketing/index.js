@@ -243,6 +243,7 @@ const Marketing = () => {
   const [dmRecipientId, setDmRecipientId] = useState("");
   const [dmMessage, setDmMessage] = useState("");
   const [dmLoading, setDmLoading] = useState(false);
+  const [dmAttachment, setDmAttachment] = useState(null);
   
   // Feed comments expansion state
   const [expandedComments, setExpandedComments] = useState({});
@@ -594,20 +595,39 @@ const Marketing = () => {
         toast.warn("Informe o ID do Destinatário (Instagram User ID)");
         return;
       }
-      if (!dmMessage) {
-        toast.warn("Escreva uma mensagem");
+      if (!dmMessage && !dmAttachment) {
+        toast.warn("Escreva uma mensagem ou anexe um arquivo");
         return;
+      }
+
+      let attachmentData = null;
+
+      if (dmAttachment) {
+         const formData = new FormData();
+         formData.append("file", dmAttachment);
+         const { data: uploadData } = await api.post("/marketing/upload-media", formData);
+         
+         let type = "image";
+         if (dmAttachment.type.startsWith("video")) type = "video";
+         if (dmAttachment.type.startsWith("audio")) type = "audio";
+
+         attachmentData = {
+             url: uploadData.url,
+             type
+         };
       }
 
       const payload = {
         instagramId: dmInstagramId,
         recipientId: dmRecipientId,
-        message: dmMessage
+        message: dmMessage,
+        attachment: attachmentData
       };
 
       await api.post("/marketing/send-dm", payload);
       toast.success("Mensagem enviada com sucesso!");
       setDmMessage(""); // Clear message after success
+      setDmAttachment(null);
     } catch (err) {
       toastError(err);
     } finally {
@@ -1083,6 +1103,23 @@ const Marketing = () => {
                       minRows={2}
                       className={classes.input}
                     />
+                    <Box mt={2} display="flex" flexDirection="column" gap={1}>
+                       <input
+                          accept="image/*,video/*,audio/*"
+                          style={{ display: 'none' }}
+                          id="dm-attachment-upload"
+                          type="file"
+                          onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file) setDmAttachment(file);
+                          }}
+                       />
+                       <label htmlFor="dm-attachment-upload">
+                          <Button variant="outlined" component="span" fullWidth className={classes.button} style={{ color: "rgba(255, 255, 255, 0.7)", borderColor: "rgba(255, 255, 255, 0.3)" }}>
+                            {dmAttachment ? `Arquivo: ${dmAttachment.name}` : "Anexar Mídia (Imagem/Vídeo/Áudio)"}
+                          </Button>
+                       </label>
+                    </Box>
                     <Box mt={2}>
                       <Button
                         fullWidth

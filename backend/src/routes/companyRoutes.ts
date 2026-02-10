@@ -21,7 +21,7 @@ companyRoutes.delete("/companies/:id", isAuth, CompanyController.remove);
 // Rota para listar o plano da empresa
 companyRoutes.get(
   "/companies/listPlan/:id",
-  isAuthCompany,
+  isAuth,
   CompanyController.listPlan
 );
 companyRoutes.get("/companiesPlan", isAuth, CompanyController.indexPlan);
