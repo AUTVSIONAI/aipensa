@@ -77,7 +77,8 @@ const useStyles = makeStyles((theme) => ({
     color: theme.palette.text.primary
   },
   cardContent: {
-    padding: theme.spacing(3)
+    padding: theme.spacing(3),
+    color: theme.palette.text.primary,
   },
   tabRoot: {
     borderRadius: 16,

@@ -835,16 +835,19 @@ const handleVideoPostAction = async (
         );
       }
 
-      // Verifica se o módulo está ativo
-      if (!(await checkPlanFeature(ticket.companyId, "useAutoPosts"))) {
+      // Bypass plan checks for Admin
+      const isAdmin = await verifyAdminPermission(contact);
+
+      // Verifica se o módulo está ativo (Bypass for Admin)
+      if (!isAdmin && !(await checkPlanFeature(ticket.companyId, "useAutoPosts"))) {
         return (
           response.replace(match[0], "").trim() +
           '\n\n⚠️ *Recurso Bloqueado*: O módulo de Postagem Automática não está ativo no seu plano. Deseja ativar? [UPGRADE_PLAN] { "type": "posts" } [/UPGRADE_PLAN]'
         );
       }
 
-      // Check Plan Limit
-      if (!(await checkPlanLimit(ticket.companyId, "limitPosts", "POST"))) {
+      // Check Plan Limit (Bypass for Admin)
+      if (!isAdmin && !(await checkPlanLimit(ticket.companyId, "limitPosts", "POST"))) {
         return (
           response.replace(match[0], "").trim() +
           "\n\n⚠️ *Limite Atingido*: Você atingiu o limite de postagens do seu plano. Deseja adicionar mais postagens ao seu pacote?"
