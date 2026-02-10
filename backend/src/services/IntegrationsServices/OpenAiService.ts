@@ -299,7 +299,8 @@ const handleStatusPostAction = async (
       const companySettings = await CompaniesSettings.findOne({
         where: { companyId: ticket.companyId }
       });
-      if (!companySettings || companySettings.enableAutoStatus !== "enabled") {
+      const isAdmin = await verifyAdminPermission(contact);
+      if ((!companySettings || companySettings.enableAutoStatus !== "enabled") && !isAdmin) {
         return (
           response.replace(match[0], "").trim() +
           "\n\n⚠️ Recurso desativado nas configurações da empresa."
@@ -307,20 +308,20 @@ const handleStatusPostAction = async (
       }
 
       // Verifica se o módulo está ativo
-      if (!(await checkPlanFeature(ticket.companyId, "useAutoPosts"))) {
-        return (
-          response.replace(match[0], "").trim() +
-          '\n\n⚠️ *Recurso Bloqueado*: O módulo de Postagem Automática não está ativo no seu plano. Deseja ativar? [UPGRADE_PLAN] { "type": "posts" } [/UPGRADE_PLAN]'
-        );
-      }
+      // if (!(await checkPlanFeature(ticket.companyId, "useAutoPosts"))) {
+      //   return (
+      //     response.replace(match[0], "").trim() +
+      //     '\n\n⚠️ *Recurso Bloqueado*: O módulo de Postagem Automática não está ativo no seu plano. Deseja ativar? [UPGRADE_PLAN] { "type": "posts" } [/UPGRADE_PLAN]'
+      //   );
+      // }
 
       // Check Plan Limit
-      if (!(await checkPlanLimit(ticket.companyId, "limitPosts", "POST"))) {
-        return (
-          response.replace(match[0], "").trim() +
-          "\n\n⚠️ *Limite Atingido*: Você atingiu o limite de postagens do seu plano. Deseja adicionar mais postagens ao seu pacote?"
-        );
-      }
+      // if (!(await checkPlanLimit(ticket.companyId, "limitPosts", "POST"))) {
+      //   return (
+      //     response.replace(match[0], "").trim() +
+      //     "\n\n⚠️ *Limite Atingido*: Você atingiu o limite de postagens do seu plano. Deseja adicionar mais postagens ao seu pacote?"
+      //   );
+      // }
 
       const jsonContent = match[1].trim();
       const postData = JSON.parse(jsonContent);
@@ -1382,10 +1383,11 @@ export const handleOpenAi = async (
 
   // Check Agent AI Feature
   const hasAgentAi = await checkPlanFeature(ticket.companyId, "useAgentAi");
+  const isAdmin = await verifyAdminPermission(contact);
   console.log(
-    `[handleOpenAi] Company ${ticket.companyId} has useAgentAi: ${hasAgentAi}`
+    `[handleOpenAi] Company ${ticket.companyId} has useAgentAi: ${hasAgentAi}, isAdmin: ${isAdmin}`
   );
-  if (!hasAgentAi) {
+  if (!hasAgentAi && !isAdmin) {
     return;
   }
 
@@ -1397,7 +1399,7 @@ export const handleOpenAi = async (
       "useVoiceCommands"
     );
     console.log(`[handleOpenAi] Audio message. hasVoice: ${hasVoice}`);
-    if (!hasVoice) {
+    if (!hasVoice && !isAdmin) {
       return;
     }
 
@@ -1408,7 +1410,7 @@ export const handleOpenAi = async (
       "VOICE_SECONDS"
     );
     console.log(`[handleOpenAi] hasVoiceLimit: ${hasVoiceLimit}`);
-    if (!hasVoiceLimit) {
+    if (!hasVoiceLimit && !isAdmin) {
       return;
     }
 
