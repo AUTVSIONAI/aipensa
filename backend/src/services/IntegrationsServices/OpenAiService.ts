@@ -1551,8 +1551,13 @@ export const handleOpenAi = async (
              }
           }
         } else if (source === "files" && file) {
-
-          localFilePath = path.resolve(publicFolder, file);
+          if (file.startsWith("http")) {
+             const parts = file.split("/");
+             const fileName = parts[parts.length - 1];
+             localFilePath = path.resolve(publicFolder, fileName);
+          } else {
+             localFilePath = path.resolve(publicFolder, file);
+          }
           console.log(`[handleOpenAi] Using file source: ${file} -> ${localFilePath}`);
         }
 
