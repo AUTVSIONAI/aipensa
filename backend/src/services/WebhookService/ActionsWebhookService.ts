@@ -351,18 +351,35 @@ export const ActionsWebhookService = async (
 
       if (nodeSelected.type === "ticket") {
         const queueId = nodeSelected.data?.data?.id || nodeSelected.data?.id;
+        const transfToAi = nodeSelected.data?.data?.transfToAi || nodeSelected.data?.transfToAi;
         const queue = await ShowQueueService(queueId, companyId);
 
-        await ticket.update({
-          status: "pending",
-          queueId: queue.id,
-          userId: ticket.userId,
-          companyId: companyId,
-          flowWebhook: true,
-          lastFlowId: nodeSelected.id,
-          hashFlowId: hashWebhookId,
-          flowStopped: idFlowDb.toString()
-        });
+        if (transfToAi) {
+          console.log("ActionsWebhookService | Transbordando para Agente IA", ticket.id);
+          await ticket.update({
+            status: "pending",
+            queueId: queue.id,
+            userId: null,
+            companyId: companyId,
+            flowWebhook: false, // STOP FLOW
+            lastFlowId: null,
+            hashFlowId: null,
+            flowStopped: null,
+            useIntegration: false,
+            isBot: true // ENABLE BOT
+          });
+        } else {
+          await ticket.update({
+            status: "pending",
+            queueId: queue.id,
+            userId: ticket.userId,
+            companyId: companyId,
+            flowWebhook: true,
+            lastFlowId: nodeSelected.id,
+            hashFlowId: hashWebhookId,
+            flowStopped: idFlowDb.toString()
+          });
+        }
 
         await FindOrCreateATicketTrakingService({
           ticketId: ticket.id,

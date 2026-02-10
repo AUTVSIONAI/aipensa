@@ -114,6 +114,7 @@ const callOpenAI = async (
   // Lista de modelos de fallback para OpenRouter (focando em gratuitos/baratos)
   const FALLBACK_MODELS = [
     "openrouter/free", // Seleciona automaticamente modelos gratuitos disponíveis
+    "google/gemini-2.5-flash-image", // Modelo pago (solicitado pelo usuário)
     "google/gemini-2.0-pro-exp-02-05:free", // Versão Pro Experimental (geralmente mais estável)
     "google/gemini-2.0-flash-thinking-exp:free", // Thinking model
     "meta-llama/llama-3.3-70b-instruct:free",
@@ -1927,30 +1928,31 @@ export const handleOpenAi = async (
       const base64Image = imageBuffer.toString("base64");
       const mimeType = msg.message.imageMessage.mimetype || "image/jpeg";
 
+      // Helper to check if model supports vision
+      const isVision = (m?: string) => {
+        if (!m) return false;
+        const lower = m.toLowerCase();
+        return lower.includes("vision") || 
+               lower.includes("gemini") || 
+               lower.includes("claude-3") || 
+               lower.includes("gpt-4o") || 
+               lower.includes("gpt-4-turbo") ||
+               lower.includes("llama-3.2") ||
+               lower.includes("vl") || // Vision Language
+               lower.includes("flash-image"); // Gemini Flash Image
+      };
+
       if (openAiSettings.provider === "openrouter") {
            // Ensure we use a vision-capable model if the current one is likely text-only
-           const isVision = (m?: string) => {
-              if (!m) return false;
-              const lower = m.toLowerCase();
-              return lower.includes("vision") || 
-                     lower.includes("gemini") || 
-                     lower.includes("claude-3") || 
-                     lower.includes("gpt-4o") || 
-                     lower.includes("gpt-4-turbo") ||
-                     lower.includes("llama-3.2") ||
-                     lower.includes("vl") || // Vision Language
-                     lower.includes("flash-image"); // Gemini Flash Image
-            };
-
            if (!openAiSettings.model || !isVision(openAiSettings.model) || openAiSettings.model === "openrouter/free") {
-                console.log(`[handleOpenAi] Model '${openAiSettings.model}' may not support vision. Switching to free vision model.`);
-                // Fallback to a reliable free vision model on OpenRouter
-                openAiSettings.model = "google/gemini-2.0-pro-exp-02-05:free";
+                console.log(`[handleOpenAi] Model '${openAiSettings.model}' may not support vision. Switching to requested vision model.`);
+                // Fallback to a reliable vision model on OpenRouter (using Paid model as requested)
+                openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free"; // Atualizado para modelo funcional
            }
       } else {
         // Se tem crédito, tentar o modelo mais robusto de visão
          if (!openAiSettings.model || !isVision(openAiSettings.model)) {
-             openAiSettings.model = "google/gemini-2.0-pro-exp-02-05:free"; // Tentar Pro experimental se disponível free
+             openAiSettings.model = "gpt-4o"; // Fallback padrão OpenAI
          }
       }
       

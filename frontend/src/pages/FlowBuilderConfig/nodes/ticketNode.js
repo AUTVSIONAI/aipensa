@@ -252,6 +252,26 @@ export default memo(({ data, isConnectable, id }) => {
         >
           Criar novo atendimento
         </div>
+        {(Object.keys(data)[0] === "data" ? data.data.transfToAi : data.transfToAi) && (
+            <div 
+            style={{
+              fontSize: "11px",
+              color: "#059669",
+              fontWeight: "600",
+              marginTop: "4px",
+              backgroundColor: "#d1fae5",
+              padding: "2px 8px",
+              borderRadius: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "4px"
+            }}
+          >
+            <span>🤖</span>
+            <span>Transbordo p/ IA Ativo</span>
+          </div>
+        )}
       </div>
 
       {/* Footer Info */}

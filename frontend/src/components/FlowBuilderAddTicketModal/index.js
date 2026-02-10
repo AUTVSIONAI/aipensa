@@ -18,6 +18,7 @@ import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
 import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
 import CircularProgress from "@material-ui/core/CircularProgress";
+import { Checkbox, FormControlLabel } from "@material-ui/core";
 import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -68,6 +69,7 @@ const FlowBuilderTicketModal = ({
     const [activeModal, setActiveModal] = useState(false)
     const [queues, setQueues] = useState([])
     const [selectedQueue, setQueueSelected] = useState()
+    const [transfToAi, setTransfToAi] = useState(false)
 
     useEffect(() => {
         if (open === 'edit') {
@@ -79,6 +81,9 @@ const FlowBuilderTicketModal = ({
                     console.log('queue', queue)
                     if (queue) {
                         setQueueSelected(queue.id)
+                    }
+                    if (data.data.transfToAi) {
+                        setTransfToAi(data.data.transfToAi)
                     }
                     setActiveModal(true)
                 } catch (error) {
@@ -116,12 +121,12 @@ const FlowBuilderTicketModal = ({
             const queue = queues.find(item => item.id === selectedQueue)
             onUpdate({
                 ...data,
-                data: queue
+                data: { ...queue, transfToAi }
             });
         } else if (open === 'create') {
             const queue = queues.find(item => item.id === selectedQueue)
             onSave({
-                data: queue
+                data: { ...queue, transfToAi }
             })
         }
         handleClose()
@@ -169,6 +174,17 @@ const FlowBuilderTicketModal = ({
                                 ))
                             )}
                         </Select>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={transfToAi}
+                                    onChange={(e) => setTransfToAi(e.target.checked)}
+                                    name="transfToAi"
+                                    color="primary"
+                                />
+                            }
+                            label="Transbordar para Agente IA"
+                        />
                     </DialogContent>
                     <DialogActions>
                         <Button

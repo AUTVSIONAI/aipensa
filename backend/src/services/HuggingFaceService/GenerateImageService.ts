@@ -21,26 +21,30 @@ const GenerateImageService = async ({
   model
 }: GenerateImageRequest): Promise<GenerateImageResponse> => {
   const resolvedApiKey = apiKey || process.env.HUGGINGFACE_API_KEY;
-  const resolvedModel = model || process.env.HUGGINGFACE_MODEL || "stabilityai/stable-diffusion-3.5-large"; // Default model if not set
+  const modelsToTry = [
+    model, 
+    process.env.HUGGINGFACE_MODEL, 
+    "stabilityai/stable-diffusion-3.5-large", 
+    "stabilityai/stable-diffusion-3.5-large-turbo",
+    "black-forest-labs/FLUX.1-dev",
+    "stabilityai/stable-diffusion-xl-base-1.0",
+    "runwayml/stable-diffusion-v1-5",
+    "prompthero/openjourney"
+  ].filter(Boolean); // Remove undefined/null
+
+  // Remove duplicatas
+  const uniqueModels = [...new Set(modelsToTry)];
 
   if (!resolvedApiKey) {
     throw new Error("HUGGINGFACE_API_KEY is not defined in environment variables or settings.");
   }
 
-  const modelsToTry = [
-    model, // Modelo preferencial do usuário/env
-    process.env.HUGGINGFACE_MODEL, // Modelo do env original
-    "stabilityai/stable-diffusion-3.5-large", // Novo modelo sugerido
-    "black-forest-labs/FLUX.1-dev", // Modelo muito popular e bom
-    "stabilityai/stable-diffusion-xl-base-1.0" // Fallback clássico
-  ].filter(m => m && m.trim() !== ""); // Remove vazios
-
-  const uniqueModels = [...new Set(modelsToTry)]; // Remove duplicatas
-
-  let lastError = null;
+  let lastError;
 
   for (const currentModel of uniqueModels) {
+      if (!currentModel) continue;
       const apiUrl = `https://api-inference.huggingface.co/models/${currentModel}`;
+
       try {
         console.log(`[HuggingFaceService] Generating image with model ${currentModel}...`);
         const response = await axios.post(
@@ -51,10 +55,10 @@ const GenerateImageService = async ({
               Authorization: `Bearer ${resolvedApiKey}`,
               "Content-Type": "application/json"
             },
-            responseType: "arraybuffer" 
+            responseType: "arraybuffer" // Important for image data
           }
         );
-    
+
         const buffer = Buffer.from(response.data, "binary");
         const fileName = `${uuidv4()}.png`;
         
@@ -64,24 +68,25 @@ const GenerateImageService = async ({
           fs.mkdirSync(publicFolder, { recursive: true });
           fs.chmodSync(publicFolder, 0o777);
         }
-    
+
         const filePath = path.join(publicFolder, fileName);
         fs.writeFileSync(filePath, buffer);
-    
+
         const backendUrl = process.env.BACKEND_URL || "https://api.aipensa.com";
         const url = `${backendUrl}/public/generated/${fileName}`;
-    
-        console.log(`[HuggingFaceService] Image generated successfully with ${currentModel}: ${url}`);
-        return { url, fileName, filePath };
 
+        console.log(`[HuggingFaceService] Image generated successfully with ${currentModel}: ${url}`);
+        console.log(`[HuggingFaceService] Saved to: ${filePath}`);
+
+        return { url, fileName, filePath };
       } catch (error: any) {
-        console.warn(`[HuggingFaceService] Failed with model ${currentModel}:`, error.response?.data ? JSON.stringify(error.response.data) : error.message);
+        console.error(`[HuggingFaceService] Error generating image with ${currentModel}:`, error.response?.data || error.message);
         lastError = error;
         // Continue to next model
       }
   }
 
-  throw new Error(`All Hugging Face models failed. Last error: ${lastError?.message || "Unknown error"}`);
+  throw new Error(`Failed to generate image after trying models: ${uniqueModels.join(", ")}. Last error: ${lastError?.message}`);
 };
 
 export default GenerateImageService;
