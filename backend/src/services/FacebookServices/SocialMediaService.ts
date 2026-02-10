@@ -84,6 +84,11 @@ const handleFacebookError = (error: any) => {
   
   console.error("[SocialMediaService] Facebook API Error:", errorMessage);
 
+  if (errorData.message) {
+    // Return detailed message to user
+    throw new Error(`Erro do Facebook/Instagram: ${errorData.message}`);
+  }
+
   if (errorMessage.includes("pages_read_engagement")) {
     throw new Error(
       "Erro de permissão: A conexão com o Facebook precisa ser atualizada. Vá em Configurações > Conexões e reconecte a página."
@@ -209,7 +214,7 @@ export const publishVideoToInstagram = async (
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     // 1. Create Container
-    const containerParams = {
+    const containerBody = {
       access_token: accessToken,
       video_url: videoUrl,
       media_type: "VIDEO",
@@ -218,8 +223,7 @@ export const publishVideoToInstagram = async (
 
     const createContainer = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-      null,
-      { params: containerParams }
+      containerBody
     );
 
     const creationId = createContainer.data.id;
@@ -228,15 +232,14 @@ export const publishVideoToInstagram = async (
     await waitForInstagramMedia(creationId, accessToken);
 
     // 2. Publish Container
-    const publishParams = {
+    const publishBody = {
       access_token: accessToken,
       creation_id: creationId
     };
 
     const publishResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-      null,
-      { params: publishParams }
+      publishBody
     );
 
     return publishResp.data;
@@ -256,7 +259,7 @@ export const publishToInstagram = async (
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     // 1. Create Container
-    const containerParams = {
+    const containerBody = {
       access_token: accessToken,
       image_url: imageUrl,
       caption: caption
@@ -264,22 +267,20 @@ export const publishToInstagram = async (
 
     const createContainer = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-      null,
-      { params: containerParams }
+      containerBody
     );
 
     const creationId = createContainer.data.id;
 
     // 2. Publish Container
-    const publishParams = {
+    const publishBody = {
       access_token: accessToken,
       creation_id: creationId
     };
 
     const publishResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-      null,
-      { params: publishParams }
+      publishBody
     );
 
     return publishResp.data;

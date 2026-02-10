@@ -514,7 +514,10 @@ export const likePost = async (
        return res.status(400).json({ error: err.response?.data?.error?.message || err.message });
     }
   } catch (error: any) {
-    console.error("[Marketing] Like critical error:", error);
+    console.error(
+      "[Marketing] Erro em likePost:",
+      error?.response?.data || error.message
+    );
     return res
       .status(400)
       .json({ error: error?.response?.data || error.message });

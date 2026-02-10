@@ -105,37 +105,6 @@ app.use(
     optionsSuccessStatus: 200
   })
 );
-// app.use(
-//   cors({
-//     credentials: true,
-//     origin: (origin, callback) => {
-//       // Allow requests with no origin (like mobile apps or curl requests)
-//       if (!origin) return callback(null, true);
-//
-//       // Check if origin is allowed
-//       const isAllowed = 
-//         allowedOrigins.includes(origin) ||
-//         origin.includes("aipensa.com") ||
-//         origin.includes("api.aipensa.com") ||
-//         origin.includes("localhost");
-//
-//       if (isAllowed) {
-//         callback(null, true);
-//       } else {
-//         callback(null, true); // Fallback: allow all for now to fix CORS issues
-//       }
-//     },
-//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-//     allowedHeaders: [
-//       "Authorization",
-//       "Content-Type",
-//       "X-Requested-With",
-//       "Accept",
-//       "Origin"
-//     ],
-//     optionsSuccessStatus: 200
-//   })
-// );
 app.use(cookieParser());
 app.use(express.json());
 app.use(Sentry.Handlers.requestHandler());

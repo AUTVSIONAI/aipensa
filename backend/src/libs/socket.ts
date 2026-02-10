@@ -11,7 +11,7 @@ export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        // Permitir todas as origens em produção temporariamente para resolver CORS
+        // Permitir todas as origens para resolver problemas de conexão
         return callback(null, true);
       },
       credentials: true,
