@@ -114,8 +114,8 @@ const callOpenAI = async (
   // Lista de modelos de fallback para OpenRouter (focando em gratuitos/baratos)
   const FALLBACK_MODELS = [
     "openrouter/free", // Seleciona automaticamente modelos gratuitos disponíveis
-    "google/gemini-2.0-flash-exp:free", // Versão experimental funcional
-    "google/gemini-2.0-pro-exp-02-05:free", // Versão Pro experimental
+    "google/gemini-2.0-pro-exp-02-05:free", // Versão Pro Experimental (geralmente mais estável)
+    "google/gemini-2.0-flash-thinking-exp:free", // Thinking model
     "meta-llama/llama-3.3-70b-instruct:free",
     "deepseek/deepseek-r1:free",
     "openai/gpt-3.5-turbo" // Último recurso (pago)
@@ -1945,7 +1945,7 @@ export const handleOpenAi = async (
            if (!openAiSettings.model || !isVision(openAiSettings.model) || openAiSettings.model === "openrouter/free") {
                 console.log(`[handleOpenAi] Model '${openAiSettings.model}' may not support vision. Switching to free vision model.`);
                 // Fallback to a reliable free vision model on OpenRouter
-                openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
+                openAiSettings.model = "google/gemini-2.0-pro-exp-02-05:free";
            }
       } else {
         // Se tem crédito, tentar o modelo mais robusto de visão
