@@ -114,7 +114,8 @@ const callOpenAI = async (
   // Lista de modelos de fallback para OpenRouter (focando em gratuitos/baratos)
   const FALLBACK_MODELS = [
     "openrouter/free", // Seleciona automaticamente modelos gratuitos disponíveis
-    "google/gemini-2.0-flash-lite-preview-02-05:free",
+    "google/gemini-2.0-flash-exp:free", // Versão experimental funcional
+    "google/gemini-2.0-pro-exp-02-05:free", // Versão Pro experimental
     "meta-llama/llama-3.3-70b-instruct:free",
     "deepseek/deepseek-r1:free",
     "openai/gpt-3.5-turbo" // Último recurso (pago)
@@ -1180,19 +1181,41 @@ const handleImageGenerationAction = async (
             // Nota: OpenRouter usa endpoint completions para alguns modelos, mas images.generate para outros se suportado.
             // Se falhar, cairá no catch e tentará OpenAI.
             const imageResponse = await openaiRouter.images.generate({
-                model: "stabilityai/stable-diffusion-xl-base-1.0", // Modelo mais barato/comum no OpenRouter
+                model: "google/gemini-2.0-flash-lite-preview-02-05:free", // Tenta Gemini 2.0 Flash Lite Free primeiro (suporta geração de imagem em alguns endpoints)
                 prompt: prompt,
                 n: 1,
                 size: size || "1024x1024"
             });
             
             imageUrl = imageResponse.data[0].url;
-            usedProvider = "openrouter";
-            console.log("[handleImageGeneration] Sucesso via OpenRouter!");
+            usedProvider = "openrouter-gemini";
+            console.log("[handleImageGeneration] Sucesso via OpenRouter (Gemini)!");
+
+        } catch (e) {
+             console.warn("[handleImageGeneration] Falha no OpenRouter (Gemini), tentando Stability AI...", e.message);
+             try {
+                const openaiRouter = new OpenAI({
+                    apiKey: openRouterKey,
+                    baseURL: "https://openrouter.ai/api/v1",
+                    defaultHeaders: {
+                        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
+                        "X-Title": "AIPENSA.COM"
+                    }
+                });
+
+                const imageResponse = await openaiRouter.images.generate({
+                    model: "stabilityai/stable-diffusion-xl-base-1.0", 
+                    prompt: prompt,
+                    n: 1,
+                    size: size || "1024x1024"
+                });
+                imageUrl = imageResponse.data[0].url;
+                usedProvider = "openrouter-stability";
+                console.log("[handleImageGeneration] Sucesso via OpenRouter (Stability)!");
+             } catch(err) {
+                 console.warn("[handleImageGeneration] Falha no OpenRouter (Stability):", err.message);
+             }
         }
-      } catch (e) {
-        console.warn("[handleImageGeneration] Falha no OpenRouter, tentando fallback para OpenAI:", e.message);
-      }
       }
 
       // 2. Fallback para OpenAI (DALL-E 3) se OpenRouter falhou ou não tem chave
@@ -1915,14 +1938,20 @@ export const handleOpenAi = async (
                      lower.includes("gpt-4o") || 
                      lower.includes("gpt-4-turbo") ||
                      lower.includes("llama-3.2") ||
-                     lower.includes("vl"); // Vision Language
-           };
+                     lower.includes("vl") || // Vision Language
+                     lower.includes("flash-image"); // Gemini Flash Image
+            };
 
            if (!openAiSettings.model || !isVision(openAiSettings.model) || openAiSettings.model === "openrouter/free") {
                 console.log(`[handleOpenAi] Model '${openAiSettings.model}' may not support vision. Switching to free vision model.`);
                 // Fallback to a reliable free vision model on OpenRouter
                 openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free";
            }
+      } else {
+        // Se tem crédito, tentar o modelo mais robusto de visão
+         if (!openAiSettings.model || !isVision(openAiSettings.model)) {
+             openAiSettings.model = "google/gemini-2.0-pro-exp-02-05:free"; // Tentar Pro experimental se disponível free
+         }
       }
       
       messagesOpenAi.push({
