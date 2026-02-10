@@ -226,10 +226,7 @@ export const publishVideoToInstagram = async (
 
     const createContainer = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-      null, // POST body vazio pois parâmetros estão na query string para POST simples, ou deveriam estar no body se fosse form-data.
-            // A documentação do Graph API aceita query params para media creation simples.
-            // Mas para evitar erro "Specifying multiple ids...", vamos garantir que seja enviado corretamente.
-      { params: containerParams }
+      containerParams // Parâmetros no BODY (JSON/Form)
     );
 
     const creationId = createContainer.data.id;
@@ -245,8 +242,7 @@ export const publishVideoToInstagram = async (
 
     const publishResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-      null,
-      { params: publishParams }
+      publishParams // Parâmetros no BODY
     );
 
     return publishResp.data;
@@ -268,8 +264,6 @@ export const publishToInstagram = async (
     console.log(`[publishToInstagram] Creating container for image: ${imageUrl}`);
 
     // 1. Create Container
-    // ATENÇÃO: Para image_url, deve ser enviado via query params ou body form-urlencoded.
-    // O erro "Specifying multiple ids" ocorre quando o parser do Facebook confunde os parâmetros.
     const containerParams = {
       access_token: accessToken,
       image_url: imageUrl,
@@ -278,8 +272,7 @@ export const publishToInstagram = async (
 
     const createContainer = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-      null,
-      { params: containerParams }
+      containerParams // Parâmetros no BODY
     );
 
     const creationId = createContainer.data.id;
@@ -293,8 +286,7 @@ export const publishToInstagram = async (
 
     const publishResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-      null,
-      { params: publishParams }
+      publishParams // Parâmetros no BODY
     );
 
     console.log(`[publishToInstagram] Published successfully: ${publishResp.data.id}`);
