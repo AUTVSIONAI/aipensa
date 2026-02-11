@@ -1669,21 +1669,21 @@ const Marketing = () => {
                                <Box p={1} display="flex" justifyContent="space-between" alignItems="center">
                                   <Box display="flex" gap={1}>
                                      <Button 
-                                       startIcon={<ThumbUpIcon />} 
-                                       size="small" 
-                                       onClick={() => handleLike(post.id)}
-                                       style={{ color: "rgba(255, 255, 255, 0.7)" }}
-                                     >
-                                        Curtir ({(post.likes && post.likes.summary && post.likes.summary.total_count) || 0})
-                                     </Button>
-                                     <Button 
-                                       startIcon={<ChatBubbleOutlineIcon />} 
-                                       size="small" 
-                                       onClick={() => toggleComments(post.id)}
-                                       style={{ color: "rgba(255, 255, 255, 0.7)" }}
-                                     >
-                                        Comentar ({(post.comments && post.comments.summary && post.comments.summary.total_count) || 0})
-                                     </Button>
+                                      startIcon={<ThumbUpIcon />} 
+                                      size="small" 
+                                      onClick={() => handleLike(post.id)}
+                                      color="primary"
+                                    >
+                                       Curtir ({(post.likes && post.likes.summary && post.likes.summary.total_count) || 0})
+                                    </Button>
+                                    <Button 
+                                      startIcon={<ChatBubbleOutlineIcon />} 
+                                      size="small" 
+                                      onClick={() => toggleComments(post.id)}
+                                      color="primary"
+                                    >
+                                       Comentar ({(post.comments && post.comments.summary && post.comments.summary.total_count) || 0})
+                                    </Button>
                                   </Box>
                                   <IconButton size="small" onClick={() => window.open(post.permalink_url, "_blank")} style={{ color: "rgba(255, 255, 255, 0.7)" }}>
                                      <LinkIcon fontSize="small" />
