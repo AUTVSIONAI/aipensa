@@ -2,7 +2,7 @@ import axios from "axios";
 import MetaIntegration from "../../models/MetaIntegration";
 import MetaPage from "../../models/MetaPage";
 import MetaAdsAccount from "../../models/MetaAdsAccount";
-import { logger } from "../../utils/logger";
+import logger from "../../utils/logger";
 
 const apiVersion = "v19.0";
 const baseUrl = `https://graph.facebook.com/${apiVersion}`;
