@@ -506,6 +506,103 @@ const handleMarketingAction = async (
   const marketingRegex = /\[MARKETING\]([\s\S]*?)\[\/MARKETING\]/;
   const match = response.match(marketingRegex);
 
+  // Regex para capturar tags [AGENT_PLAN]
+  const planRegex = /\[AGENT_PLAN\]([\s\S]*?)\[\/AGENT_PLAN\]/;
+  const planMatch = response.match(planRegex);
+
+  if (planMatch && planMatch[1]) {
+    try {
+      if (!(await verifyAdminPermission(contact))) {
+         return (
+            response.replace(planMatch[0], "").trim() +
+            "\n\n⛔ *Acesso Negado*: Esta ação requer permissão de administrador (Tag: ADMIN)."
+         );
+      }
+
+      const jsonContent = planMatch[1].trim();
+      const plan = JSON.parse(jsonContent);
+
+      // Create Task
+      const AgentTask = (await import("../../models/AgentTask")).default;
+      
+      // Enrich payload with context
+      const payload = {
+          ...plan.payload,
+          whatsappId: ticket.whatsappId,
+          companyId: ticket.companyId,
+          contactId: contact.id,
+          ticketId: ticket.id
+      };
+
+      const task = await AgentTask.create({
+         userId: ticket.userId || null, // Might be null if via bot
+         type: plan.type,
+         status: "awaiting_confirmation",
+         payload: payload,
+      });
+
+      // Generate confirmation text
+      let confirmationText = "";
+      if (plan.type === "instagram_post") {
+          confirmationText = 
+`📢 *AIPENSA IA - Publicação pronta!*
+
+Vou publicar no Instagram da sua empresa:
+📌 Tipo: ${plan.payload.media_type || "Imagem"}
+📝 Legenda: "${plan.payload.caption}"
+🖼️ Mídia: ${plan.payload.image_url ? "Sim" : "Não detectada"}
+📅 Publicação: Agora
+
+Confirma?
+✅ *SIM* para publicar
+❌ *NÃO* para cancelar
+`;
+      } else if (plan.type === "ads_campaign") {
+          confirmationText =
+`🚀 *AIPENSA IA - Campanha de Anúncio pronta!*
+
+📌 Campanha: ${plan.payload.campaign_name}
+🎯 Objetivo: ${plan.payload.objective}
+💰 Orçamento: R$${(plan.payload.daily_budget / 100).toFixed(2)}/dia
+📢 Título: ${plan.payload.ad_title || "N/A"}
+📝 Texto: ${plan.payload.ad_body || "N/A"}
+🖼️ Imagem: ${plan.payload.image_url ? "Pronta" : "Pendente"}
+
+Confirma?
+✅ *SIM* para ativar
+❌ *NÃO* para cancelar
+`;
+      } else if (plan.type === "whatsapp_status") {
+          confirmationText =
+`📱 *AIPENSA IA - Status WhatsApp pronto!*
+
+Vou postar no Status do seu WhatsApp:
+📌 Mídia: ${plan.payload.media_type || "Imagem"}
+📝 Legenda: "${plan.payload.caption}"
+
+Confirma?
+✅ *SIM* para postar
+❌ *NÃO* para cancelar
+`;
+      }
+
+      // Append Task ID to confirmation for context (could use a cache, but text is simpler)
+      // Or better, we store the pending task for this ticket/contact in a cache or rely on "last task" logic
+      // For simplicity, we can ask user to reply SIM. The system needs to know which task to confirm.
+      // We can use a temporary "pending_task_id" in Ticket or a Cache.
+      
+      // Let's use Redis or a variable in Ticket if possible. 
+      // Or we can embed a hidden ID if Whatsapp allowed, but it doesn't.
+      // We'll assume the LAST pending task for this user is the one to confirm.
+
+      return response.replace(planMatch[0], "").trim() + "\n\n" + confirmationText;
+
+    } catch (e) {
+      console.error("Error creating Agent Plan:", e);
+      return response.replace(planMatch[0], "").trim() + "\n\n❌ Erro ao gerar plano.";
+    }
+  }
+
   if (match && match[1]) {
     try {
       if (!(await verifyAdminPermission(contact))) {
@@ -1892,6 +1989,23 @@ export const handleOpenAi = async (
   IMAGE GENERATION (DALL-E):
   IMPORTANTE: Se o usuário pedir para criar, gerar, desenhar ou fazer uma imagem, você DEVE responder APENAS com esta tag (sem texto adicional antes ou depois se não for necessário).
   [GENERATE_IMAGE] { "prompt": "descrição detalhada da imagem em inglês", "size": "1024x1024" } [/GENERATE_IMAGE]
+
+  CAPACIDADES DE AGENTE (SUPERAGENT):
+  Se o usuário solicitar ações de marketing, criação de anúncios, postagens no Instagram ou Status do WhatsApp, você DEVE gerar um plano usando a tag [AGENT_PLAN].
+
+  Formatos:
+  1. Para Status do WhatsApp:
+  [AGENT_PLAN] { "type": "whatsapp_status", "payload": { "media_type": "IMAGE", "caption": "texto do status", "image_url": "url_ou_prompt_imagem" } } [/AGENT_PLAN]
+
+  2. Para Post no Instagram:
+  [AGENT_PLAN] { "type": "instagram_post", "payload": { "media_type": "IMAGE", "caption": "legenda", "image_url": "url_ou_prompt" } } [/AGENT_PLAN]
+
+  3. Para Campanha de Anúncios (Ads):
+  [AGENT_PLAN] { "type": "ads_campaign", "payload": { "campaign_name": "Nome", "objective": "OUTCOME_TRAFFIC", "daily_budget": 5000, "ad_title": "Título do Anúncio", "ad_body": "Texto Principal", "link_url": "https://...", "image_url": "https://..." } } [/AGENT_PLAN]
+  
+  IMPORTANTE SOBRE IMAGENS EM ADS:
+  - Se o usuário não fornecer uma imagem, você pode sugerir gerar uma primeiro usando a tag [GENERATE_IMAGE].
+  - Se já houver uma imagem no contexto (enviada ou gerada), use a URL dela no campo "image_url".
   
   ${catalogContext}
   

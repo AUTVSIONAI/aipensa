@@ -299,34 +299,163 @@ export const publishToInstagram = async (
     // Validate Image Aspect Ratio and Format
     await validateImageForInstagram(imageUrl);
 
-    // 1. Create Container
-    const containerParams = {
-      access_token: accessToken,
-      image_url: imageUrl,
-      caption: caption
-    };
-
     const createContainer = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
-      containerParams // Parâmetros no BODY
+      null,
+      {
+        params: {
+          access_token: accessToken,
+          image_url: imageUrl,
+          caption: caption
+        }
+      }
     );
-
     const creationId = createContainer.data.id;
-    console.log(`[publishToInstagram] Container created: ${creationId}`);
-
-    // 2. Publish Container
-    const publishParams = {
-      access_token: accessToken,
-      creation_id: creationId
-    };
 
     const publishResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
-      publishParams // Parâmetros no BODY
+      null,
+      {
+        params: {
+          access_token: accessToken,
+          creation_id: creationId
+        }
+      }
     );
 
-    console.log(`[publishToInstagram] Published successfully: ${publishResp.data.id}`);
     return publishResp.data;
+  } catch (error) {
+    handleFacebookError(error);
+  }
+};
+
+export const createCampaign = async (
+  accessToken: string,
+  adAccountId: string,
+  data: any
+): Promise<any> => {
+  try {
+    const {
+      name,
+      objective = "MESSAGES",
+      status = "PAUSED",
+      special_ad_categories = []
+    } = data;
+
+    const payload = {
+      name,
+      objective,
+      status,
+      special_ad_categories
+    };
+
+    const resp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/campaigns`,
+      payload,
+      { params: { access_token: accessToken } }
+    );
+    return resp.data;
+  } catch (error) {
+    handleFacebookError(error);
+  }
+};
+
+export const createAdSet = async (
+  accessToken: string,
+  adAccountId: string,
+  data: any
+): Promise<any> => {
+  try {
+    const {
+      name,
+      campaign_id,
+      daily_budget,
+      billing_event = "IMPRESSIONS",
+      optimization_goal = "REACH",
+      start_time,
+      end_time,
+      status = "PAUSED",
+      targeting = { geo_locations: { countries: ["BR"] } }
+    } = data;
+
+    const payload = {
+      name,
+      campaign_id,
+      daily_budget,
+      billing_event,
+      optimization_goal,
+      start_time,
+      end_time,
+      status,
+      targeting
+    };
+
+    const resp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adsets`,
+      payload,
+      { params: { access_token: accessToken } }
+    );
+    return resp.data;
+  } catch (error) {
+    handleFacebookError(error);
+  }
+};
+
+export const createCreative = async (
+  accessToken: string,
+  adAccountId: string,
+  data: any
+): Promise<any> => {
+  try {
+    const { page_id, name, link_url, image_hash, body, title } = data;
+
+    const object_story_spec = {
+      page_id,
+      link_data: {
+        link: link_url || `https://facebook.com/${page_id}`,
+        message: body,
+        name: title,
+        image_hash
+      }
+    };
+
+    const payload = {
+      name,
+      object_story_spec
+    };
+
+    const resp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adcreatives`,
+      payload,
+      { params: { access_token: accessToken } }
+    );
+    return resp.data;
+  } catch (error) {
+    handleFacebookError(error);
+  }
+};
+
+export const createAd = async (
+  accessToken: string,
+  adAccountId: string,
+  data: any
+): Promise<any> => {
+  try {
+    const { name, adset_id, creative_id, status = "PAUSED" } = data;
+
+    const payload = {
+      name,
+      adset_id,
+      creative: { creative_id },
+      status
+    };
+
+    const resp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/ads`,
+      payload,
+      { params: { access_token: accessToken } }
+    );
+    return resp.data;
   } catch (error) {
     handleFacebookError(error);
   }
@@ -396,4 +525,118 @@ export const getConnectedPages = async (companyId: number): Promise<any[]> => {
     console.error("[SocialMediaService] Error fetching pages:", e.message);
     return [];
   }
+};
+
+export const uploadAdImage = async (
+  accessToken: string,
+  adAccountId: string,
+  imageUrl: string
+): Promise<string> => {
+  try {
+    // 1. Fetch image data
+    const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+    const imageBuffer = Buffer.from(imageResponse.data);
+
+    // 2. Upload to Facebook using bytes (base64)
+    // This avoids dependency on 'form-data' package or Node.js FormData/Blob compatibility issues.
+    const base64Image = imageBuffer.toString("base64");
+    
+    const resp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adimages`,
+      {
+        bytes: base64Image,
+        access_token: accessToken
+      }
+    );
+    
+    // Response format: { images: { "filename": { hash: "..." } } }
+    const images = resp.data.images;
+    const firstKey = Object.keys(images)[0];
+    return images[firstKey].hash;
+
+  } catch (error) {
+    handleFacebookError(error);
+    throw error;
+  }
+};
+
+export const createFullAdCampaign = async (
+  companyId: number,
+  payload: any
+): Promise<any> => {
+  const { accessToken, adAccountId } = await getFbConfig(companyId);
+  if (!accessToken || !adAccountId) {
+    throw new Error("Facebook Config (Token/AdAccount) not found");
+  }
+
+  // 1. Create Campaign
+  const campaignData = {
+    name: payload.campaign_name || `Campaign ${new Date().toISOString()}`,
+    objective: payload.objective || "OUTCOME_TRAFFIC", // or OUTCOME_SALES
+    status: "PAUSED",
+    special_ad_categories: []
+  };
+  const campaign = await createCampaign(accessToken, adAccountId, campaignData);
+  console.log(`[createFullAdCampaign] Campaign created: ${campaign.id}`);
+
+  // 2. Create AdSet
+  const adSetData = {
+    name: `${campaignData.name} - AdSet`,
+    campaign_id: campaign.id,
+    daily_budget: payload.daily_budget || 5000, // min ~ $1 USD (in cents)
+    billing_event: "IMPRESSIONS",
+    optimization_goal: "REACH", // depends on objective
+    status: "PAUSED",
+    targeting: payload.targeting || { geo_locations: { countries: ["BR"] } }
+  };
+  // Adjust optimization_goal based on objective
+  if (campaignData.objective === "OUTCOME_TRAFFIC") adSetData.optimization_goal = "LINK_CLICKS";
+  
+  const adSet = await createAdSet(accessToken, adAccountId, adSetData);
+  console.log(`[createFullAdCampaign] AdSet created: ${adSet.id}`);
+
+  // 3. Create Creative
+  // If image_url is provided, upload it first
+  let image_hash = payload.image_hash;
+  if (!image_hash && payload.image_url) {
+     image_hash = await uploadAdImage(accessToken, adAccountId, payload.image_url);
+  }
+
+  // We need a page_id. 
+  // If not provided, fetch connected pages and use the first one.
+  let page_id = payload.page_id;
+  if (!page_id) {
+     const pages = await getConnectedPages(companyId);
+     if (pages.length > 0) page_id = pages[0].id;
+  }
+  if (!page_id) throw new Error("No Facebook Page found to associate with Ad");
+
+  const creativeData = {
+    name: `${campaignData.name} - Creative`,
+    page_id,
+    link_url: payload.link_url || `https://facebook.com/${page_id}`,
+    image_hash,
+    body: payload.ad_body || "Check this out!",
+    title: payload.ad_title || "Special Offer"
+  };
+  
+  const creative = await createCreative(accessToken, adAccountId, creativeData);
+  console.log(`[createFullAdCampaign] Creative created: ${creative.id}`);
+
+  // 4. Create Ad
+  const adData = {
+    name: `${campaignData.name} - Ad`,
+    adset_id: adSet.id,
+    creative_id: creative.id,
+    status: "PAUSED"
+  };
+  const ad = await createAd(accessToken, adAccountId, adData);
+  console.log(`[createFullAdCampaign] Ad created: ${ad.id}`);
+
+  return {
+    campaign,
+    adSet,
+    creative,
+    ad
+  };
 };

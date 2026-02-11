@@ -1685,27 +1685,27 @@ const Marketing = () => {
                                        Comentar ({(post.comments && post.comments.summary && post.comments.summary.total_count) || 0})
                                     </Button>
                                   </Box>
-                                  <IconButton size="small" onClick={() => window.open(post.permalink_url, "_blank")} style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                                  <IconButton size="small" onClick={() => window.open(post.permalink_url, "_blank")} style={{ color: theme.palette.text.secondary }}>
                                      <LinkIcon fontSize="small" />
                                   </IconButton>
                                </Box>
                                
                                <Collapse in={expandedComments[post.id]} timeout="auto" unmountOnExit>
-                                   <Box p={2} bgcolor="rgba(0, 0, 0, 0.2)" borderTop="1px solid rgba(255, 255, 255, 0.1)">
+                                   <Box p={2} bgcolor={theme.palette.type === "dark" ? "rgba(0, 0, 0, 0.3)" : "#f5f5f5"} borderTop="1px solid rgba(128, 128, 128, 0.1)">
                                       <Box style={{ maxHeight: 300, overflowY: "auto", marginBottom: 16, paddingRight: 8 }}>
                                          {post.comments && post.comments.data && post.comments.data.length > 0 ? (
                                            post.comments.data.map((c) => (
                                              <Box key={c.id} mb={2} display="flex" alignItems="flex-start">
                                                 <Avatar style={{ width: 32, height: 32, marginRight: 12, fontSize: 14 }}>{(c.from && c.from.name && c.from.name[0]) || "?"}</Avatar>
-                                                <Box bgcolor="rgba(255, 255, 255, 0.1)" p={2} borderRadius="0 12px 12px 12px" border="1px solid rgba(255, 255, 255, 0.1)" flexGrow={1}>
+                                                <Box bgcolor={theme.palette.type === "dark" ? "rgba(255, 255, 255, 0.05)" : "#ffffff"} p={2} borderRadius="0 12px 12px 12px" border={`1px solid ${theme.palette.type === "dark" ? "rgba(255, 255, 255, 0.1)" : "#e0e0e0"}`} flexGrow={1}>
                                                    <Typography variant="subtitle2" style={{ fontSize: "0.85rem", fontWeight: "bold", color: theme.palette.text.primary }}>{(c.from && c.from.name) || "Usuário"}</Typography>
-                                                   <Typography variant="body2" style={{ fontSize: "0.9rem", color: "#d1d5db" }}>{c.message}</Typography>
+                                                   <Typography variant="body2" style={{ fontSize: "0.9rem", color: theme.palette.text.primary }}>{c.message}</Typography>
                                                 </Box>
                                              </Box>
                                            ))
                                          ) : (
                                            <Box py={2} textAlign="center">
-                                              <Typography variant="caption" style={{ color: "rgba(255, 255, 255, 0.5)" }}>Seja o primeiro a comentar.</Typography>
+                                              <Typography variant="caption" color="textSecondary">Seja o primeiro a comentar.</Typography>
                                            </Box>
                                          )}
                                       </Box>
@@ -1719,7 +1719,7 @@ const Marketing = () => {
                                            className={classes.input}
                                            id={`comment-${post.id}`} 
                                            InputProps={{ 
-                                              style: { backgroundColor: "rgba(255, 255, 255, 0.05)", borderRadius: 20, color: theme.palette.text.primary },
+                                              style: { backgroundColor: theme.palette.type === "dark" ? "rgba(255, 255, 255, 0.05)" : "#ffffff", borderRadius: 20 },
                                               endAdornment: (
                                                 <InputAdornment position="end">
                                                   <IconButton size="small" edge="end" color="primary" onClick={() => {

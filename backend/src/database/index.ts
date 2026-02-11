@@ -53,6 +53,12 @@ import { FlowCampaignModel } from "../models/FlowCampaign";
 import { FlowImgModel } from "../models/FlowImg";
 import { WebhookModel } from "../models/Webhook";
 import UsageTracking from "../models/UsageTracking";
+import MetaIntegration from "../models/MetaIntegration";
+import MetaPage from "../models/MetaPage";
+import MetaAdsAccount from "../models/MetaAdsAccount";
+import MetaAdsCampaign from "../models/MetaAdsCampaign";
+import AgentTask from "../models/AgentTask";
+import AgentMessageLog from "../models/AgentMessageLog";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -99,6 +105,7 @@ const models = [
   ApiUsages,
   Files,
   FilesOptions,
+  ContactTag,
   CompaniesSettings,
   LogTicket,
   Prompt,
@@ -113,7 +120,13 @@ const models = [
   FlowCampaignModel,
   FlowImgModel,
   WebhookModel,
-  UsageTracking
+  UsageTracking,
+  MetaIntegration,
+  MetaPage,
+  MetaAdsAccount,
+  MetaAdsCampaign,
+  AgentTask,
+  AgentMessageLog
 ];
 
 sequelize.addModels(models);

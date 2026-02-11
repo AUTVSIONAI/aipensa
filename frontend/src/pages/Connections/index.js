@@ -729,10 +729,14 @@ const Connections = () => {
                               autoLoad={false}
                               fields="name,email,picture"
                               version="19.0"
-                              scope="public_profile,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management"
+                              scope="public_profile,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,pages_manage_posts,ads_management,business_management"
                               redirectUri={window.location.origin}
                               disableMobileRedirect={true}
                               auth_type="reauthenticate"
+                              onFailure={(error) => {
+                                console.log("Login Failed!", error);
+                                toast.error("Falha no login com Facebook. Verifique se concedeu todas as permissões.");
+                              }}
                               callback={(response) => {
                                 responseFacebook(response);
                                 popupState.close();
@@ -764,10 +768,14 @@ const Connections = () => {
                               autoLoad={false}
                               fields="name,email,picture"
                               version="19.0"
-                              scope="public_profile,instagram_basic,instagram_manage_messages,instagram_manage_comments,instagram_manage_insights,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management,ads_management,ads_read,pages_manage_posts"
+                              scope="public_profile,email,pages_show_list,pages_manage_metadata,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_manage_comments,instagram_manage_insights,instagram_content_publish,ads_management,business_management"
                               auth_type="reauthenticate"
                               redirectUri={window.location.origin}
                               disableMobileRedirect={true}
+                              onFailure={(error) => {
+                                console.log("Login Failed!", error);
+                                toast.error("Falha no login com Facebook. Verifique se concedeu todas as permissões.");
+                              }}
                               callback={(response) => {
                                 responseInstagram(response);
                                 popupState.close();
