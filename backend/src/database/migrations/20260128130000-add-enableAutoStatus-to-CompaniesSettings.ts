@@ -1,15 +1,21 @@
 import { QueryInterface, DataTypes } from "sequelize";
 
 module.exports = {
-  up: (queryInterface: QueryInterface) => {
-    return queryInterface.addColumn("CompaniesSettings", "enableAutoStatus", {
-      type: DataTypes.STRING,
-      allowNull: true,
-      defaultValue: "disabled"
-    });
+  up: async (queryInterface: QueryInterface) => {
+    const table: any = await queryInterface.describeTable("CompaniesSettings");
+    if (!table.enableAutoStatus) {
+      await queryInterface.addColumn("CompaniesSettings", "enableAutoStatus", {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: "disabled"
+      });
+    }
   },
 
-  down: (queryInterface: QueryInterface) => {
-    return queryInterface.removeColumn("CompaniesSettings", "enableAutoStatus");
+  down: async (queryInterface: QueryInterface) => {
+    const table: any = await queryInterface.describeTable("CompaniesSettings");
+    if (table.enableAutoStatus) {
+      await queryInterface.removeColumn("CompaniesSettings", "enableAutoStatus");
+    }
   }
 };
