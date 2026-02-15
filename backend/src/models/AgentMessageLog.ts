@@ -1,7 +1,7 @@
 import { Table, Column, CreatedAt, Model, DataType, PrimaryKey, Default, ForeignKey, BelongsTo } from "sequelize-typescript";
 import AgentTask from "./AgentTask";
 
-@Table({ tableName: "AgentMessagesLog" })
+@Table({ tableName: "AgentMessageLogs" })
 class AgentMessageLog extends Model<AgentMessageLog> {
   @PrimaryKey
   @Default(DataType.UUIDV4)

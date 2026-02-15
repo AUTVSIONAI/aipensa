@@ -5,8 +5,8 @@ module.exports = {
     // 1. MetaIntegrations
     await queryInterface.createTable("MetaIntegrations", {
       id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false
       },
@@ -50,13 +50,13 @@ module.exports = {
     // 2. MetaPages
     await queryInterface.createTable("MetaPages", {
       id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false
       },
       integrationId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         references: { model: "MetaIntegrations", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
@@ -91,13 +91,13 @@ module.exports = {
     // 3. MetaAdsAccounts
     await queryInterface.createTable("MetaAdsAccounts", {
       id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false
       },
       integrationId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         references: { model: "MetaIntegrations", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
@@ -173,8 +173,8 @@ module.exports = {
     // 5. AgentMessageLogs
     await queryInterface.createTable("AgentMessageLogs", {
       id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false
       },
@@ -206,8 +206,8 @@ module.exports = {
     // 6. MetaAdsCampaigns
     await queryInterface.createTable("MetaAdsCampaigns", {
       id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false
       },
