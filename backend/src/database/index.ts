@@ -105,7 +105,6 @@ const models = [
   ApiUsages,
   Files,
   FilesOptions,
-  ContactTag,
   CompaniesSettings,
   LogTicket,
   Prompt,
