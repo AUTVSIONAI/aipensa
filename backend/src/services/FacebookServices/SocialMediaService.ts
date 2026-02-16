@@ -143,6 +143,28 @@ const validateImageForInstagram = async (imageUrl: string): Promise<void> => {
   }
 };
 
+export const checkTokenPermissions = async (companyId: number): Promise<any> => {
+  try {
+    // Check token permissions first
+    console.log("[publishToFacebook] Checking token permissions...");
+    const tokenInfo = await checkTokenPermissions(companyId);
+    console.log("[publishToFacebook] Token info:", tokenInfo);
+
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+
+    // Importar a função debugToken do graphAPI
+    const { debugToken } = require('./graphAPI');
+    const debugInfo = await debugToken(accessToken);
+    
+    console.log("[checkTokenPermissions] Token permissions:", debugInfo.data?.scopes);
+    return debugInfo.data;
+  } catch (error) {
+    console.error("[checkTokenPermissions] Error:", error);
+    throw error;
+  }
+};
+
 export const publishToFacebook = async (
   companyId: number,
   pageId: string,
@@ -311,6 +333,9 @@ export const publishToInstagram = async (
       }
     );
     const creationId = createContainer.data.id;
+
+    // Wait for processing
+    await waitForInstagramMedia(creationId, accessToken);
 
     const publishResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,

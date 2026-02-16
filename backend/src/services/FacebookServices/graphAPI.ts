@@ -278,3 +278,18 @@ export const removeApplication = async (
     logger.error("ERR_REMOVING_APP_FROM_PAGE");
   }
 };
+
+export const debugToken = async (token: string): Promise<any> => {
+  try {
+    const { data } = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/debug_token`, {
+      params: {
+        input_token: token,
+        access_token: token
+      }
+    });
+    return data;
+  } catch (error) {
+    console.error("Error debugging token:", error);
+    throw error;
+  }
+};
