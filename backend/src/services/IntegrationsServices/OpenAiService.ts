@@ -238,6 +238,7 @@ import {
   publishToInstagram,
   publishVideoToFacebook,
   publishVideoToInstagram,
+  publishReelsToInstagram,
   getFbConfig
 } from "../FacebookServices/SocialMediaService";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
@@ -843,7 +844,11 @@ const handleSocialMediaAction = async (
       console.log("[OpenAiService] Social Media JSON:", jsonContent);
 
       const postData = JSON.parse(jsonContent);
-      let { platform, message, image, scheduledTime } = postData;
+      let { platform, message, image, scheduledTime, contentType, mediaType } = postData;
+      
+      // Valores padrão se não forem especificados
+      contentType = contentType || "feed";
+      mediaType = mediaType || "photo";
 
       // Resolve image URL if it's a local filename
       if (image && !image.startsWith("http")) {
@@ -896,17 +901,46 @@ const handleSocialMediaAction = async (
       if (platform === "facebook") {
         // Use first page
         const page = pages[0];
-        await publishToFacebook(
-          ticket.companyId,
-          page.id,
-          message,
-          finalImageUrl,
-          scheduledTime
-        );
-        if (scheduledTime) {
-          result = `Agendado com sucesso no Facebook (${page.name}) para ${scheduledTime}!`;
+        
+        // Escolher o método baseado no tipo de conteúdo
+        if (contentType === "reels" && mediaType === "video") {
+          // Publicar Reels (vídeo)
+          if (!finalImageUrl) {
+            throw new Error("Reels requer um vídeo");
+          }
+          await publishVideoToFacebook(
+            ticket.companyId,
+            page.id,
+            finalImageUrl,
+            message
+          );
+          result = `Reels postado com sucesso no Facebook da página ${page.name}!`;
+        } else if (mediaType === "video") {
+          // Publicar vídeo normal
+          if (!finalImageUrl) {
+            throw new Error("Vídeo requer uma URL de vídeo");
+          }
+          await publishVideoToFacebook(
+            ticket.companyId,
+            page.id,
+            finalImageUrl,
+            message
+          );
+          result = `Vídeo postado com sucesso no Facebook da página ${page.name}!`;
         } else {
-          result = `Postado com sucesso no Facebook da página ${page.name}!`;
+          // Publicar foto/feed normal
+          await publishToFacebook(
+            ticket.companyId,
+            page.id,
+            message,
+            finalImageUrl,
+            scheduledTime
+          );
+          if (scheduledTime) {
+            result = `Agendado com sucesso no Facebook (${page.name}) para ${scheduledTime}!`;
+          } else {
+            result = `Postado com sucesso no Facebook da página ${page.name}!`;
+          }
         }
       } else if (platform === "instagram") {
         if (scheduledTime) {
@@ -944,19 +978,38 @@ const handleSocialMediaAction = async (
               "\n\n(Erro: Nenhuma conta de Instagram conectada à página)"
             );
           }
-          if (!finalImageUrl) {
-            return (
-              response.replace(match[0], "").trim() +
-              "\n\n(Erro: Imagem é obrigatória para Instagram)"
+          
+          if (contentType === "reels") {
+            // Publicar Reels
+            if (!finalImageUrl) {
+              return (
+                response.replace(match[0], "").trim() +
+                "\n\n(Erro: Vídeo é obrigatório para Reels)"
+              );
+            }
+            await publishReelsToInstagram(
+              ticket.companyId,
+              pageWithInsta.instagram_business_account.id,
+              finalImageUrl,
+              message
             );
+            result = `Reels postado com sucesso no Instagram @${pageWithInsta.instagram_business_account.username}!`;
+          } else {
+            // Publicar foto normal
+            if (!finalImageUrl) {
+              return (
+                response.replace(match[0], "").trim() +
+                "\n\n(Erro: Imagem é obrigatória para Instagram)"
+              );
+            }
+            await publishToInstagram(
+              ticket.companyId,
+              pageWithInsta.instagram_business_account.id,
+              finalImageUrl,
+              message
+            );
+            result = `Postado com sucesso no Instagram @${pageWithInsta.instagram_business_account.username}!`;
           }
-          await publishToInstagram(
-            ticket.companyId,
-            pageWithInsta.instagram_business_account.id,
-            finalImageUrl,
-            message
-          );
-          result = `Postado com sucesso no Instagram @${pageWithInsta.instagram_business_account.username}!`;
         }
       } else {
         result = "(Erro: Plataforma desconhecida)";

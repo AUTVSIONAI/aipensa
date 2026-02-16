@@ -250,8 +250,15 @@ export const publishContent = async (
       return res.status(400).json({ error: "access_token ausente" });
     }
 
-    const { facebookPageId, instagramId, message, imageUrl, scheduledTime } =
-      req.body;
+    const { 
+      facebookPageId, 
+      instagramId, 
+      message, 
+      imageUrl, 
+      scheduledTime,
+      contentType = "feed", // feed, reels, story, carousel
+      mediaType = "photo"   // photo, video
+    } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: "Mensagem é obrigatória" });
@@ -268,13 +275,42 @@ export const publishContent = async (
     // 1. Publicar no Facebook
     if (facebookPageId) {
       try {
-        const result = await SocialMediaService.publishToFacebook(
-          companyId,
-          facebookPageId,
-          message,
-          imageUrl,
-          scheduledTime
-        );
+        let result;
+        
+        // Escolher o método baseado no tipo de conteúdo
+        if (contentType === "reels" && mediaType === "video") {
+          // Publicar Reels (vídeo)
+          if (!imageUrl) {
+            throw new Error("Reels requer um vídeo");
+          }
+          result = await SocialMediaService.publishVideoToFacebook(
+            companyId,
+            facebookPageId,
+            imageUrl,
+            message
+          );
+        } else if (mediaType === "video") {
+          // Publicar vídeo normal
+          if (!imageUrl) {
+            throw new Error("Vídeo requer uma URL de vídeo");
+          }
+          result = await SocialMediaService.publishVideoToFacebook(
+            companyId,
+            facebookPageId,
+            imageUrl,
+            message
+          );
+        } else {
+          // Publicar foto/feed normal
+          result = await SocialMediaService.publishToFacebook(
+            companyId,
+            facebookPageId,
+            message,
+            imageUrl,
+            scheduledTime
+          );
+        }
+        
         results.facebook = result;
         await incrementUsage(companyId, "POST", 1, `FB-${result.id}`);
       } catch (err: any) {
@@ -286,18 +322,35 @@ export const publishContent = async (
     // 2. Publicar no Instagram
     if (instagramId) {
       try {
-        if (!imageUrl) {
-          results.instagram = { error: "Instagram requer uma imagem" };
-        } else {
-          const result = await SocialMediaService.publishToInstagram(
+        let result;
+        
+        if (contentType === "reels") {
+          // Publicar Reels
+          if (!imageUrl) {
+            throw new Error("Reels requer um vídeo");
+          }
+          result = await SocialMediaService.publishReelsToInstagram(
             companyId,
             instagramId,
             imageUrl,
             message
           );
-          results.instagram = result;
-          await incrementUsage(companyId, "POST", 1, `IG-${result.id}`);
+        } else {
+          // Publicar foto normal
+          if (!imageUrl) {
+            results.instagram = { error: "Instagram requer uma imagem" };
+            return;
+          }
+          result = await SocialMediaService.publishToInstagram(
+            companyId,
+            instagramId,
+            imageUrl,
+            message
+          );
         }
+        
+        results.instagram = result;
+        await incrementUsage(companyId, "POST", 1, `IG-${result.id}`);
       } catch (err: any) {
         console.error("Erro Instagram Publish:", err.message);
         results.instagram = { error: err.message };

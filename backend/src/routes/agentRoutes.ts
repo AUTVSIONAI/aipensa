@@ -11,6 +11,7 @@ agentRoutes.post("/auth/meta/login", isAuth, MetaAuthController.login);
 
 agentRoutes.get("/meta/pages", isAuth, MetaAuthController.getPages);
 agentRoutes.get("/meta/ads/accounts", isAuth, MetaAuthController.getAdAccounts);
+agentRoutes.delete("/meta/clear", isAuth, MetaAuthController.clearIntegration);
 
 // Agent Tasks
 agentRoutes.post("/agent/task/create", isAuth, AgentTaskController.createTask);

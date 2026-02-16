@@ -733,6 +733,9 @@ const Connections = () => {
                               redirectUri={window.location.origin}
                               disableMobileRedirect={true}
                               auth_type="reauthenticate"
+                              // Evitar conflito com o outro botão do Instagram
+                              cookie={false}
+                              xfbml={false}
                               onFailure={(error) => {
                                 console.log("Login Failed!", error);
                                 toast.error("Falha no login com Facebook. Verifique se concedeu todas as permissões.");

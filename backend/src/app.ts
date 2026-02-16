@@ -91,6 +91,8 @@ app.use(
   cors({
     credentials: true,
     origin: (origin, cb) => {
+      // Debug CORS
+      console.log(`[CORS] Origin: ${origin}`);
       // Permitir todas as origens em produção temporariamente para resolver CORS
       return cb(null, true);
     },
@@ -105,6 +107,25 @@ app.use(
     optionsSuccessStatus: 200
   })
 );
+// Middleware para debug de CORS e OPTIONS
+app.use((req, res, next) => {
+  console.log(`[CORS Debug] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+  
+  // Adicionar headers de CORS extras para garantir
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With, Accept, Origin, X-CSRF-Token");
+  
+  // Se for OPTIONS, responder imediatamente
+  if (req.method === "OPTIONS") {
+    console.log(`[CORS Debug] Responding to OPTIONS for ${req.url}`);
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(Sentry.Handlers.requestHandler());

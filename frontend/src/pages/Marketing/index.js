@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useHistory } from "react-router-dom";
-import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider, Chip, Stepper, Step, StepLabel, CircularProgress, Avatar, Tooltip, InputAdornment, List, ListItem, ListItemAvatar, ListItemText, IconButton, Paper, Collapse, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox } from "@material-ui/core";
+import { Container, Typography, Box, Grid, Card, CardContent, TextField, Button, Table, TableHead, TableRow, TableCell, TableBody, MenuItem, Tabs, Tab, Divider, Chip, Stepper, Step, StepLabel, CircularProgress, Avatar, Tooltip, InputAdornment, List, ListItem, ListItemAvatar, ListItemText, IconButton, Paper, Collapse, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox, FormControl, InputLabel, Select } from "@material-ui/core";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import api from "../../services/api";
 import { socketConnection } from "../../services/socket";
@@ -227,6 +227,8 @@ const Marketing = () => {
   const [pubImageUrl, setPubImageUrl] = useState("");
   const [pubScheduledTime, setPubScheduledTime] = useState("");
   const [pubLoading, setPubLoading] = useState(false);
+  const [contentType, setContentType] = useState("feed"); // feed, reels, story, carousel
+  const [mediaType, setMediaType] = useState("photo"); // photo, video
   const [feed, setFeed] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const [feedPageId, setFeedPageId] = useState("");
@@ -681,7 +683,9 @@ const Marketing = () => {
       const payload = {
         message: pubMessage,
         imageUrl: pubImageUrl,
-        scheduledTime: pubScheduledTime || undefined
+        scheduledTime: pubScheduledTime || undefined,
+        contentType: contentType, // feed, reels, story, carousel
+        mediaType: mediaType     // photo, video
       };
       
       if (selectedPlatforms.facebook) {
@@ -1510,6 +1514,34 @@ const Marketing = () => {
                                   style={{ color: theme.palette.text.primary }}
                                 />
                              </Box>
+                          </Grid>
+                          <Grid item xs={12}>
+                             <FormControl fullWidth variant="outlined" className={classes.input}>
+                               <InputLabel>Tipo de Conteúdo</InputLabel>
+                               <Select
+                                 value={contentType}
+                                 onChange={(e) => setContentType(e.target.value)}
+                                 label="Tipo de Conteúdo"
+                               >
+                                 <MenuItem value="feed">Feed</MenuItem>
+                                 <MenuItem value="reels">Reels</MenuItem>
+                                 <MenuItem value="story">Stories</MenuItem>
+                                 <MenuItem value="carousel">Carrossel</MenuItem>
+                               </Select>
+                             </FormControl>
+                          </Grid>
+                          <Grid item xs={12}>
+                             <FormControl fullWidth variant="outlined" className={classes.input}>
+                               <InputLabel>Tipo de Mídia</InputLabel>
+                               <Select
+                                 value={mediaType}
+                                 onChange={(e) => setMediaType(e.target.value)}
+                                 label="Tipo de Mídia"
+                               >
+                                 <MenuItem value="photo">Foto</MenuItem>
+                                 <MenuItem value="video">Vídeo</MenuItem>
+                               </Select>
+                             </FormControl>
                           </Grid>
                           <Grid item xs={12}>
                              <TextField fullWidth multiline minRows={4} label="Legenda / Texto" value={pubMessage} onChange={(e) => setPubMessage(e.target.value)} variant="outlined" placeholder="Escreva algo interessante..." className={classes.input} />

@@ -4,6 +4,26 @@ import Setting from "../../models/Setting";
 import Whatsapp from "../../models/Whatsapp";
 import Jimp from "jimp";
 
+// Função para verificar se uma URL está acessível publicamente
+const checkUrlAccessibility = async (url: string): Promise<boolean> => {
+  try {
+    console.log(`[checkUrlAccessibility] Checking URL: ${url}`);
+    const response = await axios.head(url, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
+      }
+    });
+    
+    const isAccessible = response.status >= 200 && response.status < 300;
+    console.log(`[checkUrlAccessibility] URL ${url} is ${isAccessible ? 'accessible' : 'not accessible'}. Status: ${response.status}`);
+    return isAccessible;
+  } catch (error: any) {
+    console.error(`[checkUrlAccessibility] Error checking URL ${url}:`, error.message);
+    return false;
+  }
+};
+
 const GRAPH_VERSION = "v19.0";
 
 interface FbConfig {
@@ -176,6 +196,19 @@ export const publishToFacebook = async (
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
+    // Verificar permissões do token antes de tentar publicar
+    const { debugToken } = require('./graphAPI');
+    const debugInfo = await debugToken(accessToken);
+    const permissions = debugInfo.data?.scopes || [];
+    
+    console.log(`[publishToFacebook] Token permissions:`, permissions);
+    
+    // Verificar se o token ainda tem pages_manage_posts (que foi deprecado)
+    if (permissions.includes('pages_manage_posts')) {
+      console.error(`[publishToFacebook] Token still has deprecated pages_manage_posts permission!`);
+      throw new Error(`O token do Facebook contém permissões deprecadas (pages_manage_posts). Por favor, reconecte sua conta do Facebook em Configurações > Conexões.`);
+    }
+
     // Get Page Access Token
     const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`, {
       params: { fields: "access_token", access_token: accessToken }
@@ -209,6 +242,49 @@ export const publishToFacebook = async (
   }
 };
 
+// Função para upload direto de imagem para o Facebook
+export const uploadImageToFacebook = async (
+  companyId: number,
+  pageId: string,
+  imageBuffer: Buffer,
+  filename: string
+): Promise<string> => {
+  try {
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+
+    // Get Page Access Token
+    const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`, {
+      params: { fields: "access_token", access_token: accessToken }
+    });
+    const pageAccessToken = pageResp.data.access_token;
+
+    // Preparar o upload
+    const FormData = require("form-data");
+    const form = new FormData();
+    form.append('source', imageBuffer, {
+      filename: filename,
+      contentType: 'image/jpeg'
+    });
+    form.append('access_token', pageAccessToken);
+
+    // Fazer upload
+    const uploadResp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/photos`,
+      form,
+      {
+        headers: {
+          ...form.getHeaders()
+        }
+      }
+    );
+
+    return uploadResp.data.id; // Retorna o ID da imagem
+  } catch (error) {
+    handleFacebookError(error);
+  }
+};
+
 export const publishVideoToFacebook = async (
   companyId: number,
   pageId: string,
@@ -218,6 +294,14 @@ export const publishVideoToFacebook = async (
   try {
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+
+    console.log(`[publishVideoToFacebook] Publishing video to page: ${pageId}`);
+
+    // Verificar se a URL está acessível publicamente
+    const isAccessible = await checkUrlAccessibility(videoUrl);
+    if (!isAccessible) {
+      throw new Error(`O vídeo não está acessível publicamente: ${videoUrl}. Verifique se a URL está disponível sem autenticação.`);
+    }
 
     // Get Page Access Token
     const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`, {
@@ -235,6 +319,61 @@ export const publishVideoToFacebook = async (
 
     const resp = await axios.post(endpoint, body);
     return resp.data;
+  } catch (error) {
+    handleFacebookError(error);
+  }
+};
+
+// Função para publicar Reels no Instagram
+export const publishReelsToInstagram = async (
+  companyId: number,
+  instagramId: string,
+  videoUrl: string,
+  caption: string
+): Promise<any> => {
+  try {
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+
+    console.log(`[publishReelsToInstagram] Creating Reels container for video: ${videoUrl}`);
+
+    // Verificar se a URL está acessível publicamente
+    const isAccessible = await checkUrlAccessibility(videoUrl);
+    if (!isAccessible) {
+      throw new Error(`O vídeo não está acessível publicamente: ${videoUrl}. Verifique se a URL está disponível sem autenticação.`);
+    }
+
+    // Criar container para Reels
+    const createContainer = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
+      null,
+      {
+        params: {
+          access_token: accessToken,
+          media_type: "REELS",
+          video_url: videoUrl,
+          caption: caption,
+          share_to_feed: true
+        }
+      }
+    );
+
+    const creationId = createContainer.data.id;
+    await waitForInstagramMedia(creationId, accessToken);
+
+    // Publicar Reels
+    const publishResp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
+      null,
+      {
+        params: {
+          access_token: accessToken,
+          creation_id: creationId
+        }
+      }
+    );
+
+    return publishResp.data;
   } catch (error) {
     handleFacebookError(error);
   }
@@ -317,6 +456,12 @@ export const publishToInstagram = async (
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     console.log(`[publishToInstagram] Creating container for image: ${imageUrl}`);
+
+    // Verificar se a URL está acessível publicamente
+    const isAccessible = await checkUrlAccessibility(imageUrl);
+    if (!isAccessible) {
+      throw new Error(`A imagem não está acessível publicamente: ${imageUrl}. Verifique se a URL está disponível sem autenticação.`);
+    }
 
     // Validate Image Aspect Ratio and Format
     await validateImageForInstagram(imageUrl);
