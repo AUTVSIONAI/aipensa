@@ -169,7 +169,7 @@ export const getPageProfile = async (
 ): Promise<any> => {
   try {
     const { data } = await apiBase(token).get(
-      `${id}/accounts?fields=name,access_token,instagram_business_account{id,username,profile_picture_url,name}&scope=pages_show_list,pages_read_engagement,pages_manage_posts`
+      `${id}/accounts?fields=name,access_token,instagram_business_account{id,username,profile_picture_url,name}&scope=pages_show_list,pages_read_engagement`
     );
     return data;
   } catch (error) {

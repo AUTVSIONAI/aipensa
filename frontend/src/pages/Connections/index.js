@@ -729,7 +729,7 @@ const Connections = () => {
                               autoLoad={false}
                               fields="name,email,picture"
                               version="19.0"
-                              scope="public_profile,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,pages_manage_posts,ads_management,business_management"
+                              scope="public_profile,pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,ads_management,business_management"
                               redirectUri={window.location.origin}
                               disableMobileRedirect={true}
                               auth_type="reauthenticate"
@@ -768,7 +768,7 @@ const Connections = () => {
                               autoLoad={false}
                               fields="name,email,picture"
                               version="19.0"
-                              scope="public_profile,email,pages_show_list,pages_manage_metadata,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_manage_comments,instagram_manage_insights,instagram_content_publish,ads_management,business_management"
+                              scope="public_profile,email,pages_show_list,pages_manage_metadata,pages_read_engagement,instagram_basic,instagram_manage_comments,instagram_manage_insights,instagram_content_publish,ads_management,business_management"
                               auth_type="reauthenticate"
                               redirectUri={window.location.origin}
                               disableMobileRedirect={true}
