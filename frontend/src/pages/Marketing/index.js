@@ -28,6 +28,8 @@ import CheckCircleIcon from "@material-ui/icons/CheckCircle";
 import TabPanel from "../../components/TabPanel";
 import { Skeleton } from "@material-ui/lab";
 import Chart from "react-apexcharts";
+import CardBalance from "../../components/CardBalance/CardBalance";
+import CardDeposit from "../../components/CardDeposit/CardDeposit";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -247,6 +249,9 @@ const Marketing = () => {
   
   // Feed comments expansion state
   const [expandedComments, setExpandedComments] = useState({});
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [walletTotalCredits, setWalletTotalCredits] = useState(0);
+  const [walletTotalSpend, setWalletTotalSpend] = useState(0);
 
   useEffect(() => {
     if (pages.length > 0 && !pubAccountId) {
@@ -358,6 +363,20 @@ const Marketing = () => {
   }, [datePreset]);
 
   useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const { data } = await api.get("/marketing/wallet");
+        setWalletBalance(data.balance || 0);
+        setWalletTotalCredits(data.totalCredits || 0);
+        setWalletTotalSpend(data.totalSpend || 0);
+      } catch (err) {
+        toastError(err);
+      }
+    };
+    fetchWallet();
+  }, []);
+
+  useEffect(() => {
     const socket = socketConnection({ user });
 
     socket.on(`company-${user.companyId}-marketing-feed`, (data) => {
@@ -402,6 +421,8 @@ const Marketing = () => {
     const avgCtr = rows.length ? rows.reduce((a, r) => a + toNum(r.ctr), 0) / rows.length : 0;
     return { ...totals, avgCpm, avgCtr };
   }, [insights]);
+
+  const estimatedSpend = agg.spend;
 
   const exportInsightsCsv = () => {
     const headers = ["impressions", "reach", "clicks", "spend", "cpm", "ctr"];
@@ -499,6 +520,10 @@ const Marketing = () => {
   };
 
   const handleCreateCampaign = async () => {
+    if (walletBalance <= 0) {
+      toast.error("Você não possui saldo de anúncios. Adicione créditos no Financeiro antes de criar campanhas.");
+      return;
+    }
     setCreating(true);
     try {
       const payload = {
@@ -520,6 +545,10 @@ const Marketing = () => {
   };
 
   const handleCreateAdSet = async () => {
+    if (walletBalance <= 0) {
+      toast.error("Você não possui saldo de anúncios. Adicione créditos no Financeiro antes de criar campanhas.");
+      return;
+    }
     setAdsetCreating(true);
     try {
       const payload = {
@@ -565,6 +594,10 @@ const Marketing = () => {
   };
 
   const handleCreateAd = async () => {
+    if (walletBalance <= 0) {
+      toast.error("Você não possui saldo de anúncios. Adicione créditos no Financeiro antes de criar campanhas.");
+      return;
+    }
     setAdCreating(true);
     try {
       const payload = {
@@ -765,6 +798,7 @@ const Marketing = () => {
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><PostAddIcon style={{marginRight: 8}}/> Publicar</div>} />
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><DynamicFeedIcon style={{marginRight: 8}}/> Feed</div>} />
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><SettingsIcon style={{marginRight: 8}}/> Configuração</div>} />
+            <Tab label={<div style={{display:'flex', alignItems:'center'}}><MonetizationOnIcon style={{marginRight: 8}}/> Carteira</div>} />
           </Tabs>
         </Paper>
 
@@ -1790,6 +1824,86 @@ const Marketing = () => {
                           </Typography>
                           <Button variant="outlined" color="primary" onClick={() => history.push("/settings", { tab: "options", subTab: "settings-openai-audio" })}>
                              Ir para Configurações de IA
+                          </Button>
+                       </Box>
+                    </Section>
+                 </Card>
+              </Grid>
+           </Grid>
+        </TabPanel>
+
+        <TabPanel value={tab} name={10}>
+           <Grid container spacing={3} justifyContent="center">
+              <Grid item xs={12} md={6}>
+                 <Card className={classes.card}>
+                    <Section icon={<MonetizationOnIcon style={{ color: theme.palette.text.primary }} />} title="Saldo de Anúncios">
+                       <Box display="flex" justifyContent="center" mb={3}>
+                         <CardBalance balance={walletBalance} />
+                       </Box>
+                       <Box display="flex" justifyContent="space-between" mb={2}>
+                         <Box>
+                           <Typography variant="subtitle2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                             Créditos comprados
+                           </Typography>
+                           <Typography variant="body1" style={{ color: theme.palette.text.primary, fontWeight: 600 }}>
+                             {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(walletTotalCredits || 0)}
+                           </Typography>
+                         </Box>
+                         <Box textAlign="right">
+                           <Typography variant="subtitle2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                             Gasto acumulado
+                           </Typography>
+                           <Typography variant="body1" style={{ color: "#f97316", fontWeight: 600 }}>
+                             {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(walletTotalSpend || 0)}
+                           </Typography>
+                         </Box>
+                       </Box>
+                       {walletBalance < 0 && (
+                         <Box mb={2}>
+                           <Typography variant="body2" style={{ color: "#f97316" }}>
+                             Atenção: você já gastou acima do crédito comprado. Ajuste seu orçamento ou compre mais créditos.
+                           </Typography>
+                         </Box>
+                       )}
+                       <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }} paragraph>
+                         O saldo de anúncios é cobrado diretamente pela Meta na sua conta de anúncios.
+                         Aqui você acompanha um resumo para controlar quanto está disposto a investir.
+                       </Typography>
+                       <Box mt={2} p={2} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8}>
+                          <Typography variant="subtitle2" gutterBottom style={{ color: theme.palette.text.primary }}>
+                             Gasto estimado no período selecionado
+                          </Typography>
+                          <Typography variant="h5" style={{ color: "#ef4444", fontWeight: 700 }}>
+                             {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(estimatedSpend || 0)}
+                          </Typography>
+                          <Typography variant="body2" style={{ marginTop: 8, color: "rgba(255, 255, 255, 0.7)" }}>
+                             Estes valores vêm dos relatórios da Meta em "Relatórios" e ajudam a entender
+                             quanto está sendo investido em seus anúncios.
+                          </Typography>
+                       </Box>
+                    </Section>
+                 </Card>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                 <Card className={classes.card}>
+                    <Section icon={<MonetizationOnIcon style={{ color: theme.palette.text.primary }} />} title="Adicionar Crédito / Controle">
+                       <Box display="flex" justifyContent="center" mb={2}>
+                         <CardDeposit isActive />
+                       </Box>
+                       <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }} paragraph>
+                         Use esta seção como controle interno de orçamento. Caso queira vender
+                         créditos de mídia pela plataforma, você poderá integrar esta área com o seu
+                         módulo financeiro.
+                       </Typography>
+                       <Box mt={2}>
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            color="primary"
+                            className={classes.button}
+                            onClick={() => history.push("/financeiro")}
+                          >
+                            Abrir Financeiro
                           </Button>
                        </Box>
                     </Section>

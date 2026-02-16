@@ -237,11 +237,14 @@ import {
   publishToFacebook,
   publishToInstagram,
   publishVideoToFacebook,
-  publishVideoToInstagram
+  publishVideoToInstagram,
+  getFbConfig
 } from "../FacebookServices/SocialMediaService";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
 import logger from "../../utils/logger";
 import CompaniesSettings from "../../models/CompaniesSettings";
+
+import Invoices from "../../models/Invoices";
 
 const handleCatalogAction = async (
   response: string,
@@ -522,6 +525,79 @@ const handleMarketingAction = async (
       const jsonContent = planMatch[1].trim();
       const plan = JSON.parse(jsonContent);
 
+      if (plan.type === "ads_campaign") {
+        const invoices = await Invoices.findAll({
+          where: {
+            companyId: ticket.companyId,
+            status: "paid"
+          },
+          order: [["dueDate", "DESC"]]
+        });
+
+        const walletInvoices = invoices.filter(inv => {
+          const detail = inv.detail as any;
+          return (
+            typeof detail === "string" &&
+            detail.toLowerCase().includes("crédito de anúncios")
+          );
+        });
+
+        const totalCredits = walletInvoices.reduce((sum, inv) => {
+          const val = Number(inv.value) || 0;
+          return sum + val;
+        }, 0);
+
+        let totalSpend = 0;
+
+        try {
+          let { accessToken, adAccountId } = await getFbConfig(ticket.companyId);
+
+          if (accessToken && adAccountId) {
+            const params = {
+              access_token: accessToken,
+              date_preset: "lifetime",
+              level: "account",
+              fields: "spend"
+            };
+
+            const resp = await axios.get(
+              `https://graph.facebook.com/v19.0/act_${adAccountId}/insights`,
+              { params }
+            );
+
+            const rows = resp.data?.data || [];
+            totalSpend = rows.reduce((sum: number, row: any) => {
+              const val = Number(row.spend) || 0;
+              return sum + val;
+            }, 0);
+          }
+        } catch (err: any) {
+          console.warn(
+            "[OpenAiService] Falha ao obter spend lifetime para carteira (Agent):",
+            err?.response?.data || err.message
+          );
+        }
+
+        const currentBalance = totalCredits - totalSpend;
+        const formattedBalance = new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL"
+        }).format(currentBalance);
+
+        if (currentBalance <= 0) {
+          return (
+            response.replace(planMatch[0], "").trim() +
+            "\n\n⛔ *Saldo de anúncios insuficiente*\n" +
+            `Seu saldo atual de anúncios é ${formattedBalance}.\n` +
+            "Não consegui criar o plano de campanha porque o saldo de anúncios da sua empresa está zerado ou negativo.\n" +
+            "Acesse o módulo *Financeiro* ou a aba *Marketing › Carteira* no painel para adicionar créditos de anúncios e tente novamente."
+          );
+        }
+
+        // Anexar informação de saldo no payload para usar na mensagem de confirmação
+        (plan as any).walletBalance = currentBalance;
+      }
+
       // Create Task
       const AgentTask = (await import("../../models/AgentTask")).default;
       
@@ -541,25 +617,31 @@ const handleMarketingAction = async (
          payload: payload,
       });
 
-      // Generate confirmation text
       let confirmationText = "";
       if (plan.type === "instagram_post") {
           confirmationText = 
-`📢 *AIPENSA IA - Publicação pronta!*
+`📢 *AIPENSA IA - Publicação sugerida*
 
-Vou publicar no Instagram da sua empresa:
+Vou preparar esta publicação para o Instagram da sua empresa:
 📌 Tipo: ${plan.payload.media_type || "Imagem"}
 📝 Legenda: "${plan.payload.caption}"
 🖼️ Mídia: ${plan.payload.image_url ? "Sim" : "Não detectada"}
 📅 Publicação: Agora
 
-Confirma?
-✅ *SIM* para publicar
-❌ *NÃO* para cancelar
+O plano foi criado e está aguardando sua confirmação no painel.
+Acesse o painel AIPENSA e aprove ou cancele esta publicação na área do Agente IA.
 `;
       } else if (plan.type === "ads_campaign") {
+          const formattedBalance =
+            typeof (plan as any).walletBalance === "number"
+              ? new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL"
+                }).format((plan as any).walletBalance)
+              : null;
+
           confirmationText =
-`🚀 *AIPENSA IA - Campanha de Anúncio pronta!*
+`🚀 *AIPENSA IA - Campanha de Anúncio sugerida*
 
 📌 Campanha: ${plan.payload.campaign_name}
 🎯 Objetivo: ${plan.payload.objective}
@@ -568,21 +650,21 @@ Confirma?
 📝 Texto: ${plan.payload.ad_body || "N/A"}
 🖼️ Imagem: ${plan.payload.image_url ? "Pronta" : "Pendente"}
 
-Confirma?
-✅ *SIM* para ativar
-❌ *NÃO* para cancelar
+${formattedBalance ? `💰 Saldo atual de anúncios: ${formattedBalance}\n` : ""}
+
+O plano foi criado e está aguardando sua confirmação no painel.
+Acesse o painel AIPENSA e aprove ou cancele esta campanha na área do Agente IA.
 `;
       } else if (plan.type === "whatsapp_status") {
           confirmationText =
-`📱 *AIPENSA IA - Status WhatsApp pronto!*
+`📱 *AIPENSA IA - Status WhatsApp sugerido*
 
-Vou postar no Status do seu WhatsApp:
+Vou preparar este Status para o seu WhatsApp:
 📌 Mídia: ${plan.payload.media_type || "Imagem"}
 📝 Legenda: "${plan.payload.caption}"
 
-Confirma?
-✅ *SIM* para postar
-❌ *NÃO* para cancelar
+O plano foi criado e está aguardando sua confirmação no painel.
+Nada será postado sem sua aprovação na área do Agente IA.
 `;
       }
 
@@ -1969,13 +2051,6 @@ export const handleOpenAi = async (
   [MARKETING] { "action": "get_insights", "period": "last_7d" } [/MARKETING]
   [MARKETING] { "action": "get_campaigns", "status": "ACTIVE" } [/MARKETING]
   
-  CAPACIDADES DE MÍDIA SOCIAL (SUPERAGENT):
-  [POST_FEED] { "platform": "facebook", "message": "Texto", "image": "URL" } [/POST_FEED]
-  [POST_VIDEO] { "platform": "facebook", "caption": "Legenda" } [/POST_VIDEO]
-  
-  STATUS WHATSAPP:
-  [POST_STATUS] { "caption": "Legenda", "media": "image|video", "source": "chat|files", "file": "nome.ext" } [/POST_STATUS]
-
   CAPACIDADES DE PAGAMENTO (SUPERAGENT):
   [SEND_PIX] { "key": "chave", "amount": 199.9, ... } [/SEND_PIX]
 

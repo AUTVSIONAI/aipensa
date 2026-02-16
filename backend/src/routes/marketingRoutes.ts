@@ -50,5 +50,6 @@ routes.post(
   isAuth,
   MarketingController.sendInstagramMessage
 );
+routes.get("/marketing/wallet", isAuth, MarketingController.wallet);
 
 export default routes;

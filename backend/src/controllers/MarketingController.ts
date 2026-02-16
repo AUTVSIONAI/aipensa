@@ -6,6 +6,7 @@ import Whatsapp from "../models/Whatsapp";
 import Plan from "../models/Plan";
 import Company from "../models/Company";
 import UsageTracking from "../models/UsageTracking";
+import Invoices from "../models/Invoices";
 import { Op } from "sequelize";
 import FormData from "form-data";
 import {
@@ -569,6 +570,89 @@ export const commentPost = async (
     return res
       .status(400)
       .json({ error: error?.response?.data || error.message });
+  }
+};
+
+export const wallet = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const companyId = (req as any).user?.companyId;
+
+    const invoices = await Invoices.findAll({
+      where: {
+        companyId,
+        status: "paid"
+      },
+      order: [["dueDate", "DESC"]]
+    });
+
+    const walletInvoices = invoices.filter(inv => {
+      const detail = inv.detail as any;
+      return typeof detail === "string" &&
+        detail.toLowerCase().includes("crédito de anúncios");
+    });
+
+    const totalCredits = walletInvoices.reduce((sum, inv) => {
+      const val = Number(inv.value) || 0;
+      return sum + val;
+    }, 0);
+
+    let totalSpend = 0;
+
+    try {
+      let { accessToken, adAccountId } = await getFbConfig(companyId);
+
+      if (req.query.accessToken && typeof req.query.accessToken === "string") {
+        accessToken = req.query.accessToken;
+      }
+      if (req.query.adAccountId && typeof req.query.adAccountId === "string") {
+        adAccountId = req.query.adAccountId;
+      }
+
+      if (accessToken && adAccountId) {
+        const params = {
+          access_token: accessToken,
+          date_preset: "lifetime",
+          level: "account",
+          fields: "spend"
+        };
+
+        const resp = await axios.get(
+          `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/insights`,
+          { params }
+        );
+
+        const rows = resp.data?.data || [];
+        totalSpend = rows.reduce((sum: number, row: any) => {
+          const val = Number(row.spend) || 0;
+          return sum + val;
+        }, 0);
+      }
+    } catch (err: any) {
+      console.warn(
+        "[Marketing] Falha ao obter spend lifetime para carteira:",
+        err?.response?.data || err.message
+      );
+    }
+
+    const currentBalance = totalCredits - totalSpend;
+
+    return res.json({
+      balance: currentBalance,
+      totalCredits,
+      totalSpend,
+      credits: walletInvoices.map(inv => ({
+        id: inv.id,
+        detail: inv.detail,
+        value: inv.value,
+        dueDate: inv.dueDate,
+        status: inv.status
+      }))
+    });
+  } catch (error: any) {
+    console.error("[Marketing] Erro em wallet:", error?.message || error);
+    return res
+      .status(400)
+      .json({ error: error?.message || "Erro ao obter carteira" });
   }
 };
 
