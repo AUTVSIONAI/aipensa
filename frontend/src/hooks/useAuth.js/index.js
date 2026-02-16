@@ -171,7 +171,7 @@ const useAuth = () => {
         //   window.location.reload(true); // Recarregar a página
         // }, 1000);
 
-        history.push("/tickets");
+        history.push("/dashboard");
         setLoading(false);
       } else {
         localStorage.setItem("token", JSON.stringify(data.token));
