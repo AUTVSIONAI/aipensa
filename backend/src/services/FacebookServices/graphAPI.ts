@@ -1,5 +1,5 @@
 import axios from "axios";
-import FormData from "form-data";
+const FormData = require("form-data");
 import { createReadStream } from "fs";
 import logger from "../../utils/logger";
 
@@ -281,7 +281,7 @@ export const removeApplication = async (
 
 export const debugToken = async (token: string): Promise<any> => {
   try {
-    const { data } = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/debug_token`, {
+    const { data } = await axios.get(`https://graph.facebook.com/v20.0/debug_token`, {
       params: {
         input_token: token,
         access_token: token
