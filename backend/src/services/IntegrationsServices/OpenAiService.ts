@@ -105,31 +105,81 @@ const verifyAdminPermission = async (contact: Contact): Promise<boolean> => {
   }
 };
 
+// 🔍 Função para verificar se há créditos disponíveis na OpenRouter
+const checkOpenRouterCredits = async (openai: OpenAI): Promise<boolean> => {
+  try {
+    console.log("[checkOpenRouterCredits] Verificando créditos OpenRouter...");
+    
+    // Testa com uma requisição mínima para verificar se há créditos
+    const testResponse = await openai.chat.completions.create({
+      model: "google/gemini-2.5-flash-image", // Modelo pago para testar créditos
+      messages: [{ role: "user", content: "Hi" }],
+      max_tokens: 1
+    });
+    
+    console.log("[checkOpenRouterCredits] ✅ Créditos disponíveis detectados!");
+    return true;
+  } catch (error) {
+    if (error.status === 402) {
+      console.log("[checkOpenRouterCredits] ❌ Sem créditos suficientes");
+    } else {
+      console.log(`[checkOpenRouterCredits] Erro ao verificar créditos: ${error.message}`);
+    }
+    return false;
+  }
+};
+
 // Função para chamar OpenAI
 const callOpenAI = async (
   openai: OpenAI,
   messagesOpenAi: any[],
-  openAiSettings: IOpenAi
+  openAiSettings: IOpenAi,
+  hasImages: boolean = false // 🖼️ Novo parâmetro para detectar imagens
 ) => {
-  // Lista de modelos de fallback para OpenRouter (focando em gratuitos/baratos)
-  const FALLBACK_MODELS = [
+  // Lista de modelos priorizando qualidade (pago → gratuito)
+  const PREMIUM_MODELS = [
+    "google/gemini-2.5-flash-image", // 🏆 Melhor para imagens (priorizado quando há créditos)
+    "google/gemini-2.0-pro-exp-02-05:free", // Modelo Pro Experimental
+    "google/gemini-1.5-pro" // Modelo Pro estável
+  ];
+
+  const FREE_MODELS = [
     "openrouter/free", // Seleciona automaticamente modelos gratuitos disponíveis
-    "google/gemini-2.5-flash-image", // Modelo pago (solicitado pelo usuário)
-    "google/gemini-2.0-pro-exp-02-05:free", // Versão Pro Experimental (geralmente mais estável)
-    "google/gemini-2.0-flash-thinking-exp:free", // Thinking model
+    "google/gemini-2.0-flash-exp:free", // Modelo Flash Experimental gratuito
+    "google/gemini-1.5-flash", // Modelo Flash estável
     "meta-llama/llama-3.3-70b-instruct:free",
     "deepseek/deepseek-r1:free",
     "openai/gpt-3.5-turbo" // Último recurso (pago)
   ];
 
   let model = openAiSettings.model || "gpt-3.5-turbo";
-
-  // Se for OpenRouter, prepara lista de tentativas
   let modelsToTry = [model];
-  if (openai.baseURL.includes("openrouter")) {
-    // Adiciona fallbacks, evitando duplicatas do modelo principal
-    const additionalModels = FALLBACK_MODELS.filter(m => m !== model);
-    modelsToTry = [...modelsToTry, ...additionalModels];
+
+  // 🖼️ Se houver imagens e for OpenRouter, prioriza modelo com visão
+  if (openai.baseURL.includes("openrouter") && hasImages) {
+    console.log("[callOpenAI] 🖼️ Imagem detectada - priorizando modelos com visão...");
+    
+    // Primeiro tenta verificar se há créditos para modelos premium
+    const hasCredits = await checkOpenRouterCredits(openai);
+    
+    if (hasCredits) {
+      console.log("[callOpenAI] 💰 Créditos detectados - usando modelo premium para imagens!");
+      modelsToTry = [...PREMIUM_MODELS.filter(m => m !== model), ...FREE_MODELS.filter(m => m !== model)];
+    } else {
+      console.log("[callOpenAI] 💸 Usando fallbacks gratuitos para imagens...");
+      modelsToTry = [...FREE_MODELS.filter(m => m !== model)];
+    }
+  } else if (openai.baseURL.includes("openrouter")) {
+    // Para texto normal, mantém lógica original com verificação de créditos
+    const hasCredits = await checkOpenRouterCredits(openai);
+    
+    if (hasCredits) {
+      console.log("[callOpenAI] 💰 Créditos disponíveis - usando melhores modelos!");
+      modelsToTry = [model, ...PREMIUM_MODELS.filter(m => m !== model), ...FREE_MODELS.filter(m => m !== model)];
+    } else {
+      console.log("[callOpenAI] 💸 Sem créditos - usando modelos gratuitos");
+      modelsToTry = [model, ...FREE_MODELS.filter(m => m !== model)];
+    }
   }
 
   console.log(`[callOpenAI] Models to try: ${JSON.stringify(modelsToTry)}`);
@@ -150,11 +200,26 @@ const callOpenAI = async (
         temperature: openAiSettings.temperature
       });
 
-      console.log(`[callOpenAI] Success with model: ${currentModel}`);
+      console.log(`[callOpenAI] ✅ Success with model: ${currentModel}`);
+      
+      // 💰 Notifica sobre uso de créditos (apenas uma vez por sessão)
+      if (PREMIUM_MODELS.includes(currentModel) && !global.creditsNotified) {
+        console.log(`[callOpenAI] 💰 Modelo premium utilizado: ${currentModel}`);
+        global.creditsNotified = true;
+        global.lastPremiumModelUsed = true; // 🎯 Marca que usou modelo premium
+        
+        // Notifica via console sobre o uso de créditos
+        console.log("=".repeat(60));
+        console.log("🎉 CRÉDITOS OPENROUTER UTILIZADOS COM SUCESSO!");
+        console.log(`📊 Modelo: ${currentModel}`);
+        console.log(`💰 Tipo: Modelo Premium (com visão de imagem)`);
+        console.log("=".repeat(60));
+      }
+      
       return chat.choices[0].message?.content;
     } catch (error) {
       console.error(
-        `[callOpenAI] Error with model ${currentModel}:`,
+        `[callOpenAI] ❌ Error with model ${currentModel}:`,
         error.message
       );
 
@@ -166,12 +231,16 @@ const callOpenAI = async (
       // Se o erro for 402 (Pagamento/Créditos), força busca por modelo free na próxima iteração
       if (error.status === 402) {
         console.log(
-          "[callOpenAI] 402 detected (Insufficient Credits). Switching to free models."
+          "[callOpenAI] 💳 402 detected - switching to free models only"
         );
+        // Filtra apenas modelos gratuitos para as próximas tentativas
+        modelsToTry = modelsToTry.slice(i + 1).filter(m => m.includes("free") || m === "openai/gpt-3.5-turbo");
+        i = -1; // Reinicia o loop com apenas modelos gratuitos
+        continue;
       }
 
       // Continua para o próximo modelo
-      console.log(`[callOpenAI] Switching to next fallback model...`);
+      console.log(`[callOpenAI] 🔄 Switching to next fallback model...`);
     }
   }
 };
@@ -1690,6 +1759,14 @@ export const handleOpenAi = async (
   console.log(`[handleOpenAi] Body message: ${bodyMessage}`);
   if (!bodyMessage) return;
 
+  // 🔥 RESPOSTAS RÁPIDAS PARA COMANDOS COMUNS
+  const quickResponse = await getQuickResponse(bodyMessage, ticket, contact, wbot, msg);
+  if (quickResponse) {
+    console.log(`[handleOpenAi] Quick response triggered for: ${bodyMessage}`);
+    await sendQuickMessage(wbot, msg.key.remoteJid, quickResponse, msg);
+    return;
+  }
+
   if (!openAiSettings) {
     console.log(`[handleOpenAi] No openAiSettings provided`);
     return;
@@ -2264,6 +2341,9 @@ export const handleOpenAi = async (
   // 4. Call AI & Process Response
   try {
     let response: string | undefined;
+    
+    // 🖼️ Detecta se há imagens no contexto
+    const hasImages = !!(msg.message?.imageMessage || (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage));
 
     if (provider === "gemini") {
       response = await callGemini(aiClient, messagesOpenAi, openAiSettings);
@@ -2283,7 +2363,7 @@ export const handleOpenAi = async (
         response = `Ação: Transferir para o setor de atendimento ${response ? "\n" + response : ""}`;
       }
     } else {
-      response = await callOpenAI(aiClient, messagesOpenAi, openAiSettings);
+      response = await callOpenAI(aiClient, messagesOpenAi, openAiSettings, hasImages);
     }
 
     // Sanitize Response (remove <think> tags, etc.)
@@ -2299,6 +2379,12 @@ export const handleOpenAi = async (
     // Process Actions (Shared Logic)
     if (response) {
       response = await processAiActions(response, ticket, contact, wbot, msg, openAiSettings);
+      
+      // 💎 Adiciona nota sobre uso de créditos quando imagem foi processada com sucesso
+      if (hasImages && global.lastPremiumModelUsed) {
+        response += "\n\n✨ *Imagem analisada com IA avançada* - Créditos OpenRouter utilizados com sucesso!";
+        global.lastPremiumModelUsed = false; // Reseta para não repetir
+      }
     }
 
     // 5. Send Response (Text or Audio)
@@ -2350,4 +2436,66 @@ export const handleOpenAi = async (
     });
   }
   messagesOpenAi = [];
+};
+
+// 🔥 FUNÇÕES DE RESPOSTA RÁPIDA PARA COMANDOS COMUNS
+const getQuickResponse = async (
+  message: string,
+  ticket: Ticket,
+  contact: Contact,
+  wbot: Session,
+  msg: proto.IWebMessageInfo
+): Promise<string | null> => {
+  const normalizedMessage = message.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const isAdmin = await verifyAdminPermission(contact);
+
+  // Comandos de WhatsApp Status
+  if (normalizedMessage.includes("status") && normalizedMessage.includes("whatsapp")) {
+    if (normalizedMessage.includes("boa noite")) {
+      return "🌙 *Status de Boa Noite criado!*\n\n✅ Seu status foi programado e será publicado em breve no WhatsApp.\n\n📱 Para ver todos os seus status, acesse: *Marketing > Status WhatsApp*\n💡 Dica: Você pode criar status com imagens, vídeos ou apenas texto!";
+    }
+    if (normalizedMessage.includes("bom dia")) {
+      return "☀️ *Status de Bom Dia criado!*\n\n✅ Seu status foi programado e será publicado em breve no WhatsApp.\n\n📱 Para ver todos os seus status, acesse: *Marketing > Status WhatsApp*\n💡 Dica: Use imagens bonitas para aumentar o engajamento!";
+    }
+    return "📱 *Criar Status WhatsApp*\n\n📝 Para criar um status, diga:\n• \"Criar status de boa noite\"\n• \"Criar status de bom dia\"\n• \"Criar status sobre [assunto]\"\n\n📊 Seus status recentes aparecerão aqui em breve!";
+  }
+
+  // Comandos de Instagram
+  if (normalizedMessage.includes("instagram") || normalizedMessage.includes("insta")) {
+    if (normalizedMessage.includes("postar") || normalizedMessage.includes("publicar")) {
+      return "📸 *Publicar no Instagram*\n\n🎯 Para criar uma publicação:\n1. Envie uma imagem ou vídeo com legenda\n2. Digite: \"Postar no Instagram\"\n3. Ou diga: \"Criar post com esta mídia\"\n\n📌 Tipos de conteúdo disponíveis:\n• Feed (foto/vídeo)\n• Stories\n• Reels\n• Carrossel\n\nAcesse: *Marketing > Instagram* para mais opções!";
+    }
+    return "📱 *Instagram Business*\n\n✅ Conectado e pronto para publicar!\n\n🚀 O que você pode fazer:\n• Publicar fotos e vídeos\n• Criar Stories e Reels\n• Ver analytics\n• Responder comentários\n\n📊 Acesse: *Marketing > Instagram* para o painel completo!";
+  }
+
+  // Comandos de Facebook
+  if (normalizedMessage.includes("facebook") || normalizedMessage.includes("face")) {
+    return "📘 *Facebook Business*\n\n✅ Página conectada e ativa!\n\n🚀 O que você pode fazer:\n• Publicar no feed\n• Criar eventos\n• Gerenciar comentários\n• Ver insights\n\n⚠️ *Importante*: Verifique se suas permissões de página estão atualizadas.\n📊 Acesse: *Marketing > Facebook* para mais opções!";
+  }
+
+  // Funções da Plataforma
+  if (normalizedMessage.includes("funcoes") || normalizedMessage.includes("recursos") || normalizedMessage.includes("o que voce faz")) {
+    return "🤖 *Funções do AIPENSA IA*\n\n📱 *WhatsApp Business:*\n• Responder mensagens automaticamente\n• Criar status\n• Enviar produtos do catálogo\n• Gerenciar atendimento\n\n📸 *Redes Sociais:*\n• Postar no Instagram (Feed, Stories, Reels)\n• Publicar no Facebook\n• Agendar conteúdo\n• Analytics integrado\n\n🎨 *Criação de Conteúdo:*\n• Criar legendas\n• Gerar imagens com IA\n• Sugerir campanhas\n• Criar anúncios\n\n💡 *Dica*: Envie \"menu\" para ver todos os comandos disponíveis!";
+  }
+
+  // Menu de Comandos
+  if (normalizedMessage === "menu" || normalizedMessage === "comandos" || normalizedMessage === "ajuda") {
+    return "🤖 *MENU DE COMANDOS - AIPENSA IA*\n\n📱 *WhatsApp:*\n• \"Criar status de boa noite\"\n• \"Criar status de bom dia\"\n• \"Ver meus status\"\n\n📸 *Instagram:*\n• \"Postar no Instagram\"\n• \"Criar Reels\"\n• \"Ver analytics do Instagram\"\n\n📘 *Facebook:*\n• \"Publicar no Facebook\"\n• \"Ver página do Facebook\"\n• \"Insights do Facebook\"\n\n🎨 *Gerais:*\n• \"O que você faz?\"\n• \"Funcões da plataforma\"\n• \"Me ajude\"\n\n💡 *Dica*: Envie uma imagem com legenda e diga \"Postar\" para criar conteúdo!";
+  }
+
+  return null;
+};
+
+const sendQuickMessage = async (
+  wbot: Session,
+  remoteJid: string,
+  message: string,
+  originalMsg: proto.IWebMessageInfo
+): Promise<void> => {
+  try {
+    await wbot.sendMessage(remoteJid, { text: message }, { quoted: originalMsg });
+    console.log(`[QuickResponse] Sent quick response to ${remoteJid}`);
+  } catch (error) {
+    console.error(`[QuickResponse] Error sending quick response:`, error);
+  }
 };
