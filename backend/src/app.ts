@@ -55,7 +55,7 @@ const allowedOrigins = [
   normalizeOrigin(process.env.BACKEND_URL),
   "http://localhost:3000",
   "http://localhost:3001",
-  "https://app.aipensa.com",
+  "https://aipensa.com",
   "https://api.aipensa.com"
 ].filter(Boolean);
 
