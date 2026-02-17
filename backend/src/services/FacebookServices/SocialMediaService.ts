@@ -170,6 +170,7 @@ export const checkTokenPermissions = async (companyId: number): Promise<any> => 
     const tokenInfo = await checkTokenPermissions(companyId);
     console.log("[publishToFacebook] Token info:", tokenInfo);
 
+    console.log(`[publishReelsToInstagram] Publishing Reels for company ${companyId}, instagramId ${instagramId}, videoUrl ${videoUrl}`);
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
@@ -238,6 +239,7 @@ export const publishToFacebook = async (
     const resp = await axios.post(endpoint, body);
     return resp.data;
   } catch (error) {
+    console.error(`[publishReelsToInstagram] Error publishing Reels:`, error.response?.data || error.message);
     handleFacebookError(error);
   }
 };

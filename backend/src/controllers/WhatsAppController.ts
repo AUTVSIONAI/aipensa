@@ -264,9 +264,11 @@ export const storeFacebook = async (
           name: instagramName
         } = instagram_business_account;
 
+        const instaName = username || instagramName || `ID ${instagramId}`;
+
         pages.push({
           companyId,
-          name: `Insta ${username || instagramName}`,
+          name: `Insta ${instaName}`,
           facebookUserId: facebookUserId,
           facebookPageUserId: instagramId,
           facebookUserToken: acessTokenPage,

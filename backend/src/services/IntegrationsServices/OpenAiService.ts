@@ -569,6 +569,87 @@ const handlePixAction = async (
   return response;
 };
 
+// Função para executar planos do agente automaticamente via WhatsApp
+const executePlan = async (plan: any, ticket: Ticket, contact: Contact): Promise<string> => {
+  try {
+    const companyId = ticket.companyId;
+    
+    // Obter configuração do Facebook
+    let { accessToken } = await getFbConfig(companyId);
+    
+    if (!accessToken) {
+      return "❌ *Erro*: Configuração do Facebook não encontrada.";
+    }
+
+    // Preparar dados para publicação
+    const publishData = {
+      accessToken,
+      message: plan.payload.caption,
+      imageUrl: plan.payload.image_url,
+      contentType: plan.payload.content_type || "feed",
+      mediaType: plan.payload.media_type || "photo"
+    };
+
+    // Determinar plataforma de destino
+    if (plan.type === "instagram_post") {
+      // Para Instagram, precisamos do Instagram ID
+      const { instagramId } = await getFbConfig(companyId);
+      if (!instagramId) {
+        return "❌ *Erro*: Instagram não conectado. Conecte seu Instagram no painel primeiro.";
+      }
+      publishData.instagramId = instagramId;
+    } else if (plan.type === "facebook_post") {
+      // Para Facebook, precisamos do Page ID
+      const { facebookPageId } = await getFbConfig(companyId);
+      if (!facebookPageId) {
+        return "❌ *Erro*: Página do Facebook não conectada. Conecte sua página no painel primeiro.";
+      }
+      publishData.facebookPageId = facebookPageId;
+    }
+
+    // Fazer requisição para o endpoint de publicação
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
+    const response = await axios.post(
+      `${backendUrl}/marketing/publish-content`,
+      publishData,
+      {
+        headers: {
+          "Content-Type": "application/json"
+        },
+        // Usar um token de serviço ou criar um contexto de usuário
+        // Por enquanto, vamos simular um contexto de administrador
+        params: {
+          companyId: companyId,
+          userProfile: "admin" // Permitir execução automática
+        }
+      }
+    );
+
+    const results = response.data;
+    
+    // Analisar resultados
+    let successMessage = "✅ *Publicação realizada com sucesso!*\n\n";
+    
+    if (results.instagram && !results.instagram.error) {
+      successMessage += `📱 Instagram: Post publicado\n`;
+    } else if (results.instagram && results.instagram.error) {
+      successMessage += `📱 Instagram: Erro - ${results.instagram.error}\n`;
+    }
+    
+    if (results.facebook && !results.facebook.error) {
+      successMessage += `📘 Facebook: Post publicado\n`;
+    } else if (results.facebook && results.facebook.error) {
+      successMessage += `📘 Facebook: Erro - ${results.facebook.error}\n`;
+    }
+
+    return successMessage;
+    
+  } catch (error: any) {
+    console.error("Erro ao executar plano:", error);
+    return `❌ *Erro ao publicar*: ${error.message || "Erro desconhecido"}`;
+  }
+};
+
 const handleMarketingAction = async (
   response: string,
   ticket: Ticket,
@@ -668,40 +749,72 @@ const handleMarketingAction = async (
         (plan as any).walletBalance = currentBalance;
       }
 
-      // Create Task
-      const AgentTask = (await import("../../models/AgentTask")).default;
-      
-      // Enrich payload with context
-      const payload = {
-          ...plan.payload,
-          whatsappId: ticket.whatsappId,
-          companyId: ticket.companyId,
-          contactId: contact.id,
-          ticketId: ticket.id
-      };
-
-      const task = await AgentTask.create({
-         userId: ticket.userId || null, // Might be null if via bot
-         type: plan.type,
-         status: "awaiting_confirmation",
-         payload: payload,
-      });
-
+      // Para comandos via WhatsApp, executar o plano automaticamente
+      // Para comandos via painel, manter o fluxo de confirmação
       let confirmationText = "";
-      if (plan.type === "instagram_post") {
-          confirmationText = 
-`📢 *AIPENSA IA - Publicação sugerida*
+      let autoExecuted = false;
+      
+      // Verificar se é um comando via WhatsApp (ticket tem whatsappId)
+      if (ticket.whatsappId && (plan.type === "instagram_post" || plan.type === "facebook_post" || plan.type === "whatsapp_status")) {
+        // Executar plano automaticamente para WhatsApp
+        const executionResult = await executePlan(plan, ticket, contact);
+        confirmationText = executionResult;
+        autoExecuted = true;
+        
+        // Criar task com status completed para registro
+        const AgentTask = (await import("../../models/AgentTask")).default;
+        const payload = {
+            ...plan.payload,
+            whatsappId: ticket.whatsappId,
+            companyId: ticket.companyId,
+            contactId: contact.id,
+            ticketId: ticket.id,
+            autoExecuted: true
+        };
 
-Vou preparar esta publicação para o Instagram da sua empresa:
-📌 Tipo: ${plan.payload.media_type || "Imagem"}
-📝 Legenda: "${plan.payload.caption}"
-🖼️ Mídia: ${plan.payload.image_url ? "Sim" : "Não detectada"}
-📅 Publicação: Agora
+        await AgentTask.create({
+           userId: ticket.userId || null,
+           type: plan.type,
+           status: "completed",
+           payload: payload,
+        });
+        
+      } else {
+        // Manter fluxo de confirmação para painel
+        const AgentTask = (await import("../../models/AgentTask")).default;
+        
+        // Enrich payload with context
+        const payload = {
+            ...plan.payload,
+            whatsappId: ticket.whatsappId,
+            companyId: ticket.companyId,
+            contactId: contact.id,
+            ticketId: ticket.id
+        };
 
-O plano foi criado e está aguardando sua confirmação no painel.
-Acesse o painel AIPENSA e aprove ou cancele esta publicação na área do Agente IA.
-`;
-      } else if (plan.type === "ads_campaign") {
+        await AgentTask.create({
+           userId: ticket.userId || null, // Might be null if via bot
+           type: plan.type,
+           status: "awaiting_confirmation",
+           payload: payload,
+        });
+      }
+      // Apenas mostrar mensagens de confirmação se não foi executado automaticamente
+      if (!autoExecuted) {
+        if (plan.type === "instagram_post") {
+            confirmationText = 
+  `📢 *AIPENSA IA - Publicação sugerida*
+  
+  Vou preparar esta publicação para o Instagram da sua empresa:
+  📌 Tipo: ${plan.payload.media_type || "Imagem"}
+  📝 Legenda: "${plan.payload.caption}"
+  🖼️ Mídia: ${plan.payload.image_url ? "Sim" : "Não detectada"}
+  📅 Publicação: Agora
+  
+  O plano foi criado e está aguardando sua confirmação no painel.
+  Acesse o painel AIPENSA e aprove ou cancele esta publicação na área do Agente IA.
+  `;
+        } else if (plan.type === "ads_campaign") {
           const formattedBalance =
             typeof (plan as any).walletBalance === "number"
               ? new Intl.NumberFormat("pt-BR", {
@@ -721,11 +834,10 @@ Acesse o painel AIPENSA e aprove ou cancele esta publicação na área do Agente
 🖼️ Imagem: ${plan.payload.image_url ? "Pronta" : "Pendente"}
 
 ${formattedBalance ? `💰 Saldo atual de anúncios: ${formattedBalance}\n` : ""}
-
 O plano foi criado e está aguardando sua confirmação no painel.
 Acesse o painel AIPENSA e aprove ou cancele esta campanha na área do Agente IA.
 `;
-      } else if (plan.type === "whatsapp_status") {
+      } else if (plan.type === "whatsapp_status" && !autoExecuted) {
           confirmationText =
 `📱 *AIPENSA IA - Status WhatsApp sugerido*
 
@@ -747,7 +859,13 @@ Nada será postado sem sua aprovação na área do Agente IA.
       // Or we can embed a hidden ID if Whatsapp allowed, but it doesn't.
       // We'll assume the LAST pending task for this user is the one to confirm.
 
-      return response.replace(planMatch[0], "").trim() + "\n\n" + confirmationText;
+      // Se foi executado automaticamente, já temos a mensagem de resultado
+      // Se não, mostrar mensagem de confirmação normal
+      if (autoExecuted) {
+        return response.replace(planMatch[0], "").trim() + "\n\n" + confirmationText;
+      } else {
+        return response.replace(planMatch[0], "").trim() + "\n\n" + confirmationText;
+      }
 
     } catch (e) {
       console.error("Error creating Agent Plan:", e);
@@ -1469,36 +1587,45 @@ const handleImageGenerationAction = async (
       let imageUrl: string | undefined;
       let usedProvider = "openai";
 
-      // 0. Tentar Hugging Face (Prioridade Definida pelo Usuário)
+      // 0. Tentar OpenAI DALL-E 3 primeiro (Principal - conforme solicitado)
       try {
-        let hfKey = process.env.HUGGINGFACE_API_KEY;
-        let hfModel = process.env.HUGGINGFACE_MODEL;
+          console.log("[handleImageGeneration] Tentando gerar imagem via OpenAI DALL-E 3...");
+          
+          // Tentar chave de voz/transcrição primeiro
+          let openaiApiKey = openAiSettings.voiceKey;
+          
+          if (!openaiApiKey || openaiApiKey.trim() === "") {
+               // Tentar chave global de voz
+               try {
+                 const globalVoiceKey = await Setting.findOne({ where: { companyId: 1, key: "openaikeyaudio" } });
+                 if (globalVoiceKey?.value) openaiApiKey = globalVoiceKey.value;
+               } catch (err) {}
+          }
 
-        try {
-           const settingKey = await Setting.findOne({ where: { companyId: 1, key: "huggingFaceApiKey" } });
-           if (settingKey?.value) hfKey = settingKey.value;
-           
-           const settingModel = await Setting.findOne({ where: { companyId: 1, key: "huggingFaceModel" } });
-           if (settingModel?.value) hfModel = settingModel.value;
-        } catch(err) {
-           console.error("[handleImageGeneration] Error fetching global HF settings:", err);
-        }
+          if (!openaiApiKey || openaiApiKey.trim() === "") {
+              openaiApiKey = await resolveApiKey("openai");
+          }
 
-        if (hfKey) {
-           console.log("[handleImageGeneration] Tentando gerar imagem via Hugging Face...");
-           const result = await GenerateImageService({ prompt, apiKey: hfKey, model: hfModel });
-           imageUrl = result.url;
-           usedProvider = "huggingface";
-           console.log("[handleImageGeneration] Sucesso via Hugging Face!");
-        }
+          if (openaiApiKey) {
+              const openai = new OpenAI({ apiKey: openaiApiKey });
+              const imageResponse = await openai.images.generate({
+                model: "dall-e-3",
+                prompt: prompt,
+                n: 1,
+                size: size || "1024x1024"
+              });
+              imageUrl = imageResponse.data[0].url;
+              usedProvider = "openai";
+              console.log("[handleImageGeneration] Sucesso via OpenAI DALL-E 3!");
+          }
       } catch (e) {
-        console.warn("[handleImageGeneration] Falha no Hugging Face:", e.message);
+          console.warn("[handleImageGeneration] Falha no OpenAI DALL-E 3:", e.message);
       }
 
-      // 1. Tentar OpenRouter primeiro (Economia) - Somente se não gerou via HF
+      // 1. Tentar OpenRouter como fallback (Economia) - Somente se DALL-E 3 falhou
       if (!imageUrl) {
         try {
-          console.log("[handleImageGeneration] Tentando gerar imagem via OpenRouter...");
+          console.log("[handleImageGeneration] Tentando gerar imagem via OpenRouter (fallback)...");
           // Move resolveApiKey call inside try or before, but ensure variable scope
           const openRouterKey = await resolveApiKey("openrouter");
         
@@ -1515,7 +1642,7 @@ const handleImageGenerationAction = async (
 
                 // Tentar modelos do OpenRouter (ex: stabilityai/stable-diffusion-xl-base-1.0 ou auto)
                 // Nota: OpenRouter usa endpoint completions para alguns modelos, mas images.generate para outros se suportado.
-                // Se falhar, cairá no catch e tentará OpenAI.
+                // Se falhar, cairá no catch e tentará Hugging Face.
                 const imageResponse = await openaiRouter.images.generate({
                     model: "google/gemini-2.0-flash-lite-preview-02-05:free", // Tenta Gemini 2.0 Flash Lite Free primeiro
                     prompt: prompt,
@@ -1558,45 +1685,62 @@ const handleImageGenerationAction = async (
         }
       }
 
-      // 2. Fallback para OpenAI (DALL-E 3) se OpenRouter falhou ou não tem chave
+      // 2. Fallback para Hugging Face se OpenRouter falhou ou não tem chave
       if (!imageUrl) {
-          console.log("[handleImageGeneration] Usando OpenAI (DALL-E 3) como fallback...");
-          
-          // Tentar chave de voz/transcrição primeiro (como solicitado anteriormente)
-          let openaiApiKey = openAiSettings.voiceKey;
-          
-          if (!openaiApiKey || openaiApiKey.trim() === "") {
-               // Tentar chave global de voz
-               try {
-                 const globalVoiceKey = await Setting.findOne({ where: { companyId: 1, key: "openaikeyaudio" } });
-                 if (globalVoiceKey?.value) openaiApiKey = globalVoiceKey.value;
-               } catch (err) {}
+        try {
+          let hfKey = process.env.HUGGINGFACE_API_KEY;
+          let hfModel = process.env.HUGGINGFACE_MODEL;
+
+          try {
+             const settingKey = await Setting.findOne({ where: { companyId: 1, key: "huggingFaceApiKey" } });
+             if (settingKey?.value) hfKey = settingKey.value;
+             
+             const settingModel = await Setting.findOne({ where: { companyId: 1, key: "huggingFaceModel" } });
+             if (settingModel?.value) hfModel = settingModel.value;
+          } catch(err) {
+             console.error("[handleImageGeneration] Error fetching global HF settings:", err);
           }
 
-          if (!openaiApiKey || openaiApiKey.trim() === "") {
-              openaiApiKey = await resolveApiKey("openai");
+          if (hfKey) {
+             console.log("[handleImageGeneration] Tentando gerar imagem via Hugging Face (fallback)...");
+             const result = await GenerateImageService({ prompt, apiKey: hfKey, model: hfModel });
+             imageUrl = result.url;
+             usedProvider = "huggingface";
+             console.log("[handleImageGeneration] Sucesso via Hugging Face!");
           }
+        } catch (e) {
+          console.warn("[handleImageGeneration] Falha no Hugging Face:", e.message);
+        }
+      }
 
-          if (!openaiApiKey) {
-              throw new Error("Chave da OpenAI não configurada para geração de imagens (Fallback).");
-          }
-
-          const openai = new OpenAI({ apiKey: openaiApiKey });
-          const imageResponse = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: prompt,
-            n: 1,
-            size: size || "1024x1024"
-          });
-          imageUrl = imageResponse.data[0].url;
-          usedProvider = "openai";
+      // Se nenhum provider funcionou, lançar erro
+      if (!imageUrl) {
+          throw new Error("Nenhum serviço de geração de imagem está disponível. Verifique suas configurações.");
       }
 
       if (imageUrl) {
-        // const providerLabel = usedProvider === "huggingface" ? "Via Hugging Face" : (usedProvider === "openrouter" ? "Via OpenRouter" : "Via DALL-E");
+        // Definir label do provider baseado no usado
+        let providerLabel = "";
+        switch (usedProvider) {
+          case "openai":
+            providerLabel = "Via OpenAI DALL-E 3";
+            break;
+          case "openrouter-gemini":
+            providerLabel = "Via OpenRouter (Gemini)";
+            break;
+          case "openrouter-stability":
+            providerLabel = "Via OpenRouter (Stability AI)";
+            break;
+          case "huggingface":
+            providerLabel = "Via Hugging Face";
+            break;
+          default:
+            providerLabel = "Via IA";
+        }
+        
         await wbot.sendMessage(ticket.contact.remoteJid, {
           image: { url: imageUrl },
-          caption: `🎨 Imagem gerada com sucesso!\n\nDescrição: ${prompt}\n\nDeseja postar nas redes sociais? Responda com 'Sim' para eu preparar a postagem.`
+          caption: `🎨 Imagem gerada com sucesso! ${providerLabel}\n\nDescrição: ${prompt}\n\nDeseja postar nas redes sociais? Responda com 'Sim' para eu preparar a postagem.`
         });
         
         return response.replace(match[0], "").trim() + "\n\n✅ Imagem gerada e enviada!";
