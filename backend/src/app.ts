@@ -84,9 +84,7 @@ if (
 //   // }
 // }));
 
-app.use(compression()); // Compressão HTTP
-app.use(bodyParser.json({ limit: "5mb" })); // Aumentar o limite de carga para 5 MB
-app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
+// CORS deve vir ANTES de outros middlewares
 app.use(
   cors({
     credentials: true,
@@ -102,11 +100,17 @@ app.use(
       "Content-Type",
       "X-Requested-With",
       "Accept",
-      "Origin"
+      "Origin",
+      "X-CSRF-Token"
     ],
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
+    preflightContinue: false
   })
 );
+
+app.use(compression()); // Compressão HTTP
+app.use(bodyParser.json({ limit: "5mb" })); // Aumentar o limite de carga para 5 MB
+app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
 // Middleware para debug de CORS e OPTIONS
 app.use((req, res, next) => {
   console.log(`[CORS Debug] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);

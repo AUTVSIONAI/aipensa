@@ -389,6 +389,8 @@ export const getFeed = async (
   try {
     const companyId = (req as any).user?.companyId;
 
+    console.log(`[getFeed] CompanyId: ${companyId}, Query:`, req.query);
+
     if (!(await checkPlan(companyId, "useMarketing"))) {
       return res.status(403).json({
         error: "ERR_PLAN_LIMIT",
@@ -407,8 +409,10 @@ export const getFeed = async (
     }
     const { pageId } = req.query;
     if (!pageId) {
+      console.log(`[getFeed] pageId ausente na query`);
       return res.status(400).json({ error: "pageId é obrigatório" });
     }
+    console.log(`[getFeed] pageId recebido: ${pageId}`);
 
     // Fix: Tenta encontrar a conexão específica para este pageId para usar o token correto
     // (Page Token em vez de User Token ou Token de outra página)
