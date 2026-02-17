@@ -52,8 +52,11 @@ app.set("queues", {
 const normalizeOrigin = (value?: string) => (value ? value.replace(/\/$/, "") : value);
 const allowedOrigins = [
   normalizeOrigin(process.env.FRONTEND_URL),
+  normalizeOrigin(process.env.BACKEND_URL),
   "http://localhost:3000",
-  "http://localhost:3001"
+  "http://localhost:3001",
+  "https://app.aipensa.com",
+  "https://api.aipensa.com"
 ].filter(Boolean);
 
 // Configuração do BullBoard
@@ -89,9 +92,21 @@ app.use(
   cors({
     credentials: true,
     origin: (origin, cb) => {
-      // Debug CORS
       console.log(`[CORS] Origin: ${origin}`);
-      // Permitir todas as origens em produção temporariamente para resolver CORS
+      if (!origin) {
+        return cb(null, true);
+      }
+      const isAllowed = allowedOrigins.some(allowedOrigin => {
+        if (!allowedOrigin) return false;
+        return origin === allowedOrigin || origin.includes(allowedOrigin.replace(/^https?:\/\//, ""));
+      });
+      if (process.env.NODE_ENV === "production") {
+        if (isAllowed) {
+          return cb(null, true);
+        } else {
+          return cb(new Error("Not allowed by CORS"), false);
+        }
+      }
       return cb(null, true);
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
