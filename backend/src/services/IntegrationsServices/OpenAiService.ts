@@ -93,11 +93,19 @@ const verifyAdminPermission = async (contact: Contact): Promise<boolean> => {
     }
 
     const tags = contactWithTags.tags.map(t => t.name);
-    console.log(`[verifyAdminPermission] Contact ${contact.id} tags (raw): ${JSON.stringify(tags)}`);
+    console.log(
+      `[verifyAdminPermission] Contact ${
+        contact.id
+      } tags (raw): ${JSON.stringify(tags)}`
+    );
 
     // Check for "ADMIN" or "admin" tag
-    const hasPermission = contactWithTags.tags.some(t => t.name.trim().toUpperCase() === "ADMIN");
-    console.log(`[verifyAdminPermission] Contact ${contact.id} has permission: ${hasPermission}`);
+    const hasPermission = contactWithTags.tags.some(
+      t => t.name.trim().toUpperCase() === "ADMIN"
+    );
+    console.log(
+      `[verifyAdminPermission] Contact ${contact.id} has permission: ${hasPermission}`
+    );
     return hasPermission;
   } catch (e) {
     console.error("Error verifying admin permission:", e);
@@ -109,21 +117,23 @@ const verifyAdminPermission = async (contact: Contact): Promise<boolean> => {
 const checkOpenRouterCredits = async (openai: OpenAI): Promise<boolean> => {
   try {
     console.log("[checkOpenRouterCredits] Verificando créditos OpenRouter...");
-    
+
     // Testa com uma requisição mínima para verificar se há créditos
     const testResponse = await openai.chat.completions.create({
       model: "google/gemini-2.5-flash-image", // Modelo pago para testar créditos
       messages: [{ role: "user", content: "Hi" }],
       max_tokens: 1
     });
-    
+
     console.log("[checkOpenRouterCredits] ✅ Créditos disponíveis detectados!");
     return true;
   } catch (error) {
     if (error.status === 402) {
       console.log("[checkOpenRouterCredits] ❌ Sem créditos suficientes");
     } else {
-      console.log(`[checkOpenRouterCredits] Erro ao verificar créditos: ${error.message}`);
+      console.log(
+        `[checkOpenRouterCredits] Erro ao verificar créditos: ${error.message}`
+      );
     }
     return false;
   }
@@ -157,14 +167,21 @@ const callOpenAI = async (
 
   // 🖼️ Se houver imagens e for OpenRouter, prioriza modelo com visão
   if (openai.baseURL.includes("openrouter") && hasImages) {
-    console.log("[callOpenAI] 🖼️ Imagem detectada - priorizando modelos com visão...");
-    
+    console.log(
+      "[callOpenAI] 🖼️ Imagem detectada - priorizando modelos com visão..."
+    );
+
     // Primeiro tenta verificar se há créditos para modelos premium
     const hasCredits = await checkOpenRouterCredits(openai);
-    
+
     if (hasCredits) {
-      console.log("[callOpenAI] 💰 Créditos detectados - usando modelo premium para imagens!");
-      modelsToTry = [...PREMIUM_MODELS.filter(m => m !== model), ...FREE_MODELS.filter(m => m !== model)];
+      console.log(
+        "[callOpenAI] 💰 Créditos detectados - usando modelo premium para imagens!"
+      );
+      modelsToTry = [
+        ...PREMIUM_MODELS.filter(m => m !== model),
+        ...FREE_MODELS.filter(m => m !== model)
+      ];
     } else {
       console.log("[callOpenAI] 💸 Usando fallbacks gratuitos para imagens...");
       modelsToTry = [...FREE_MODELS.filter(m => m !== model)];
@@ -172,10 +189,16 @@ const callOpenAI = async (
   } else if (openai.baseURL.includes("openrouter")) {
     // Para texto normal, mantém lógica original com verificação de créditos
     const hasCredits = await checkOpenRouterCredits(openai);
-    
+
     if (hasCredits) {
-      console.log("[callOpenAI] 💰 Créditos disponíveis - usando melhores modelos!");
-      modelsToTry = [model, ...PREMIUM_MODELS.filter(m => m !== model), ...FREE_MODELS.filter(m => m !== model)];
+      console.log(
+        "[callOpenAI] 💰 Créditos disponíveis - usando melhores modelos!"
+      );
+      modelsToTry = [
+        model,
+        ...PREMIUM_MODELS.filter(m => m !== model),
+        ...FREE_MODELS.filter(m => m !== model)
+      ];
     } else {
       console.log("[callOpenAI] 💸 Sem créditos - usando modelos gratuitos");
       modelsToTry = [model, ...FREE_MODELS.filter(m => m !== model)];
@@ -201,13 +224,15 @@ const callOpenAI = async (
       });
 
       console.log(`[callOpenAI] ✅ Success with model: ${currentModel}`);
-      
+
       // 💰 Notifica sobre uso de créditos (apenas uma vez por sessão)
       if (PREMIUM_MODELS.includes(currentModel) && !global.creditsNotified) {
-        console.log(`[callOpenAI] 💰 Modelo premium utilizado: ${currentModel}`);
+        console.log(
+          `[callOpenAI] 💰 Modelo premium utilizado: ${currentModel}`
+        );
         global.creditsNotified = true;
         global.lastPremiumModelUsed = true; // 🎯 Marca que usou modelo premium
-        
+
         // Notifica via console sobre o uso de créditos
         console.log("=".repeat(60));
         console.log("🎉 CRÉDITOS OPENROUTER UTILIZADOS COM SUCESSO!");
@@ -215,7 +240,7 @@ const callOpenAI = async (
         console.log(`💰 Tipo: Modelo Premium (com visão de imagem)`);
         console.log("=".repeat(60));
       }
-      
+
       return chat.choices[0].message?.content;
     } catch (error) {
       console.error(
@@ -234,7 +259,9 @@ const callOpenAI = async (
           "[callOpenAI] 💳 402 detected - switching to free models only"
         );
         // Filtra apenas modelos gratuitos para as próximas tentativas
-        modelsToTry = modelsToTry.slice(i + 1).filter(m => m.includes("free") || m === "openai/gpt-3.5-turbo");
+        modelsToTry = modelsToTry
+          .slice(i + 1)
+          .filter(m => m.includes("free") || m === "openai/gpt-3.5-turbo");
         i = -1; // Reinicia o loop com apenas modelos gratuitos
         continue;
       }
@@ -373,7 +400,10 @@ const handleStatusPostAction = async (
         where: { companyId: ticket.companyId }
       });
       const isAdmin = await verifyAdminPermission(contact);
-      if ((!companySettings || companySettings.enableAutoStatus !== "enabled") && !isAdmin) {
+      if (
+        (!companySettings || companySettings.enableAutoStatus !== "enabled") &&
+        !isAdmin
+      ) {
         return (
           response.replace(match[0], "").trim() +
           "\n\n⚠️ Recurso desativado nas configurações da empresa."
@@ -398,33 +428,46 @@ const handleStatusPostAction = async (
 
       const jsonContent = match[1].trim();
       const postData = JSON.parse(jsonContent);
-      
+
       // Tentar baixar mídia da mensagem atual (que disparou o gatilho)
       let localFilePath: string | null = null;
       if (msg.message?.imageMessage || msg.message?.videoMessage) {
-         try {
-           const buffer = (await downloadMediaMessage(
-             msg,
-             "buffer",
-             {},
-             { logger, reuploadRequest: wbot.updateMediaMessage }
-           )) as Buffer;
-           
-           const publicFolder = path.resolve(__dirname, "..", "..", "..", "public", `company${ticket.companyId}`);
-           if (!fs.existsSync(publicFolder)) fs.mkdirSync(publicFolder, { recursive: true });
-           
-           const ext = msg.message?.videoMessage ? "mp4" : "jpg";
-           const fileName = `${ticket.id}_${Date.now()}_status_temp.${ext}`;
-           const filePath = path.join(publicFolder, fileName);
-           fs.writeFileSync(filePath, buffer);
-           localFilePath = filePath;
-           console.log(`[handleStatusPostAction] Media saved to: ${localFilePath}`);
-         } catch (err) {
-           console.error("[handleStatusPostAction] Error downloading media:", err);
-         }
+        try {
+          const buffer = (await downloadMediaMessage(
+            msg,
+            "buffer",
+            {},
+            { logger, reuploadRequest: wbot.updateMediaMessage }
+          )) as Buffer;
+
+          const publicFolder = path.resolve(
+            __dirname,
+            "..",
+            "..",
+            "..",
+            "public",
+            `company${ticket.companyId}`
+          );
+          if (!fs.existsSync(publicFolder))
+            fs.mkdirSync(publicFolder, { recursive: true });
+
+          const ext = msg.message?.videoMessage ? "mp4" : "jpg";
+          const fileName = `${ticket.id}_${Date.now()}_status_temp.${ext}`;
+          const filePath = path.join(publicFolder, fileName);
+          fs.writeFileSync(filePath, buffer);
+          localFilePath = filePath;
+          console.log(
+            `[handleStatusPostAction] Media saved to: ${localFilePath}`
+          );
+        } catch (err) {
+          console.error(
+            "[handleStatusPostAction] Error downloading media:",
+            err
+          );
+        }
       }
 
-      const dataWebhook: any = Object.assign({}, ticket.dataWebhook || {});
+      const dataWebhook: any = { ...(ticket.dataWebhook || {}) };
       dataWebhook.pendingStatusPost = {
         caption: postData.caption || "",
         source: postData.source || "chat",
@@ -570,13 +613,17 @@ const handlePixAction = async (
 };
 
 // Função para executar planos do agente automaticamente via WhatsApp
-const executePlan = async (plan: any, ticket: Ticket, contact: Contact): Promise<string> => {
+const executePlan = async (
+  plan: any,
+  ticket: Ticket,
+  contact: Contact
+): Promise<string> => {
   try {
     const companyId = ticket.companyId;
-    
+
     // Obter configuração do Facebook
     let { accessToken } = await getFbConfig(companyId);
-    
+
     if (!accessToken) {
       return "❌ *Erro*: Configuração do Facebook não encontrada.";
     }
@@ -585,17 +632,32 @@ const executePlan = async (plan: any, ticket: Ticket, contact: Contact): Promise
     const publishData: any = {
       accessToken,
       message: plan.payload.caption,
-      imageUrl: plan.payload.image_url,
+      imageUrl: plan.payload.image_url || plan.payload.video_url,
       contentType: plan.payload.content_type || "feed",
       mediaType: plan.payload.media_type || "photo"
     };
 
-    // IDs específicos de plataforma serão resolvidos no endpoint de marketing
+    // Resolver IDs conectados quando não fornecidos
+    try {
+      const pages = await getConnectedPages(companyId);
+      const page = pages?.[0];
+      if (page) {
+        publishData.facebookPageId = publishData.facebookPageId || page.id;
+        const ig =
+          page.instagram_business_account && page.instagram_business_account.id;
+        if (ig) publishData.instagramId = publishData.instagramId || ig;
+      }
+    } catch (e) {
+      console.warn(
+        "[executePlan] Não foi possível resolver páginas conectadas automaticamente:",
+        (e as any)?.message
+      );
+    }
 
     // Fazer requisição para o endpoint de publicação
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
     const response = await axios.post(
-      `${backendUrl}/marketing/publish-content`,
+      `${backendUrl}/marketing/publish`,
       publishData,
       {
         headers: {
@@ -611,16 +673,16 @@ const executePlan = async (plan: any, ticket: Ticket, contact: Contact): Promise
     );
 
     const results = response.data;
-    
+
     // Analisar resultados
     let successMessage = "✅ *Publicação realizada com sucesso!*\n\n";
-    
+
     if (results.instagram && !results.instagram.error) {
       successMessage += `📱 Instagram: Post publicado\n`;
     } else if (results.instagram && results.instagram.error) {
       successMessage += `📱 Instagram: Erro - ${results.instagram.error}\n`;
     }
-    
+
     if (results.facebook && !results.facebook.error) {
       successMessage += `📘 Facebook: Post publicado\n`;
     } else if (results.facebook && results.facebook.error) {
@@ -628,7 +690,6 @@ const executePlan = async (plan: any, ticket: Ticket, contact: Contact): Promise
     }
 
     return successMessage;
-    
   } catch (error: any) {
     console.error("Erro ao executar plano:", error);
     return `❌ *Erro ao publicar*: ${error.message || "Erro desconhecido"}`;
@@ -652,10 +713,10 @@ const handleMarketingAction = async (
   if (planMatch && planMatch[1]) {
     try {
       if (!(await verifyAdminPermission(contact))) {
-         return (
-            response.replace(planMatch[0], "").trim() +
-            "\n\n⛔ *Acesso Negado*: Esta ação requer permissão de administrador (Tag: ADMIN)."
-         );
+        return (
+          response.replace(planMatch[0], "").trim() +
+          "\n\n⛔ *Acesso Negado*: Esta ação requer permissão de administrador (Tag: ADMIN)."
+        );
       }
 
       const jsonContent = planMatch[1].trim();
@@ -686,7 +747,9 @@ const handleMarketingAction = async (
         let totalSpend = 0;
 
         try {
-          let { accessToken, adAccountId } = await getFbConfig(ticket.companyId);
+          let { accessToken, adAccountId } = await getFbConfig(
+            ticket.companyId
+          );
 
           if (accessToken && adAccountId) {
             const params = {
@@ -738,57 +801,60 @@ const handleMarketingAction = async (
       // Para comandos via painel, manter o fluxo de confirmação
       let confirmationText = "";
       let autoExecuted = false;
-      
+
       // Verificar se é um comando via WhatsApp (ticket tem whatsappId)
-      if (ticket.whatsappId && (plan.type === "instagram_post" || plan.type === "facebook_post" || plan.type === "whatsapp_status")) {
+      if (
+        ticket.whatsappId &&
+        (plan.type === "instagram_post" ||
+          plan.type === "facebook_post" ||
+          plan.type === "whatsapp_status")
+      ) {
         // Executar plano automaticamente para WhatsApp
         const executionResult = await executePlan(plan, ticket, contact);
         confirmationText = executionResult;
         autoExecuted = true;
-        
+
         // Criar task com status completed para registro
         const AgentTask = (await import("../../models/AgentTask")).default;
         const payload = {
-            ...plan.payload,
-            whatsappId: ticket.whatsappId,
-            companyId: ticket.companyId,
-            contactId: contact.id,
-            ticketId: ticket.id,
-            autoExecuted: true
+          ...plan.payload,
+          whatsappId: ticket.whatsappId,
+          companyId: ticket.companyId,
+          contactId: contact.id,
+          ticketId: ticket.id,
+          autoExecuted: true
         };
 
         await AgentTask.create({
-           userId: ticket.userId || null,
-           type: plan.type,
-           status: "completed",
-           payload: payload,
+          userId: ticket.userId || null,
+          type: plan.type,
+          status: "completed",
+          payload: payload
         });
-        
       } else {
         // Manter fluxo de confirmação para painel
         const AgentTask = (await import("../../models/AgentTask")).default;
-        
+
         // Enrich payload with context
         const payload = {
-            ...plan.payload,
-            whatsappId: ticket.whatsappId,
-            companyId: ticket.companyId,
-            contactId: contact.id,
-            ticketId: ticket.id
+          ...plan.payload,
+          whatsappId: ticket.whatsappId,
+          companyId: ticket.companyId,
+          contactId: contact.id,
+          ticketId: ticket.id
         };
 
         await AgentTask.create({
-           userId: ticket.userId || null, // Might be null if via bot
-           type: plan.type,
-           status: "awaiting_confirmation",
-           payload: payload,
+          userId: ticket.userId || null, // Might be null if via bot
+          type: plan.type,
+          status: "awaiting_confirmation",
+          payload: payload
         });
       }
       // Apenas mostrar mensagens de confirmação se não foi executado automaticamente
       if (!autoExecuted) {
         if (plan.type === "instagram_post") {
-            confirmationText = 
-  `📢 *AIPENSA IA - Publicação sugerida*
+          confirmationText = `📢 *AIPENSA IA - Publicação sugerida*
   
   Vou preparar esta publicação para o Instagram da sua empresa:
   📌 Tipo: ${plan.payload.media_type || "Imagem"}
@@ -808,8 +874,7 @@ const handleMarketingAction = async (
                 }).format((plan as any).walletBalance)
               : null;
 
-          confirmationText =
-`🚀 *AIPENSA IA - Campanha de Anúncio sugerida*
+          confirmationText = `🚀 *AIPENSA IA - Campanha de Anúncio sugerida*
 
 📌 Campanha: ${plan.payload.campaign_name}
 🎯 Objetivo: ${plan.payload.objective}
@@ -822,9 +887,8 @@ ${formattedBalance ? `💰 Saldo atual de anúncios: ${formattedBalance}\n` : ""
 O plano foi criado e está aguardando sua confirmação no painel.
 Acesse o painel AIPENSA e aprove ou cancele esta campanha na área do Agente IA.
 `;
-      } else if (plan.type === "whatsapp_status" && !autoExecuted) {
-          confirmationText =
-`📱 *AIPENSA IA - Status WhatsApp sugerido*
+        } else if (plan.type === "whatsapp_status" && !autoExecuted) {
+          confirmationText = `📱 *AIPENSA IA - Status WhatsApp sugerido*
 
 Vou preparar este Status para o seu WhatsApp:
 📌 Mídia: ${plan.payload.media_type || "Imagem"}
@@ -833,30 +897,35 @@ Vou preparar este Status para o seu WhatsApp:
 O plano foi criado e está aguardando sua confirmação no painel.
 Nada será postado sem sua aprovação na área do Agente IA.
 `;
-      }
-
+        }
       }
 
       // Append Task ID to confirmation for context (could use a cache, but text is simpler)
       // Or better, we store the pending task for this ticket/contact in a cache or rely on "last task" logic
       // For simplicity, we can ask user to reply SIM. The system needs to know which task to confirm.
       // We can use a temporary "pending_task_id" in Ticket or a Cache.
-      
-      // Let's use Redis or a variable in Ticket if possible. 
+
+      // Let's use Redis or a variable in Ticket if possible.
       // Or we can embed a hidden ID if Whatsapp allowed, but it doesn't.
       // We'll assume the LAST pending task for this user is the one to confirm.
 
       // Se foi executado automaticamente, já temos a mensagem de resultado
       // Se não, mostrar mensagem de confirmação normal
       if (autoExecuted) {
-        return response.replace(planMatch[0], "").trim() + "\n\n" + confirmationText;
+        return (
+          response.replace(planMatch[0], "").trim() + "\n\n" + confirmationText
+        );
       } else {
-        return response.replace(planMatch[0], "").trim() + "\n\n" + confirmationText;
+        return (
+          response.replace(planMatch[0], "").trim() + "\n\n" + confirmationText
+        );
       }
-
     } catch (e) {
       console.error("Error creating Agent Plan:", e);
-      return response.replace(planMatch[0], "").trim() + "\n\n❌ Erro ao gerar plano.";
+      return (
+        response.replace(planMatch[0], "").trim() +
+        "\n\n❌ Erro ao gerar plano."
+      );
     }
   }
 
@@ -945,7 +1014,7 @@ Nada será postado sem sua aprovação na área do Agente IA.
       );
     }
   }
-  
+
   return response;
 };
 
@@ -1019,8 +1088,9 @@ const handleSocialMediaAction = async (
       console.log("[OpenAiService] Social Media JSON:", jsonContent);
 
       const postData = JSON.parse(jsonContent);
-      let { platform, message, image, scheduledTime, contentType, mediaType } = postData;
-      
+      let { platform, message, image, scheduledTime, contentType, mediaType } =
+        postData;
+
       // Valores padrão se não forem especificados
       contentType = contentType || "feed";
       mediaType = mediaType || "photo";
@@ -1038,13 +1108,17 @@ const handleSocialMediaAction = async (
         const filePath = path.join(publicFolder, image);
         if (fs.existsSync(filePath)) {
           image = `${process.env.BACKEND_URL}/public/company${ticket.companyId}/${image}`;
-          console.log(`[OpenAiService] Resolved local image to public URL: ${image}`);
+          console.log(
+            `[OpenAiService] Resolved local image to public URL: ${image}`
+          );
         } else {
-           console.warn(`[OpenAiService] Image file not found: ${filePath}`);
+          console.warn(`[OpenAiService] Image file not found: ${filePath}`);
         }
       }
 
-      console.log(`[OpenAiService] Processing Social Media Action: Platform=${platform}, Image=${image}`);
+      console.log(
+        `[OpenAiService] Processing Social Media Action: Platform=${platform}, Image=${image}`
+      );
 
       if (!platform || !message) {
         return (
@@ -1067,16 +1141,18 @@ const handleSocialMediaAction = async (
       // Ensure Image URL is Public and Valid
       let finalImageUrl = image;
       if (image && !image.startsWith("http")) {
-         // Se for nome de arquivo local, converte para URL pública do backend
-         const publicUrl = `${process.env.BACKEND_URL}/public/company${ticket.companyId}/${image}`;
-         finalImageUrl = publicUrl;
-         console.log(`[OpenAiService] Converted local image to public URL: ${finalImageUrl}`);
+        // Se for nome de arquivo local, converte para URL pública do backend
+        const publicUrl = `${process.env.BACKEND_URL}/public/company${ticket.companyId}/${image}`;
+        finalImageUrl = publicUrl;
+        console.log(
+          `[OpenAiService] Converted local image to public URL: ${finalImageUrl}`
+        );
       }
 
       if (platform === "facebook") {
         // Use first page
         const page = pages[0];
-        
+
         // Escolher o método baseado no tipo de conteúdo
         if (contentType === "reels" && mediaType === "video") {
           // Publicar Reels (vídeo)
@@ -1153,7 +1229,7 @@ const handleSocialMediaAction = async (
               "\n\n(Erro: Nenhuma conta de Instagram conectada à página)"
             );
           }
-          
+
           if (contentType === "reels") {
             // Publicar Reels
             if (!finalImageUrl) {
@@ -1274,7 +1350,10 @@ const handleVideoPostAction = async (
       const isAdmin = await verifyAdminPermission(contact);
 
       // Verifica se o módulo está ativo (Bypass for Admin)
-      if (!isAdmin && !(await checkPlanFeature(ticket.companyId, "useAutoPosts"))) {
+      if (
+        !isAdmin &&
+        !(await checkPlanFeature(ticket.companyId, "useAutoPosts"))
+      ) {
         return (
           response.replace(match[0], "").trim() +
           '\n\n⚠️ *Recurso Bloqueado*: O módulo de Postagem Automática não está ativo no seu plano. Deseja ativar? [UPGRADE_PLAN] { "type": "posts" } [/UPGRADE_PLAN]'
@@ -1282,7 +1361,10 @@ const handleVideoPostAction = async (
       }
 
       // Check Plan Limit (Bypass for Admin)
-      if (!isAdmin && !(await checkPlanLimit(ticket.companyId, "limitPosts", "POST"))) {
+      if (
+        !isAdmin &&
+        !(await checkPlanLimit(ticket.companyId, "limitPosts", "POST"))
+      ) {
         return (
           response.replace(match[0], "").trim() +
           "\n\n⚠️ *Limite Atingido*: Você atingiu o limite de postagens do seu plano. Deseja adicionar mais postagens ao seu pacote?"
@@ -1449,46 +1531,49 @@ const handleLinkAction = async (
     try {
       const url = match[1].trim();
       if (msg.key.remoteJid) {
-         const sentMessage = await wbot.sendMessage(msg.key.remoteJid, { text: url });
-         await verifyMessage(sentMessage!, ticket, contact);
+        const sentMessage = await wbot.sendMessage(msg.key.remoteJid, {
+          text: url
+        });
+        await verifyMessage(sentMessage!, ticket, contact);
 
-         const publicFolder: string = path.resolve(
-           __dirname,
-           "..",
-           "..",
-           "..",
-           "public",
-           `company${ticket.companyId}`
-         );
+        const publicFolder: string = path.resolve(
+          __dirname,
+          "..",
+          "..",
+          "..",
+          "public",
+          `company${ticket.companyId}`
+        );
 
-         const fileNameWithOutExtension = `${ticket.id}_${Date.now()}_link`;
-         try {
-           const voiceKeyResolved = await (async () => {
-             const vKey = (openAiSettings.voiceKey || "").trim();
-             if (vKey !== "") return vKey;
-             const base = await resolveApiKey("openai", openAiSettings.apiKey);
-             if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") return process.env.AZURE_SPEECH_KEY || base;
-             return base;
-           })();
+        const fileNameWithOutExtension = `${ticket.id}_${Date.now()}_link`;
+        try {
+          const voiceKeyResolved = await (async () => {
+            const vKey = (openAiSettings.voiceKey || "").trim();
+            if (vKey !== "") return vKey;
+            const base = await resolveApiKey("openai", openAiSettings.apiKey);
+            if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure")
+              return process.env.AZURE_SPEECH_KEY || base;
+            return base;
+          })();
 
-           await convertTextToSpeechAndSaveToFile(
-             keepOnlySpecifiedChars(`Enviei o link por texto. Confira: ${url}`),
-             `${publicFolder}/${fileNameWithOutExtension}`,
-             voiceKeyResolved,
-             openAiSettings.voiceRegion || "openai",
-             openAiSettings.voice,
-             "mp3"
-           );
-           await wbot.sendMessage(msg.key.remoteJid!, {
-             audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
-             mimetype: "audio/mpeg",
-             ptt: true
-           });
-           deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
-           deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
-         } catch (err) {
-           // ignore TTS failures
-         }
+          await convertTextToSpeechAndSaveToFile(
+            keepOnlySpecifiedChars(`Enviei o link por texto. Confira: ${url}`),
+            `${publicFolder}/${fileNameWithOutExtension}`,
+            voiceKeyResolved,
+            openAiSettings.voiceRegion || "openai",
+            openAiSettings.voice,
+            "mp3"
+          );
+          await wbot.sendMessage(msg.key.remoteJid!, {
+            audio: { url: `${publicFolder}/${fileNameWithOutExtension}.mp3` },
+            mimetype: "audio/mpeg",
+            ptt: true
+          });
+          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
+          deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
+        } catch (err) {
+          // ignore TTS failures
+        }
       }
       return response.replace(match[0], "").trim() + "\n\n✅ Link enviado.";
     } catch (e) {
@@ -1510,20 +1595,25 @@ async function resolveApiKey(prov?: string, key?: string) {
     if (prov === "external") settingKey = "externalAgentApiKey";
 
     // Try fetching global setting
-    const setting = await Setting.findOne({ where: { companyId: 1, key: settingKey } });
+    const setting = await Setting.findOne({
+      where: { companyId: 1, key: settingKey }
+    });
     if (setting?.value) {
       return setting.value;
     }
-    
+
     // Fallback: check if 'userApiToken' is used for everything in some setups
     if (prov !== "openai") {
-       const genericSetting = await Setting.findOne({ where: { companyId: 1, key: "userApiToken" } });
-       if (genericSetting?.value) {
-          return genericSetting.value;
-       }
+      const genericSetting = await Setting.findOne({
+        where: { companyId: 1, key: "userApiToken" }
+      });
+      if (genericSetting?.value) {
+        return genericSetting.value;
+      }
     }
-
-  } catch(e) { console.error("[OpenAiService] Error fetching global key:", e); }
+  } catch (e) {
+    console.error("[OpenAiService] Error fetching global key:", e);
+  }
 
   if (prov === "openrouter") return process.env.OPENROUTER_API_KEY || "";
   if (prov === "gemini") return process.env.GEMINI_API_KEY || "";
@@ -1543,23 +1633,26 @@ const handleImageGenerationAction = async (
 
   // Fallback for partial/cut-off tags (e.g. [/G or missing closing)
   if (!match) {
-      const partialRegex = /\[GENERATE_IMAGE\]([\s\S]*)/;
-      const partialMatch = response.match(partialRegex);
-      if (partialMatch && partialMatch[1]) {
-          // Try to extract JSON from the rest of the string
-          const potentialJson = partialMatch[1].trim();
-          // Simple check: does it look like it has a closing brace?
-          if (potentialJson.includes("}")) {
-              match = partialMatch;
-              // We'll try to parse safely below
-          }
+    const partialRegex = /\[GENERATE_IMAGE\]([\s\S]*)/;
+    const partialMatch = response.match(partialRegex);
+    if (partialMatch && partialMatch[1]) {
+      // Try to extract JSON from the rest of the string
+      const potentialJson = partialMatch[1].trim();
+      // Simple check: does it look like it has a closing brace?
+      if (potentialJson.includes("}")) {
+        match = partialMatch;
+        // We'll try to parse safely below
       }
+    }
   }
 
   if (match && match[1]) {
     try {
       if (!(await verifyAdminPermission(contact))) {
-         return response.replace(match[0], "").trim() + "\n\n⛔ *Acesso Negado*: A geração de imagens requer permissão de administrador (Tag: ADMIN).";
+        return (
+          response.replace(match[0], "").trim() +
+          "\n\n⛔ *Acesso Negado*: A geração de imagens requer permissão de administrador (Tag: ADMIN)."
+        );
       }
 
       // Clean up the content to ensure valid JSON
@@ -1567,7 +1660,7 @@ const handleImageGenerationAction = async (
       // Remove any trailing characters after the last } if we are in fallback mode
       const lastBrace = jsonContent.lastIndexOf("}");
       if (lastBrace !== -1) {
-          jsonContent = jsonContent.substring(0, lastBrace + 1);
+        jsonContent = jsonContent.substring(0, lastBrace + 1);
       }
 
       const { prompt, size } = JSON.parse(jsonContent);
@@ -1577,99 +1670,122 @@ const handleImageGenerationAction = async (
 
       // 0. Tentar OpenAI DALL-E 3 primeiro (Principal - conforme solicitado)
       try {
-          console.log("[handleImageGeneration] Tentando gerar imagem via OpenAI DALL-E 3...");
-          
-          // Tentar chave de voz/transcrição primeiro
-          let openaiApiKey = openAiSettings.voiceKey;
-          
-          if (!openaiApiKey || openaiApiKey.trim() === "") {
-               // Tentar chave global de voz
-               try {
-                 const globalVoiceKey = await Setting.findOne({ where: { companyId: 1, key: "openaikeyaudio" } });
-                 if (globalVoiceKey?.value) openaiApiKey = globalVoiceKey.value;
-               } catch (err) {}
-          }
+        console.log(
+          "[handleImageGeneration] Tentando gerar imagem via OpenAI DALL-E 3..."
+        );
 
-          if (!openaiApiKey || openaiApiKey.trim() === "") {
-              openaiApiKey = await resolveApiKey("openai");
-          }
+        // Tentar chave de voz/transcrição primeiro
+        let openaiApiKey = openAiSettings.voiceKey;
 
-          if (openaiApiKey) {
-              const openai = new OpenAI({ apiKey: openaiApiKey });
-              const imageResponse = await openai.images.generate({
-                model: "dall-e-3",
-                prompt: prompt,
-                n: 1,
-                size: size || "1024x1024"
-              });
-              imageUrl = imageResponse.data[0].url;
-              usedProvider = "openai";
-              console.log("[handleImageGeneration] Sucesso via OpenAI DALL-E 3!");
-          }
+        if (!openaiApiKey || openaiApiKey.trim() === "") {
+          // Tentar chave global de voz
+          try {
+            const globalVoiceKey = await Setting.findOne({
+              where: { companyId: 1, key: "openaikeyaudio" }
+            });
+            if (globalVoiceKey?.value) openaiApiKey = globalVoiceKey.value;
+          } catch (err) {}
+        }
+
+        if (!openaiApiKey || openaiApiKey.trim() === "") {
+          openaiApiKey = await resolveApiKey("openai");
+        }
+
+        if (openaiApiKey) {
+          const openai = new OpenAI({ apiKey: openaiApiKey });
+          const imageResponse = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: prompt,
+            n: 1,
+            size: size || "1024x1024"
+          });
+          imageUrl = imageResponse.data[0].url;
+          usedProvider = "openai";
+          console.log("[handleImageGeneration] Sucesso via OpenAI DALL-E 3!");
+        }
       } catch (e) {
-          console.warn("[handleImageGeneration] Falha no OpenAI DALL-E 3:", e.message);
+        console.warn(
+          "[handleImageGeneration] Falha no OpenAI DALL-E 3:",
+          e.message
+        );
       }
 
       // 1. Tentar OpenRouter como fallback (Economia) - Somente se DALL-E 3 falhou
       if (!imageUrl) {
         try {
-          console.log("[handleImageGeneration] Tentando gerar imagem via OpenRouter (fallback)...");
+          console.log(
+            "[handleImageGeneration] Tentando gerar imagem via OpenRouter (fallback)..."
+          );
           // Move resolveApiKey call inside try or before, but ensure variable scope
           const openRouterKey = await resolveApiKey("openrouter");
-        
+
           if (openRouterKey) {
             try {
-                const openaiRouter = new OpenAI({
-                    apiKey: openRouterKey,
-                    baseURL: "https://openrouter.ai/api/v1",
-                    defaultHeaders: {
-                        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
-                        "X-Title": "AIPENSA.COM"
-                    }
-                });
+              const openaiRouter = new OpenAI({
+                apiKey: openRouterKey,
+                baseURL: "https://openrouter.ai/api/v1",
+                defaultHeaders: {
+                  "HTTP-Referer":
+                    process.env.FRONTEND_URL || "https://aipensa.com",
+                  "X-Title": "AIPENSA.COM"
+                }
+              });
 
-                // Tentar modelos do OpenRouter (ex: stabilityai/stable-diffusion-xl-base-1.0 ou auto)
-                // Nota: OpenRouter usa endpoint completions para alguns modelos, mas images.generate para outros se suportado.
-                // Se falhar, cairá no catch e tentará Hugging Face.
-                const imageResponse = await openaiRouter.images.generate({
-                    model: "google/gemini-2.0-flash-lite-preview-02-05:free", // Tenta Gemini 2.0 Flash Lite Free primeiro
-                    prompt: prompt,
-                    n: 1,
-                    size: size || "1024x1024"
-                });
-                
-                imageUrl = imageResponse.data[0].url;
-                usedProvider = "openrouter-gemini";
-                console.log("[handleImageGeneration] Sucesso via OpenRouter (Gemini)!");
+              // Tentar modelos do OpenRouter (ex: stabilityai/stable-diffusion-xl-base-1.0 ou auto)
+              // Nota: OpenRouter usa endpoint completions para alguns modelos, mas images.generate para outros se suportado.
+              // Se falhar, cairá no catch e tentará Hugging Face.
+              const imageResponse = await openaiRouter.images.generate({
+                model: "google/gemini-2.0-flash-lite-preview-02-05:free", // Tenta Gemini 2.0 Flash Lite Free primeiro
+                prompt: prompt,
+                n: 1,
+                size: size || "1024x1024"
+              });
 
+              imageUrl = imageResponse.data[0].url;
+              usedProvider = "openrouter-gemini";
+              console.log(
+                "[handleImageGeneration] Sucesso via OpenRouter (Gemini)!"
+              );
             } catch (e) {
-                 console.warn("[handleImageGeneration] Falha no OpenRouter (Gemini), tentando Stability AI...", e.message);
-                 try {
-                    const openaiRouter = new OpenAI({
-                        apiKey: openRouterKey,
-                        baseURL: "https://openrouter.ai/api/v1",
-                        defaultHeaders: {
-                            "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
-                            "X-Title": "AIPENSA.COM"
-                        }
-                    });
+              console.warn(
+                "[handleImageGeneration] Falha no OpenRouter (Gemini), tentando Stability AI...",
+                e.message
+              );
+              try {
+                const openaiRouter = new OpenAI({
+                  apiKey: openRouterKey,
+                  baseURL: "https://openrouter.ai/api/v1",
+                  defaultHeaders: {
+                    "HTTP-Referer":
+                      process.env.FRONTEND_URL || "https://aipensa.com",
+                    "X-Title": "AIPENSA.COM"
+                  }
+                });
 
-                    const imageResponse = await openaiRouter.images.generate({
-                        model: "stabilityai/stable-diffusion-xl-base-1.0", 
-                        prompt: prompt,
-                        n: 1,
-                        size: size || "1024x1024"
-                    });
-                    imageUrl = imageResponse.data[0].url;
-                    usedProvider = "openrouter-stability";
-                    console.log("[handleImageGeneration] Sucesso via OpenRouter (Stability)!");
-                 } catch(err) {
-                     console.warn("[handleImageGeneration] Falha no OpenRouter (Stability):", err.message);
-                 }
+                const imageResponse = await openaiRouter.images.generate({
+                  model: "stabilityai/stable-diffusion-xl-base-1.0",
+                  prompt: prompt,
+                  n: 1,
+                  size: size || "1024x1024"
+                });
+                imageUrl = imageResponse.data[0].url;
+                usedProvider = "openrouter-stability";
+                console.log(
+                  "[handleImageGeneration] Sucesso via OpenRouter (Stability)!"
+                );
+              } catch (err) {
+                console.warn(
+                  "[handleImageGeneration] Falha no OpenRouter (Stability):",
+                  err.message
+                );
+              }
             }
           }
         } catch (e) {
-             console.warn("[handleImageGeneration] Erro geral no bloco OpenRouter:", e.message);
+          console.warn(
+            "[handleImageGeneration] Erro geral no bloco OpenRouter:",
+            e.message
+          );
         }
       }
 
@@ -1680,30 +1796,48 @@ const handleImageGenerationAction = async (
           let hfModel = process.env.HUGGINGFACE_MODEL;
 
           try {
-             const settingKey = await Setting.findOne({ where: { companyId: 1, key: "huggingFaceApiKey" } });
-             if (settingKey?.value) hfKey = settingKey.value;
-             
-             const settingModel = await Setting.findOne({ where: { companyId: 1, key: "huggingFaceModel" } });
-             if (settingModel?.value) hfModel = settingModel.value;
-          } catch(err) {
-             console.error("[handleImageGeneration] Error fetching global HF settings:", err);
+            const settingKey = await Setting.findOne({
+              where: { companyId: 1, key: "huggingFaceApiKey" }
+            });
+            if (settingKey?.value) hfKey = settingKey.value;
+
+            const settingModel = await Setting.findOne({
+              where: { companyId: 1, key: "huggingFaceModel" }
+            });
+            if (settingModel?.value) hfModel = settingModel.value;
+          } catch (err) {
+            console.error(
+              "[handleImageGeneration] Error fetching global HF settings:",
+              err
+            );
           }
 
           if (hfKey) {
-             console.log("[handleImageGeneration] Tentando gerar imagem via Hugging Face (fallback)...");
-             const result = await GenerateImageService({ prompt, apiKey: hfKey, model: hfModel });
-             imageUrl = result.url;
-             usedProvider = "huggingface";
-             console.log("[handleImageGeneration] Sucesso via Hugging Face!");
+            console.log(
+              "[handleImageGeneration] Tentando gerar imagem via Hugging Face (fallback)..."
+            );
+            const result = await GenerateImageService({
+              prompt,
+              apiKey: hfKey,
+              model: hfModel
+            });
+            imageUrl = result.url;
+            usedProvider = "huggingface";
+            console.log("[handleImageGeneration] Sucesso via Hugging Face!");
           }
         } catch (e) {
-          console.warn("[handleImageGeneration] Falha no Hugging Face:", e.message);
+          console.warn(
+            "[handleImageGeneration] Falha no Hugging Face:",
+            e.message
+          );
         }
       }
 
       // Se nenhum provider funcionou, lançar erro
       if (!imageUrl) {
-          throw new Error("Nenhum serviço de geração de imagem está disponível. Verifique suas configurações.");
+        throw new Error(
+          "Nenhum serviço de geração de imagem está disponível. Verifique suas configurações."
+        );
       }
 
       if (imageUrl) {
@@ -1725,15 +1859,21 @@ const handleImageGenerationAction = async (
           default:
             providerLabel = "Via IA";
         }
-        
+
         await wbot.sendMessage(ticket.contact.remoteJid, {
           image: { url: imageUrl },
           caption: `🎨 Imagem gerada com sucesso! ${providerLabel}\n\nDescrição: ${prompt}\n\nDeseja postar nas redes sociais? Responda com 'Sim' para eu preparar a postagem.`
         });
-        
-        return response.replace(match[0], "").trim() + "\n\n✅ Imagem gerada e enviada!";
+
+        return (
+          response.replace(match[0], "").trim() +
+          "\n\n✅ Imagem gerada e enviada!"
+        );
       } else {
-        return response.replace(match[0], "").trim() + "\n\n❌ Falha ao gerar imagem.";
+        return (
+          response.replace(match[0], "").trim() +
+          "\n\n❌ Falha ao gerar imagem."
+        );
       }
     } catch (e) {
       console.error("Erro ao gerar imagem:", e);
@@ -1769,32 +1909,33 @@ const processAiActions = async (
   response = await handleSocialMediaAction(response, ticket, contact);
 
   // Processar ações de postagem de vídeo
-  response = await handleVideoPostAction(
-    response,
-    ticket,
-    contact,
-    wbot,
-    msg
-  );
+  response = await handleVideoPostAction(response, ticket, contact, wbot, msg);
 
   // Enviar links solicitados
-  response = await handleLinkAction(response, wbot, msg, ticket, contact, openAiSettings);
-
-  // Postar Status do WhatsApp
-  response = await handleStatusPostAction(
+  response = await handleLinkAction(
     response,
+    wbot,
+    msg,
     ticket,
     contact,
-    wbot,
-    msg
+    openAiSettings
   );
+
+  // Postar Status do WhatsApp
+  response = await handleStatusPostAction(response, ticket, contact, wbot, msg);
 
   // Processar ações de pagamento PIX
   response = await handlePixAction(response, ticket, contact, wbot);
 
   // Processar geração de imagem DALL-E
   if (response?.includes("[GENERATE_IMAGE]")) {
-     response = await handleImageGenerationAction(response, ticket, contact, wbot, openAiSettings);
+    response = await handleImageGenerationAction(
+      response,
+      ticket,
+      contact,
+      wbot,
+      openAiSettings
+    );
   }
 
   // Processar ações de upgrade
@@ -1806,23 +1947,27 @@ const processAiActions = async (
 // Helper to sanitize AI response (remove reasoning/Chain-of-Thought)
 const sanitizeResponse = (response: string): string => {
   if (!response) return "";
-  
+
   // Remove <think> tags (DeepSeek R1, etc.)
   let sanitized = response.replace(/<think>[\s\S]*?<\/think>/gi, "");
-  
+
   // Remove [THOUGHT] tags
   sanitized = sanitized.replace(/\[THOUGHT\][\s\S]*?\[\/THOUGHT\]/gi, "");
-  
+
   // Remove specific "Okay, the user asked me..." patterns if they appear at the start
   // (Heuristic for models that leak internal monologue without tags)
-  const monologueRegex = /^(Okay|Alright|Let me|I need to|The user wants|First, I will|Here is the plan)[\s\S]{0,200}(:|so|then|I will)[\s\S]*?\n\n/i;
+  const monologueRegex =
+    /^(Okay|Alright|Let me|I need to|The user wants|First, I will|Here is the plan)[\s\S]{0,200}(:|so|then|I will)[\s\S]*?\n\n/i;
   // Use caution with heuristics, only apply if it looks very much like a monologue
 
   // Remove leaked system prompt instructions
-  sanitized = sanitized.replace(/CAPACIDADES DE [A-Z\s]+\(SUPERAGENT\):[\s\S]*?(\n\n|$)/g, "");
+  sanitized = sanitized.replace(
+    /CAPACIDADES DE [A-Z\s]+\(SUPERAGENT\):[\s\S]*?(\n\n|$)/g,
+    ""
+  );
   sanitized = sanitized.replace(/INSTRUÇÕES DE VENDA:[\s\S]*?(\n\n|$)/g, "");
   sanitized = sanitized.replace(/STATUS WHATSAPP:[\s\S]*?(\n\n|$)/g, "");
-  
+
   return sanitized.trim();
 };
 
@@ -1892,7 +2037,13 @@ export const handleOpenAi = async (
   if (!bodyMessage) return;
 
   // 🔥 RESPOSTAS RÁPIDAS PARA COMANDOS COMUNS
-  const quickResponse = await getQuickResponse(bodyMessage, ticket, contact, wbot, msg);
+  const quickResponse = await getQuickResponse(
+    bodyMessage,
+    ticket,
+    contact,
+    wbot,
+    msg
+  );
   if (quickResponse) {
     console.log(`[handleOpenAi] Quick response triggered for: ${bodyMessage}`);
     await sendQuickMessage(wbot, msg.key.remoteJid, quickResponse, msg);
@@ -1915,10 +2066,16 @@ export const handleOpenAi = async (
     "mistralai/mistral-7b-instruct:free",
     "huggingfaceh4/zephyr-7b-beta:free"
   ];
-  
-  if (provider === "openrouter" && openAiSettings.model && BROKEN_MODELS.includes(openAiSettings.model)) {
-      console.log(`[handleOpenAi] Replacing broken model '${openAiSettings.model}' with 'openrouter/free'`);
-      openAiSettings.model = "openrouter/free";
+
+  if (
+    provider === "openrouter" &&
+    openAiSettings.model &&
+    BROKEN_MODELS.includes(openAiSettings.model)
+  ) {
+    console.log(
+      `[handleOpenAi] Replacing broken model '${openAiSettings.model}' with 'openrouter/free'`
+    );
+    openAiSettings.model = "openrouter/free";
   }
 
   console.log(`Using AI Provider: ${provider}`);
@@ -1939,11 +2096,13 @@ export const handleOpenAi = async (
       .trim()
       .toLowerCase();
 
-  const webhookData: any = Object.assign({}, ticket.dataWebhook || {});
+  const webhookData: any = { ...(ticket.dataWebhook || {}) };
   const textNorm = normalize(bodyMessage || "");
 
   if (webhookData.pendingStatusPost) {
-    console.log(`[handleOpenAi] Processing pendingStatusPost for ticket ${ticket.id}. Input: ${textNorm}`);
+    console.log(
+      `[handleOpenAi] Processing pendingStatusPost for ticket ${ticket.id}. Input: ${textNorm}`
+    );
     const accept =
       /^(s|sim|confirmo|pode postar|ok|manda|enviar)$/i.test(textNorm) ||
       textNorm.includes("confirmar") ||
@@ -1967,8 +2126,17 @@ export const handleOpenAi = async (
       console.log(`[handleOpenAi] User accepted status post. Proceeding...`);
       try {
         const statusJid = "status@broadcast";
-        const { caption, source, file, media, localFilePath: storedLocalPath } = webhookData.pendingStatusPost;
-        console.log(`[handleOpenAi] Status Post Data:`, webhookData.pendingStatusPost);
+        const {
+          caption,
+          source,
+          file,
+          media,
+          localFilePath: storedLocalPath
+        } = webhookData.pendingStatusPost;
+        console.log(
+          `[handleOpenAi] Status Post Data:`,
+          webhookData.pendingStatusPost
+        );
 
         let buffer: Buffer | null = null;
         let localFilePath: string | null = storedLocalPath || null;
@@ -1976,65 +2144,83 @@ export const handleOpenAi = async (
         if (source === "chat") {
           // If we already have a stored local path, use it.
           if (!localFilePath) {
-             if (msg.message?.imageMessage || msg.message?.videoMessage) {
-                buffer = (await downloadMediaMessage(
-                  msg,
-                  "buffer",
-                  {},
-                  { logger, reuploadRequest: wbot.updateMediaMessage }
-                )) as Buffer;
-             } else if (
-                msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage ||
-                msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage
-             ) {
-                const quoted = msg.message.extendedTextMessage.contextInfo;
-                const pseudoMsg: any = {
-                  message: quoted.quotedMessage,
-                  key: { remoteJid: msg.key.remoteJid, id: quoted.stanzaId }
-                };
-                buffer = (await downloadMediaMessage(
-                  pseudoMsg,
-                  "buffer",
-                  {},
-                  { logger, reuploadRequest: wbot.updateMediaMessage }
-                )) as Buffer;
-             } else {
-                // Try to find the last media sent by the user
-                const lastMedia = await Message.findOne({
-                  where: {
-                    ticketId: ticket.id,
-                    fromMe: false,
-                    mediaType: { [Op.in]: ["image", "video"] }
-                  },
-                  order: [["createdAt", "DESC"]]
-                });
+            if (msg.message?.imageMessage || msg.message?.videoMessage) {
+              buffer = (await downloadMediaMessage(
+                msg,
+                "buffer",
+                {},
+                { logger, reuploadRequest: wbot.updateMediaMessage }
+              )) as Buffer;
+            } else if (
+              msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
+                ?.imageMessage ||
+              msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
+                ?.videoMessage
+            ) {
+              const quoted = msg.message.extendedTextMessage.contextInfo;
+              const pseudoMsg: any = {
+                message: quoted.quotedMessage,
+                key: { remoteJid: msg.key.remoteJid, id: quoted.stanzaId }
+              };
+              buffer = (await downloadMediaMessage(
+                pseudoMsg,
+                "buffer",
+                {},
+                { logger, reuploadRequest: wbot.updateMediaMessage }
+              )) as Buffer;
+            } else {
+              // Try to find the last media sent by the user
+              const lastMedia = await Message.findOne({
+                where: {
+                  ticketId: ticket.id,
+                  fromMe: false,
+                  mediaType: { [Op.in]: ["image", "video"] }
+                },
+                order: [["createdAt", "DESC"]]
+              });
 
-                if (lastMedia && lastMedia.mediaUrl) {
-                   const publicFolder = path.resolve(__dirname, "..", "..", "..", "public", `company${ticket.companyId}`);
-                   let fileName = lastMedia.mediaUrl;
-                   if (fileName.startsWith("http") || fileName.startsWith("https")) {
-                       const parts = fileName.split("/");
-                       fileName = parts[parts.length - 1];
-                   }
-                   localFilePath = path.join(publicFolder, fileName);
-                   if (!fs.existsSync(localFilePath)) {
-                      // Fallback: try to verify if mediaUrl is just the filename or full path
-                      // In Whaticket, mediaUrl is usually just the filename
-                      console.log(`[handleOpenAi] File not found at ${localFilePath}, checking if mediaUrl is absolute...`);
-                   }
-                   console.log(`[handleOpenAi] Found last media: ${lastMedia.mediaUrl} -> ${localFilePath}`);
+              if (lastMedia && lastMedia.mediaUrl) {
+                const publicFolder = path.resolve(
+                  __dirname,
+                  "..",
+                  "..",
+                  "..",
+                  "public",
+                  `company${ticket.companyId}`
+                );
+                let fileName = lastMedia.mediaUrl;
+                if (
+                  fileName.startsWith("http") ||
+                  fileName.startsWith("https")
+                ) {
+                  const parts = fileName.split("/");
+                  fileName = parts[parts.length - 1];
                 }
-             }
+                localFilePath = path.join(publicFolder, fileName);
+                if (!fs.existsSync(localFilePath)) {
+                  // Fallback: try to verify if mediaUrl is just the filename or full path
+                  // In Whaticket, mediaUrl is usually just the filename
+                  console.log(
+                    `[handleOpenAi] File not found at ${localFilePath}, checking if mediaUrl is absolute...`
+                  );
+                }
+                console.log(
+                  `[handleOpenAi] Found last media: ${lastMedia.mediaUrl} -> ${localFilePath}`
+                );
+              }
+            }
           }
         } else if (source === "files" && file) {
           if (file.startsWith("http")) {
-             const parts = file.split("/");
-             const fileName = parts[parts.length - 1];
-             localFilePath = path.resolve(publicFolder, fileName);
+            const parts = file.split("/");
+            const fileName = parts[parts.length - 1];
+            localFilePath = path.resolve(publicFolder, fileName);
           } else {
-             localFilePath = path.resolve(publicFolder, file);
+            localFilePath = path.resolve(publicFolder, file);
           }
-          console.log(`[handleOpenAi] Using file source: ${file} -> ${localFilePath}`);
+          console.log(
+            `[handleOpenAi] Using file source: ${file} -> ${localFilePath}`
+          );
         }
 
         let savedPath: string | null = null;
@@ -2107,8 +2293,7 @@ export const handleOpenAi = async (
         await ticket.update({ dataWebhook: webhookData });
 
         const ok = await wbot.sendMessage(msg.key.remoteJid!, {
-          text:
-            "✅ Status publicado. Deseja postar nas redes sociais? Responda 'facebook', 'instagram' ou 'sim'."
+          text: "✅ Status publicado. Deseja postar nas redes sociais? Responda 'facebook', 'instagram' ou 'sim'."
         });
         await verifyMessage(ok!, ticket, contact);
         return;
@@ -2124,7 +2309,9 @@ export const handleOpenAi = async (
       }
     }
   } else if (webhookData.pendingSocialPost) {
-    console.log(`[handleOpenAi] Processing pendingSocialPost. Input: ${textNorm}`);
+    console.log(
+      `[handleOpenAi] Processing pendingSocialPost. Input: ${textNorm}`
+    );
     const wantsFb = textNorm.includes("facebook");
     const wantsIg = textNorm.includes("instagram");
     const wantsAll =
@@ -2161,7 +2348,8 @@ export const handleOpenAi = async (
           }
           if (wantsIg || wantsAll) {
             const withInsta = pages.find(
-              p => p.instagram_business_account && p.instagram_business_account.id
+              p =>
+                p.instagram_business_account && p.instagram_business_account.id
             );
             if (withInsta) {
               if (webhookData.pendingSocialPost.video) {
@@ -2206,7 +2394,9 @@ export const handleOpenAi = async (
       textNorm.includes("mais barato") ||
       (textNorm.includes("barato") && textNorm.includes("mais"));
     const wantsLink =
-      textNorm.includes("link") || textNorm.includes("url") || textNorm.includes("acesso");
+      textNorm.includes("link") ||
+      textNorm.includes("url") ||
+      textNorm.includes("acesso");
     const mentionsCatalog =
       textNorm.includes("catalogo") ||
       textNorm.includes("catálogo") ||
@@ -2216,18 +2406,22 @@ export const handleOpenAi = async (
     if (wantsCheap && wantsLink && mentionsCatalog) {
       try {
         const ownerJid = wbot.user?.id;
-        if (!ownerJid || !msg.key.remoteJid) throw new Error("whatsapp session not ready");
+        if (!ownerJid || !msg.key.remoteJid)
+          throw new Error("whatsapp session not ready");
         const catalog = await getCatalog(wbot, ownerJid);
         let cheapest: any = null;
         catalog?.forEach((p: any) => {
           const price = p.price || p.amount || 0;
-          if (!cheapest || price < (cheapest.price || cheapest.amount || 0)) cheapest = p;
+          if (!cheapest || price < (cheapest.price || cheapest.amount || 0))
+            cheapest = p;
         });
         if (cheapest) {
           const phoneNumber = ownerJid.split(":")[0].split("@")[0];
           const link =
             cheapest.url || `https://wa.me/p/${cheapest.id}/${phoneNumber}`;
-          const sent = await wbot.sendMessage(msg.key.remoteJid, { text: link });
+          const sent = await wbot.sendMessage(msg.key.remoteJid, {
+            text: link
+          });
           await verifyMessage(sent!, ticket, contact);
           return;
         }
@@ -2240,10 +2434,14 @@ export const handleOpenAi = async (
   const effectiveApiKey = await resolveApiKey(provider, openAiSettings.apiKey);
 
   if (!effectiveApiKey) {
-     console.error(`[OpenAiService] Error: No API Key found for provider ${provider}`);
-     throw new Error(`Chave API não configurada globalmente para ${provider}. Verifique as Configurações.`);
+    console.error(
+      `[OpenAiService] Error: No API Key found for provider ${provider}`
+    );
+    throw new Error(
+      `Chave API não configurada globalmente para ${provider}. Verifique as Configurações.`
+    );
   }
-  
+
   if (provider === "gemini") {
     // Configurar Gemini
     aiClient = new GoogleGenerativeAI(effectiveApiKey);
@@ -2253,7 +2451,7 @@ export const handleOpenAi = async (
       apiKey: effectiveApiKey,
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
-        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com", 
+        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
         "X-Title": "AIPENSA.COM"
       }
     });
@@ -2279,7 +2477,10 @@ export const handleOpenAi = async (
     if (ownerJid) {
       const products = await getCatalog(wbot, ownerJid);
       if (products && products.length > 0) {
-        const phoneNumber = ownerJid.split("@")[0].split(":")[0].replace(/\D/g, "");
+        const phoneNumber = ownerJid
+          .split("@")[0]
+          .split(":")[0]
+          .replace(/\D/g, "");
         const catalogLink = `https://wa.me/c/${phoneNumber}`;
         catalogContext = `\n\n🛍️ LINK GERAL DO CATÁLOGO: ${catalogLink}\n`;
         catalogContext += "🛍️ CATÁLOGO DE PRODUTOS DISPONÍVEIS:\n";
@@ -2291,9 +2492,13 @@ export const handleOpenAi = async (
           const productLink = p.url || `https://wa.me/p/${p.id}/${phoneNumber}`;
           catalogContext += `- ID: ${p.id} | ${p.name} | ${price}\n  Link: ${productLink}\n`;
           if (p.image) catalogContext += `  Img: ${p.image}\n`;
-          if (p.description) catalogContext += `  Desc: ${p.description.substring(0, 100)}${p.description.length > 100 ? "..." : ""}\n`;
+          if (p.description)
+            catalogContext += `  Desc: ${p.description.substring(0, 100)}${
+              p.description.length > 100 ? "..." : ""
+            }\n`;
         });
-        catalogContext += "\nINSTRUÇÕES DE VENDA:\n- Priorize recomendar produtos específicos.\n- Use [SEND_PRODUCT: ID] para enviar cartões.\n- Só envie link geral se pedido.\n";
+        catalogContext +=
+          "\nINSTRUÇÕES DE VENDA:\n- Priorize recomendar produtos específicos.\n- Use [SEND_PRODUCT: ID] para enviar cartões.\n- Só envie link geral se pedido.\n";
       }
     }
   } catch (e) {
@@ -2362,19 +2567,26 @@ export const handleOpenAi = async (
     // Fallback lookups for mediaUrl...
     if (!mediaUrl) {
       try {
-        const msgRecord = await Message.findOne({ where: { wid: msg.key.id, ticketId: ticket.id } });
+        const msgRecord = await Message.findOne({
+          where: { wid: msg.key.id, ticketId: ticket.id }
+        });
         mediaUrl = msgRecord?.mediaUrl?.split("/").pop();
       } catch (e) {}
     }
     if (!mediaUrl) {
       try {
-        const lastAudio = await Message.findOne({ where: { ticketId: ticket.id, mediaType: "audio" }, order: [["createdAt", "DESC"]] });
+        const lastAudio = await Message.findOne({
+          where: { ticketId: ticket.id, mediaType: "audio" },
+          order: [["createdAt", "DESC"]]
+        });
         mediaUrl = lastAudio?.mediaUrl?.split("/").pop();
       } catch (e) {}
     }
 
     if (!mediaUrl) {
-      await wbot.sendMessage(msg.key.remoteJid!, { text: "Desculpe, não consegui localizar o áudio." });
+      await wbot.sendMessage(msg.key.remoteJid!, {
+        text: "Desculpe, não consegui localizar o áudio."
+      });
       return;
     }
 
@@ -2387,20 +2599,24 @@ export const handleOpenAi = async (
         const openaiKey = await resolveApiKey("openai");
         if (openaiKey) return openaiKey;
         const base = await resolveApiKey(provider, openAiSettings.apiKey);
-        if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") return process.env.AZURE_SPEECH_KEY || base;
+        if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure")
+          return process.env.AZURE_SPEECH_KEY || base;
         return base;
       })();
 
       const transcriptionClient = new OpenAI({ apiKey: transcriptionApiKey });
-      const transcription = await transcriptionClient.audio.transcriptions.create({
-        model: "whisper-1",
-        file: file
-      });
+      const transcription =
+        await transcriptionClient.audio.transcriptions.create({
+          model: "whisper-1",
+          file: file
+        });
       transcriptionText = transcription.text;
       inputContent = transcriptionText;
     } catch (error) {
       console.error(`Error transcribing audio:`, error);
-      await wbot.sendMessage(msg.key.remoteJid!, { text: "Desculpe, não consegui transcrever o áudio." });
+      await wbot.sendMessage(msg.key.remoteJid!, {
+        text: "Desculpe, não consegui transcrever o áudio."
+      });
       return;
     }
   }
@@ -2408,9 +2624,16 @@ export const handleOpenAi = async (
   // 2. Build History
   messagesOpenAi.push({ role: "system", content: promptSystem });
 
-  for (let i = 0; i < Math.min(openAiSettings.maxMessages, messages.length); i++) {
+  for (
+    let i = 0;
+    i < Math.min(openAiSettings.maxMessages, messages.length);
+    i++
+  ) {
     const message = messages[i];
-    if (message.mediaType === "conversation" || message.mediaType === "extendedTextMessage") {
+    if (
+      message.mediaType === "conversation" ||
+      message.mediaType === "extendedTextMessage"
+    ) {
       if (message.fromMe) {
         messagesOpenAi.push({ role: "assistant", content: message.body });
       } else {
@@ -2421,51 +2644,66 @@ export const handleOpenAi = async (
 
   // 3. Add Current Message (Text/Audio/Image)
   if (msg.message?.imageMessage) {
-      const mediaUrl = mediaSent!.mediaUrl!.split("/").pop();
-      const filePath = `${publicFolder}/${mediaUrl}`;
-      const imageBuffer = fs.readFileSync(filePath);
-      const base64Image = imageBuffer.toString("base64");
-      const mimeType = msg.message.imageMessage.mimetype || "image/jpeg";
+    const mediaUrl = mediaSent!.mediaUrl!.split("/").pop();
+    const filePath = `${publicFolder}/${mediaUrl}`;
+    const imageBuffer = fs.readFileSync(filePath);
+    const base64Image = imageBuffer.toString("base64");
+    const mimeType = msg.message.imageMessage.mimetype || "image/jpeg";
 
-      // Helper to check if model supports vision
-      const isVision = (m?: string) => {
-        if (!m) return false;
-        const lower = m.toLowerCase();
-        return lower.includes("vision") || 
-               lower.includes("gemini") || 
-               lower.includes("claude-3") || 
-               lower.includes("gpt-4o") || 
-               lower.includes("gpt-4-turbo") ||
-               lower.includes("llama-3.2") ||
-               lower.includes("vl") || // Vision Language
-               lower.includes("flash-image"); // Gemini Flash Image
-      };
+    // Helper to check if model supports vision
+    const isVision = (m?: string) => {
+      if (!m) return false;
+      const lower = m.toLowerCase();
+      return (
+        lower.includes("vision") ||
+        lower.includes("gemini") ||
+        lower.includes("claude-3") ||
+        lower.includes("gpt-4o") ||
+        lower.includes("gpt-4-turbo") ||
+        lower.includes("llama-3.2") ||
+        lower.includes("vl") || // Vision Language
+        lower.includes("flash-image")
+      ); // Gemini Flash Image
+    };
 
-      if (openAiSettings.provider === "openrouter") {
-           // Ensure we use a vision-capable model if the current one is likely text-only
-           if (!openAiSettings.model || !isVision(openAiSettings.model) || openAiSettings.model === "openrouter/free") {
-                console.log(`[handleOpenAi] Model '${openAiSettings.model}' may not support vision. Switching to requested vision model.`);
-                // Fallback to a reliable vision model on OpenRouter (using Paid model as requested)
-                openAiSettings.model = "google/gemini-2.0-flash-lite-preview-02-05:free"; // Atualizado para modelo funcional
-           }
-      } else {
-        // Se tem crédito, tentar o modelo mais robusto de visão
-         if (!openAiSettings.model || !isVision(openAiSettings.model)) {
-             openAiSettings.model = "gpt-4o"; // Fallback padrão OpenAI
-         }
+    if (openAiSettings.provider === "openrouter") {
+      // Ensure we use a vision-capable model if the current one is likely text-only
+      if (
+        !openAiSettings.model ||
+        !isVision(openAiSettings.model) ||
+        openAiSettings.model === "openrouter/free"
+      ) {
+        console.log(
+          `[handleOpenAi] Model '${openAiSettings.model}' may not support vision. Switching to requested vision model.`
+        );
+        // Fallback to a reliable vision model on OpenRouter (using Paid model as requested)
+        openAiSettings.model =
+          "google/gemini-2.0-flash-lite-preview-02-05:free"; // Atualizado para modelo funcional
       }
-      
-      messagesOpenAi.push({
-        role: "user",
-        content: [
-          { type: "text", text: inputContent || "Analise esta imagem." },
-          { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Image}` } }
-        ]
-      });
+    } else {
+      // Se tem crédito, tentar o modelo mais robusto de visão
+      if (!openAiSettings.model || !isVision(openAiSettings.model)) {
+        openAiSettings.model = "gpt-4o"; // Fallback padrão OpenAI
+      }
+    }
+
+    messagesOpenAi.push({
+      role: "user",
+      content: [
+        { type: "text", text: inputContent || "Analise esta imagem." },
+        {
+          type: "image_url",
+          image_url: { url: `data:${mimeType};base64,${base64Image}` }
+        }
+      ]
+    });
   } else {
     // If OpenRouter and default model, switch to cheap/free model
-    if (openAiSettings.provider === "openrouter" && (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo")) {
-        openAiSettings.model = "openrouter/free";
+    if (
+      openAiSettings.provider === "openrouter" &&
+      (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo")
+    ) {
+      openAiSettings.model = "openrouter/free";
     }
     messagesOpenAi.push({ role: "user", content: inputContent! });
   }
@@ -2473,14 +2711,18 @@ export const handleOpenAi = async (
   // 4. Call AI & Process Response
   try {
     let response: string | undefined;
-    
+
     // 🖼️ Detecta se há imagens no contexto
-    const hasImages = !!(msg.message?.imageMessage || (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage));
+    const hasImages = !!(
+      msg.message?.imageMessage ||
+      msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage
+    );
 
     if (provider === "gemini") {
       response = await callGemini(aiClient, messagesOpenAi, openAiSettings);
     } else if (provider === "external") {
-      const integrationUrl = openAiSettings.model || "https://api.direitai.com/v1/agent/chat";
+      const integrationUrl =
+        openAiSettings.model || "https://api.direitai.com/v1/agent/chat";
       const payload = {
         remoteJid: msg.key.remoteJid,
         pushName: contact.name,
@@ -2492,29 +2734,46 @@ export const handleOpenAi = async (
       const { data } = await axios.post(integrationUrl, payload);
       response = data.response || data.message;
       if (data.action === "transfer") {
-        response = `Ação: Transferir para o setor de atendimento ${response ? "\n" + response : ""}`;
+        response = `Ação: Transferir para o setor de atendimento ${
+          response ? "\n" + response : ""
+        }`;
       }
     } else {
-      response = await callOpenAI(aiClient, messagesOpenAi, openAiSettings, hasImages);
+      response = await callOpenAI(
+        aiClient,
+        messagesOpenAi,
+        openAiSettings,
+        hasImages
+      );
     }
 
     // Sanitize Response (remove <think> tags, etc.)
     if (response) {
-        response = sanitizeResponse(response);
+      response = sanitizeResponse(response);
     }
 
     if (response?.includes("Ação: Transferir para o setor de atendimento")) {
       await transferQueue(openAiSettings.queueId, ticket, contact);
-      response = response.replace("Ação: Transferir para o setor de atendimento", "").trim();
+      response = response
+        .replace("Ação: Transferir para o setor de atendimento", "")
+        .trim();
     }
 
     // Process Actions (Shared Logic)
     if (response) {
-      response = await processAiActions(response, ticket, contact, wbot, msg, openAiSettings);
-      
+      response = await processAiActions(
+        response,
+        ticket,
+        contact,
+        wbot,
+        msg,
+        openAiSettings
+      );
+
       // 💎 Adiciona nota sobre uso de créditos quando imagem foi processada com sucesso
       if (hasImages && global.lastPremiumModelUsed) {
-        response += "\n\n✨ *Imagem analisada com IA avançada* - Créditos OpenRouter utilizados com sucesso!";
+        response +=
+          "\n\n✨ *Imagem analisada com IA avançada* - Créditos OpenRouter utilizados com sucesso!";
         global.lastPremiumModelUsed = false; // Reseta para não repetir
       }
     }
@@ -2529,7 +2788,8 @@ export const handleOpenAi = async (
             const vKey = (openAiSettings.voiceKey || "").trim();
             if (vKey !== "") return vKey;
             const base = await resolveApiKey(provider, openAiSettings.apiKey);
-            if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure") return process.env.AZURE_SPEECH_KEY || base;
+            if ((openAiSettings.voiceRegion || "").toLowerCase() === "azure")
+              return process.env.AZURE_SPEECH_KEY || base;
             return base;
           })();
 
@@ -2546,25 +2806,38 @@ export const handleOpenAi = async (
             mimetype: "audio/mpeg",
             ptt: true
           });
-          await verifyMediaMessage(sendMessage!, ticket, contact, ticketTraking, false, false, wbot);
+          await verifyMediaMessage(
+            sendMessage!,
+            ticket,
+            contact,
+            ticketTraking,
+            false,
+            false,
+            wbot
+          );
           deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.mp3`);
           deleteFileSync(`${publicFolder}/${fileNameWithOutExtension}.wav`);
         } catch (error) {
           // Fallback to text if TTS fails
-          const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, { text: `\u200e ${response!}` });
+          const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+            text: `\u200e ${response!}`
+          });
           await verifyMessage(sentMessage!, ticket, contact);
         }
       } else {
         // Send Text Response
-        const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, { text: `\u200e ${response!}` });
+        const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {
+          text: `\u200e ${response!}`
+        });
         await verifyMessage(sentMessage!, ticket, contact);
       }
     }
-
   } catch (error) {
     console.error(`Error calling ${provider}:`, error);
     await wbot.sendMessage(msg.key.remoteJid!, {
-      text: `Desculpe, ocorreu um erro temporário: ${error.message || "Erro desconhecido"}. Tente novamente em alguns instantes.`
+      text: `Desculpe, ocorreu um erro temporário: ${
+        error.message || "Erro desconhecido"
+      }. Tente novamente em alguns instantes.`
     });
   }
   messagesOpenAi = [];
@@ -2578,41 +2851,64 @@ const getQuickResponse = async (
   wbot: Session,
   msg: proto.IWebMessageInfo
 ): Promise<string | null> => {
-  const normalizedMessage = message.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const normalizedMessage = message
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
   const isAdmin = await verifyAdminPermission(contact);
 
   // Comandos de WhatsApp Status
-  if (normalizedMessage.includes("status") && normalizedMessage.includes("whatsapp")) {
+  if (
+    normalizedMessage.includes("status") &&
+    normalizedMessage.includes("whatsapp")
+  ) {
     if (normalizedMessage.includes("boa noite")) {
       return "🌙 *Status de Boa Noite criado!*\n\n✅ Seu status foi programado e será publicado em breve no WhatsApp.\n\n📱 Para ver todos os seus status, acesse: *Marketing > Status WhatsApp*\n💡 Dica: Você pode criar status com imagens, vídeos ou apenas texto!";
     }
     if (normalizedMessage.includes("bom dia")) {
       return "☀️ *Status de Bom Dia criado!*\n\n✅ Seu status foi programado e será publicado em breve no WhatsApp.\n\n📱 Para ver todos os seus status, acesse: *Marketing > Status WhatsApp*\n💡 Dica: Use imagens bonitas para aumentar o engajamento!";
     }
-    return "📱 *Criar Status WhatsApp*\n\n📝 Para criar um status, diga:\n• \"Criar status de boa noite\"\n• \"Criar status de bom dia\"\n• \"Criar status sobre [assunto]\"\n\n📊 Seus status recentes aparecerão aqui em breve!";
+    return '📱 *Criar Status WhatsApp*\n\n📝 Para criar um status, diga:\n• "Criar status de boa noite"\n• "Criar status de bom dia"\n• "Criar status sobre [assunto]"\n\n📊 Seus status recentes aparecerão aqui em breve!';
   }
 
   // Comandos de Instagram
-  if (normalizedMessage.includes("instagram") || normalizedMessage.includes("insta")) {
-    if (normalizedMessage.includes("postar") || normalizedMessage.includes("publicar")) {
-      return "📸 *Publicar no Instagram*\n\n🎯 Para criar uma publicação:\n1. Envie uma imagem ou vídeo com legenda\n2. Digite: \"Postar no Instagram\"\n3. Ou diga: \"Criar post com esta mídia\"\n\n📌 Tipos de conteúdo disponíveis:\n• Feed (foto/vídeo)\n• Stories\n• Reels\n• Carrossel\n\nAcesse: *Marketing > Instagram* para mais opções!";
+  if (
+    normalizedMessage.includes("instagram") ||
+    normalizedMessage.includes("insta")
+  ) {
+    if (
+      normalizedMessage.includes("postar") ||
+      normalizedMessage.includes("publicar")
+    ) {
+      return '📸 *Publicar no Instagram*\n\n🎯 Para criar uma publicação:\n1. Envie uma imagem ou vídeo com legenda\n2. Digite: "Postar no Instagram"\n3. Ou diga: "Criar post com esta mídia"\n\n📌 Tipos de conteúdo disponíveis:\n• Feed (foto/vídeo)\n• Stories\n• Reels\n• Carrossel\n\nAcesse: *Marketing > Instagram* para mais opções!';
     }
     return "📱 *Instagram Business*\n\n✅ Conectado e pronto para publicar!\n\n🚀 O que você pode fazer:\n• Publicar fotos e vídeos\n• Criar Stories e Reels\n• Ver analytics\n• Responder comentários\n\n📊 Acesse: *Marketing > Instagram* para o painel completo!";
   }
 
   // Comandos de Facebook
-  if (normalizedMessage.includes("facebook") || normalizedMessage.includes("face")) {
+  if (
+    normalizedMessage.includes("facebook") ||
+    normalizedMessage.includes("face")
+  ) {
     return "📘 *Facebook Business*\n\n✅ Página conectada e ativa!\n\n🚀 O que você pode fazer:\n• Publicar no feed\n• Criar eventos\n• Gerenciar comentários\n• Ver insights\n\n⚠️ *Importante*: Verifique se suas permissões de página estão atualizadas.\n📊 Acesse: *Marketing > Facebook* para mais opções!";
   }
 
   // Funções da Plataforma
-  if (normalizedMessage.includes("funcoes") || normalizedMessage.includes("recursos") || normalizedMessage.includes("o que voce faz")) {
-    return "🤖 *Funções do AIPENSA IA*\n\n📱 *WhatsApp Business:*\n• Responder mensagens automaticamente\n• Criar status\n• Enviar produtos do catálogo\n• Gerenciar atendimento\n\n📸 *Redes Sociais:*\n• Postar no Instagram (Feed, Stories, Reels)\n• Publicar no Facebook\n• Agendar conteúdo\n• Analytics integrado\n\n🎨 *Criação de Conteúdo:*\n• Criar legendas\n• Gerar imagens com IA\n• Sugerir campanhas\n• Criar anúncios\n\n💡 *Dica*: Envie \"menu\" para ver todos os comandos disponíveis!";
+  if (
+    normalizedMessage.includes("funcoes") ||
+    normalizedMessage.includes("recursos") ||
+    normalizedMessage.includes("o que voce faz")
+  ) {
+    return '🤖 *Funções do AIPENSA IA*\n\n📱 *WhatsApp Business:*\n• Responder mensagens automaticamente\n• Criar status\n• Enviar produtos do catálogo\n• Gerenciar atendimento\n\n📸 *Redes Sociais:*\n• Postar no Instagram (Feed, Stories, Reels)\n• Publicar no Facebook\n• Agendar conteúdo\n• Analytics integrado\n\n🎨 *Criação de Conteúdo:*\n• Criar legendas\n• Gerar imagens com IA\n• Sugerir campanhas\n• Criar anúncios\n\n💡 *Dica*: Envie "menu" para ver todos os comandos disponíveis!';
   }
 
   // Menu de Comandos
-  if (normalizedMessage === "menu" || normalizedMessage === "comandos" || normalizedMessage === "ajuda") {
-    return "🤖 *MENU DE COMANDOS - AIPENSA IA*\n\n📱 *WhatsApp:*\n• \"Criar status de boa noite\"\n• \"Criar status de bom dia\"\n• \"Ver meus status\"\n\n📸 *Instagram:*\n• \"Postar no Instagram\"\n• \"Criar Reels\"\n• \"Ver analytics do Instagram\"\n\n📘 *Facebook:*\n• \"Publicar no Facebook\"\n• \"Ver página do Facebook\"\n• \"Insights do Facebook\"\n\n🎨 *Gerais:*\n• \"O que você faz?\"\n• \"Funcões da plataforma\"\n• \"Me ajude\"\n\n💡 *Dica*: Envie uma imagem com legenda e diga \"Postar\" para criar conteúdo!";
+  if (
+    normalizedMessage === "menu" ||
+    normalizedMessage === "comandos" ||
+    normalizedMessage === "ajuda"
+  ) {
+    return '🤖 *MENU DE COMANDOS - AIPENSA IA*\n\n📱 *WhatsApp:*\n• "Criar status de boa noite"\n• "Criar status de bom dia"\n• "Ver meus status"\n\n📸 *Instagram:*\n• "Postar no Instagram"\n• "Criar Reels"\n• "Ver analytics do Instagram"\n\n📘 *Facebook:*\n• "Publicar no Facebook"\n• "Ver página do Facebook"\n• "Insights do Facebook"\n\n🎨 *Gerais:*\n• "O que você faz?"\n• "Funcões da plataforma"\n• "Me ajude"\n\n💡 *Dica*: Envie uma imagem com legenda e diga "Postar" para criar conteúdo!';
   }
 
   return null;
@@ -2625,7 +2921,11 @@ const sendQuickMessage = async (
   originalMsg: proto.IWebMessageInfo
 ): Promise<void> => {
   try {
-    await wbot.sendMessage(remoteJid, { text: message }, { quoted: originalMsg });
+    await wbot.sendMessage(
+      remoteJid,
+      { text: message },
+      { quoted: originalMsg }
+    );
     console.log(`[QuickResponse] Sent quick response to ${remoteJid}`);
   } catch (error) {
     console.error(`[QuickResponse] Error sending quick response:`, error);

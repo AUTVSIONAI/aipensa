@@ -583,6 +583,65 @@ export const publishVideoToInstagram = async (
   }
 };
 
+// Publicar Story no Instagram (imagem ou vídeo)
+export const publishStoryToInstagram = async (
+  companyId: number,
+  instagramId: string,
+  mediaUrl: string,
+  caption: string,
+  isVideo: boolean = false
+): Promise<any> => {
+  try {
+    const { accessToken } = await getFbConfig(companyId);
+    if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
+
+    const isAccessible = await checkUrlAccessibility(mediaUrl);
+    if (!isAccessible) {
+      throw new Error(
+        `A mídia não está acessível publicamente: ${mediaUrl}. Verifique se a URL está disponível sem autenticação.`
+      );
+    }
+
+    const params: any = {
+      access_token: accessToken,
+      media_type: "STORIES"
+    };
+
+    if (isVideo) {
+      params.video_url = mediaUrl;
+    } else {
+      params.image_url = mediaUrl;
+    }
+    if (caption) {
+      params.caption = caption;
+    }
+
+    const createContainer = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
+      null,
+      { params }
+    );
+
+    const creationId = createContainer.data.id;
+    await waitForInstagramMedia(creationId, accessToken);
+
+    const publishResp = await axios.post(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
+      null,
+      {
+        params: {
+          access_token: accessToken,
+          creation_id: creationId
+        }
+      }
+    );
+
+    return publishResp.data;
+  } catch (error) {
+    handleFacebookError(error);
+  }
+};
+
 export const publishToInstagram = async (
   companyId: number,
   instagramId: string,

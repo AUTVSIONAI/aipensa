@@ -30,6 +30,9 @@ import { Skeleton } from "@material-ui/lab";
 import Chart from "react-apexcharts";
 import CardBalance from "../../components/CardBalance/CardBalance";
 import CardDeposit from "../../components/CardDeposit/CardDeposit";
+import useSettings from "../../hooks/useSettings";
+import useWhatsApps from "../../hooks/useWhatsApps";
+import ConnectionIcon from "../../components/ConnectionIcon";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -254,6 +257,15 @@ const Marketing = () => {
   const [walletBalance, setWalletBalance] = useState(0);
   const [walletTotalCredits, setWalletTotalCredits] = useState(0);
   const [walletTotalSpend, setWalletTotalSpend] = useState(0);
+  const [commentTriggersText, setCommentTriggersText] = useState("");
+  const [commentTriggersSaving, setCommentTriggersSaving] = useState(false);
+  const [pdfLink, setPdfLink] = useState("");
+  const [pdfQuestion, setPdfQuestion] = useState("Posso te enviar um PDF rápido com detalhes e valores?");
+  const [pdfSaving, setPdfSaving] = useState(false);
+
+  const settingsApi = useSettings();
+  const { get, update } = settingsApi;
+  const { whatsApps, loading: whatsAppsLoading } = useWhatsApps();
 
   useEffect(() => {
     if (pages.length > 0 && !pubAccountId) {
@@ -300,6 +312,71 @@ const Marketing = () => {
     };
     fetchStatus();
   }, []);
+
+  useEffect(() => {
+    const fetchMarketingSettings = async () => {
+      try {
+        const triggersSetting = await get("marketingCommentTriggers");
+        if (triggersSetting && triggersSetting.value) {
+          const parsed = JSON.parse(triggersSetting.value);
+          if (Array.isArray(parsed)) {
+            setCommentTriggersText(parsed.join(", "));
+          }
+        }
+
+        const pdfLinkSetting = await get("marketingPdfLink");
+        if (pdfLinkSetting && pdfLinkSetting.value) {
+          setPdfLink(pdfLinkSetting.value);
+        }
+
+        const pdfQuestionSetting = await get("marketingPdfQuestion");
+        if (pdfQuestionSetting && pdfQuestionSetting.value) {
+          setPdfQuestion(pdfQuestionSetting.value);
+        }
+      } catch (err) {
+        console.log("Erro ao carregar configurações de marketing:", err);
+      }
+    };
+    fetchMarketingSettings();
+  }, [get]);
+
+  const handleSaveCommentTriggers = async () => {
+    try {
+      setCommentTriggersSaving(true);
+      const items = commentTriggersText
+        .split(",")
+        .map(v => v.trim())
+        .filter(v => v.length > 0);
+      await update({
+        key: "marketingCommentTriggers",
+        value: JSON.stringify(items)
+      });
+      toast.success("Palavras gatilho salvas com sucesso.");
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setCommentTriggersSaving(false);
+    }
+  };
+
+  const handleSavePdfConfig = async () => {
+    try {
+      setPdfSaving(true);
+      await update({
+        key: "marketingPdfLink",
+        value: pdfLink || ""
+      });
+      await update({
+        key: "marketingPdfQuestion",
+        value: pdfQuestion || ""
+      });
+      toast.success("Configurações de PDF salvas com sucesso.");
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setPdfSaving(false);
+    }
+  };
 
   useEffect(() => {
     const fetchPages = async () => {
@@ -799,8 +876,7 @@ const Marketing = () => {
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><LinkIcon style={{marginRight: 8}}/> Fluxo Rápido</div>} />
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><SettingsSuggestIcon style={{marginRight: 8}}/> Gerenciar</div>} />
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><MonetizationOnIcon style={{marginRight: 8}}/> Relatórios</div>} />
-            <Tab label={<div style={{display:'flex', alignItems:'center'}}><PostAddIcon style={{marginRight: 8}}/> Publicar</div>} />
-            <Tab label={<div style={{display:'flex', alignItems:'center'}}><DynamicFeedIcon style={{marginRight: 8}}/> Feed</div>} />
+            <Tab label={<div style={{display:'flex', alignItems:'center'}}><PostAddIcon style={{marginRight: 8}}/> Publicar & Feed</div>} />
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><SettingsIcon style={{marginRight: 8}}/> Configuração</div>} />
             <Tab label={<div style={{display:'flex', alignItems:'center'}}><MonetizationOnIcon style={{marginRight: 8}}/> Carteira</div>} />
           </Tabs>
@@ -1105,30 +1181,30 @@ const Marketing = () => {
                 </Section>
               </Card>
               <Box mt={2}>
-                 <Card className={classes.card} style={{ height: "auto" }}>
-                  <Section icon={<ChatBubbleOutlineIcon style={{ color: theme.palette.text.primary }} />} title="Teste de DM Instagram">
+                    <Card className={classes.card} style={{ height: "auto" }}>
+                  <Section icon={<ChatBubbleOutlineIcon style={{ color: theme.palette.text.primary }} />} title="Teste avançado de DM (opcional)">
                     <Typography variant="body2" style={{ marginBottom: 16, color: "rgba(255, 255, 255, 0.7)" }}>
-                        Teste o envio de mensagens diretas para verificar permissões e conectividade.
+                        Área avançada para quem já conhece a API do Instagram. Usuários comuns não precisam usar esta parte.
                     </Typography>
                     <TextField
                       fullWidth
-                      label="Instagram Business ID (Sua conta)"
+                      label="ID da conta do Instagram"
                       value={dmInstagramId}
                       onChange={(e) => setDmInstagramId(e.target.value)}
                       variant="outlined"
                       margin="normal"
                       className={classes.input}
-                      helperText="ID da conta empresarial do Instagram (não é o username)"
+                      helperText="Use apenas se souber o ID empresarial da conta."
                     />
                     <TextField
                       fullWidth
-                      label="Recipient ID (Usuário Destino)"
+                      label="ID do usuário destino"
                       value={dmRecipientId}
                       onChange={(e) => setDmRecipientId(e.target.value)}
                       variant="outlined"
                       margin="normal"
                       className={classes.input}
-                      helperText="ID numérico do usuário do Instagram (Scoped ID)"
+                      helperText="Use apenas para testes técnicos de DM."
                     />
                     <TextField
                       fullWidth
@@ -1622,10 +1698,192 @@ const Marketing = () => {
                     </Section>
                  </Card>
               </Grid>
+              <Grid item xs={12} md={10}>
+                 <Paper elevation={0} style={{ padding: 24, marginTop: 24, borderRadius: 16, backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", backdropFilter: "blur(10px)" }}>
+                   <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+                     <Box flexGrow={1}>
+                       <Typography variant="h6" gutterBottom style={{ color: theme.palette.text.primary }}>Feed do Facebook/Instagram</Typography>
+                       <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                         Selecione uma página para visualizar e interagir com as postagens recentes.
+                       </Typography>
+                     </Box>
+                     <Box display="flex" gap={2} alignItems="center">
+                       <TextField
+                         select
+                         label="Onde estão suas postagens"
+                         value={feedPlatform}
+                         onChange={(e) => setFeedPlatform(e.target.value)}
+                         variant="outlined"
+                         size="small"
+                         className={classes.input}
+                         style={{ minWidth: 150 }}
+                       >
+                         <MenuItem value="facebook">Facebook</MenuItem>
+                         <MenuItem value="instagram">Instagram</MenuItem>
+                       </TextField>
+                       <TextField
+                         select
+                         label="Escolha a página ou perfil"
+                         value={feedPageId}
+                         onChange={(e) => setFeedPageId(e.target.value)}
+                         variant="outlined"
+                         size="small"
+                         className={classes.input}
+                         style={{ minWidth: 250 }}
+                       >
+                         {pages.map((p) => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
+                       </TextField>
+                       <Button
+                         className={classes.button}
+                         onClick={handleFetchFeed}
+                         disabled={feedLoading || !feedPageId}
+                         startIcon={feedLoading ? <CircularProgress size={20} color="inherit" /> : <DynamicFeedIcon />}
+                       >
+                         {feedLoading ? "Carregando..." : "Atualizar Feed"}
+                       </Button>
+                     </Box>
+                   </Box>
+                 </Paper>
+ 
+                 {feedLoading ? (
+                   <Grid container spacing={3} style={{ marginTop: 8 }}>
+                     {[1, 2, 3].map((i) => (
+                       <Grid item xs={12} md={6} key={i}>
+                         <Card className={classes.card}>
+                           <CardContent>
+                             <Box display="flex" alignItems="center" mb={2}>
+                               <Skeleton variant="circle" width={40} height={40} style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+                               <Box ml={2} width="100%">
+                                 <Skeleton variant="text" width="60%" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+                                 <Skeleton variant="text" width="40%" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+                               </Box>
+                             </Box>
+                             <Skeleton variant="rect" height={200} style={{ borderRadius: 8, backgroundColor: "rgba(255,255,255,0.1)" }} />
+                             <Box mt={2}>
+                               <Skeleton variant="text" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+                               <Skeleton variant="text" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+                             </Box>
+                           </CardContent>
+                         </Card>
+                       </Grid>
+                     ))}
+                   </Grid>
+                 ) : feed.length === 0 && feedPageId ? (
+                   <Box textAlign="center" py={8} bgcolor="rgba(255, 255, 255, 0.05)" borderRadius={16} border="1px dashed rgba(255, 255, 255, 0.2)" style={{ marginTop: 8 }}>
+                     <DynamicFeedIcon style={{ fontSize: 64, color: "rgba(255, 255, 255, 0.3)", marginBottom: 16 }} />
+                     <Typography variant="h6" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Nenhuma publicação encontrada</Typography>
+                     <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.5)" }}>Tente selecionar outra página ou verifique se há postagens recentes.</Typography>
+                   </Box>
+                 ) : (
+                   <Grid container spacing={3} style={{ marginTop: 8 }}>
+                     {feed.map((post) => (
+                       <Grid item xs={12} md={6} lg={6} key={post.id}>
+                         <Card className={classes.card} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                           <Box p={2} display="flex" alignItems="center" borderBottom="1px solid rgba(255, 255, 255, 0.1)">
+                             <Avatar src={post.from && post.from.picture && post.from.picture.data && post.from.picture.data.url} style={{ border: "2px solid #3b82f6" }}>{(post.from && post.from.name && post.from.name[0]) || "?"}</Avatar>
+                             <Box ml={2}>
+                               <Typography variant="subtitle2" style={{ fontWeight: 700, color: theme.palette.text.primary }}>{(post.from && post.from.name) || "Usuário"}</Typography>
+                               <Typography variant="caption" style={{ display: "flex", alignItems: "center", gap: 4, color: "rgba(255, 255, 255, 0.7)" }}>
+                                 {new Date(post.created_time).toLocaleDateString()} às {new Date(post.created_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                 <PublicIcon style={{ fontSize: 12 }} />
+                               </Typography>
+                             </Box>
+                           </Box>
+                           {post.full_picture && (
+                             <Box 
+                               style={{ 
+                                 width: "100%", 
+                                 paddingTop: "56.25%",
+                                 backgroundImage: `url(${post.full_picture})`, 
+                                 backgroundSize: "cover", 
+                                 backgroundPosition: "center",
+                                 backgroundColor: "rgba(0,0,0,0.2)"
+                               }} 
+                             />
+                           )}
+                           <CardContent style={{ flexGrow: 1, paddingTop: 16, paddingBottom: 8 }}>
+                             <Typography variant="body2" style={{ whiteSpace: "pre-wrap", fontSize: "0.95rem", lineHeight: 1.5, color: "rgba(255, 255, 255, 0.7)" }}>{post.message}</Typography>
+                           </CardContent>
+                           <Divider style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }} />
+                           <Box p={1} display="flex" justifyContent="space-between" alignItems="center">
+                             <Box display="flex" gap={1}>
+                               <Button 
+                                 startIcon={<ThumbUpIcon />} 
+                                 size="small" 
+                                 onClick={() => handleLike(post.id)}
+                                 color="primary"
+                               >
+                                 Curtir ({(post.likes && post.likes.summary && post.likes.summary.total_count) || 0})
+                               </Button>
+                               <Button 
+                                 startIcon={<ChatBubbleOutlineIcon />} 
+                                 size="small" 
+                                 onClick={() => toggleComments(post.id)}
+                                 color="primary"
+                               >
+                                 Comentar ({(post.comments && post.comments.summary && post.comments.summary.total_count) || 0})
+                               </Button>
+                             </Box>
+                             <IconButton size="small" onClick={() => window.open(post.permalink_url, "_blank")} style={{ color: theme.palette.text.secondary }}>
+                               <LinkIcon fontSize="small" />
+                             </IconButton>
+                           </Box>
+                           
+                           <Collapse in={expandedComments[post.id]} timeout="auto" unmountOnExit>
+                             <Box p={2} bgcolor={theme.palette.type === "dark" ? "rgba(0, 0, 0, 0.3)" : "#f5f5f5"} borderTop="1px solid rgba(128, 128, 128, 0.1)">
+                               <Box style={{ maxHeight: 300, overflowY: "auto", marginBottom: 16, paddingRight: 8 }}>
+                                 {post.comments && post.comments.data && post.comments.data.length > 0 ? (
+                                   post.comments.data.map((c) => (
+                                     <Box key={c.id} mb={2} display="flex" alignItems="flex-start">
+                                       <Avatar style={{ width: 32, height: 32, marginRight: 12, fontSize: 14 }}>{(c.from && c.from.name && c.from.name[0]) || "?"}</Avatar>
+                                       <Box bgcolor={theme.palette.type === "dark" ? "rgba(255, 255, 255, 0.05)" : "#ffffff"} p={2} borderRadius="0 12px 12px 12px" border={`1px solid ${theme.palette.type === "dark" ? "rgba(255, 255, 255, 0.1)" : "#e0e0e0"}`} flexGrow={1}>
+                                         <Typography variant="subtitle2" style={{ fontSize: "0.85rem", fontWeight: "bold", color: theme.palette.text.primary }}>{(c.from && c.from.name) || "Usuário"}</Typography>
+                                         <Typography variant="body2" style={{ fontSize: "0.9rem", color: theme.palette.text.primary }}>{c.message}</Typography>
+                                       </Box>
+                                     </Box>
+                                   ))
+                                 ) : (
+                                   <Box py={2} textAlign="center">
+                                     <Typography variant="caption" color="textSecondary">Seja o primeiro a comentar.</Typography>
+                                   </Box>
+                                 )}
+                               </Box>
+                               <Box display="flex" gap={1} alignItems="center">
+                                 <Avatar style={{ width: 32, height: 32 }} />
+                                 <TextField 
+                                   fullWidth 
+                                   placeholder="Escreva um comentário..." 
+                                   size="small" 
+                                   variant="outlined" 
+                                   className={classes.input}
+                                   id={`comment-${post.id}`} 
+                                   InputProps={{ 
+                                     style: { backgroundColor: theme.palette.type === "dark" ? "rgba(255, 255, 255, 0.05)" : "#ffffff", borderRadius: 20 },
+                                     endAdornment: (
+                                       <InputAdornment position="end">
+                                         <IconButton size="small" edge="end" color="primary" onClick={() => {
+                                           const el = document.getElementById(`comment-${post.id}`);
+                                           if (el && el.value) { handleComment(post.id, el.value); el.value = ""; }
+                                         }}>
+                                           <SendIcon fontSize="small" />
+                                         </IconButton>
+                                       </InputAdornment>
+                                     )
+                                   }}
+                                 />
+                               </Box>
+                             </Box>
+                           </Collapse>
+                         </Card>
+                       </Grid>
+                     ))}
+                   </Grid>
+                 )}
+              </Grid>
            </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} name={8}>
+        <TabPanel value={tab} name={-1}>
            <Grid container spacing={3} justifyContent="center">
               <Grid item xs={12} md={10}>
                  <Paper elevation={0} style={{ padding: 24, marginBottom: 24, borderRadius: 16, backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", backdropFilter: "blur(10px)" }}>
@@ -1637,7 +1895,7 @@ const Marketing = () => {
                        <Box display="flex" gap={2} alignItems="center">
                           <TextField 
                             select 
-                            label="Plataforma" 
+                            label="Onde estão suas postagens" 
                             value={feedPlatform} 
                             onChange={(e) => setFeedPlatform(e.target.value)} 
                             variant="outlined" 
@@ -1650,7 +1908,7 @@ const Marketing = () => {
                           </TextField>
                           <TextField 
                             select 
-                            label="Página Conectada" 
+                            label="Escolha a página ou perfil" 
                             value={feedPageId} 
                             onChange={(e) => setFeedPageId(e.target.value)} 
                             variant="outlined" 
@@ -1810,7 +2068,7 @@ const Marketing = () => {
            </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} name={9}>
+        <TabPanel value={tab} name={8}>
            <Grid container spacing={3} justifyContent="center">
               <Grid item xs={12} md={8}>
                  <Card className={classes.card}>
@@ -1823,20 +2081,22 @@ const Marketing = () => {
                           <Typography variant="h6" gutterBottom style={{ color: theme.palette.text.primary }}>Meta (Facebook & Instagram)</Typography>
                           
                           {status?.adAccountId ? (
-                             <Box>
-                                <Box display="flex" alignItems="center" gap={2} mb={2}>
-                                   <CheckCircleIcon style={{ color: "#10b981" }} />
-                                   <Typography variant="body1" style={{ color: theme.palette.text.primary }}>Conectado como <strong>{status.me?.name}</strong></Typography>
+                                <Box>
+                                   <Box display="flex" alignItems="center" gap={2} mb={2}>
+                                      <CheckCircleIcon style={{ color: "#10b981" }} />
+                                      <Typography variant="body1" style={{ color: theme.palette.text.primary }}>
+                                        Conexão com Facebook e Instagram ativa para <strong>{status.me?.name}</strong>
+                                      </Typography>
+                                   </Box>
+                                   <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                                     Suas contas já estão conectadas. Você não precisa se preocupar com IDs técnicos.
+                                   </Typography>
+                                   <Box mt={3}>
+                                      <Button variant="outlined" color="secondary" onClick={() => window.location.href = "/connections"}>
+                                         Ajustar conexões
+                                      </Button>
+                                   </Box>
                                 </Box>
-                                <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Ad Account ID: {status.adAccountId}</Typography>
-                                <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Business Manager ID: {status.businessId}</Typography>
-                                
-                                <Box mt={3}>
-                                   <Button variant="outlined" color="secondary" onClick={() => window.location.href = "/connections"}>
-                                      Gerenciar Conexão
-                                   </Button>
-                                </Box>
-                             </Box>
                           ) : (
                              <Box>
                                 <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
@@ -1858,13 +2118,195 @@ const Marketing = () => {
                              Ir para Configurações de IA
                           </Button>
                        </Box>
+
+                       <Box mb={4} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
+                          <Typography variant="h6" gutterBottom style={{ color: theme.palette.text.primary }}>
+                            Palavras gatilho para comentários (captar leads)
+                          </Typography>
+                          <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
+                            Quando alguém comentar usando uma dessas palavras ou frases, vamos enviar uma mensagem no Direct e abrir um atendimento automaticamente.
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            multiline
+                            minRows={2}
+                            variant="outlined"
+                            className={classes.input}
+                            label="Palavras ou frases separadas por vírgula"
+                            placeholder='Ex: "quero orçamento, quero comprar, mais informações"'
+                            value={commentTriggersText}
+                            onChange={e => setCommentTriggersText(e.target.value)}
+                          />
+                          <Box mt={2}>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              className={classes.button}
+                              onClick={handleSaveCommentTriggers}
+                              disabled={commentTriggersSaving}
+                            >
+                              {commentTriggersSaving ? "Salvando..." : "Salvar palavras gatilho"}
+                            </Button>
+                          </Box>
+                        </Box>
+
+                        <Box mb={4} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
+                          <Typography variant="h6" gutterBottom style={{ color: theme.palette.text.primary }}>
+                            PDF de resposta rápida no DM
+                          </Typography>
+                          <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 16 }}>
+                            Configure um link de PDF e a frase que o agente/robô usa para oferecer esse material quando o lead chega pelo Instagram ou Facebook.
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            variant="outlined"
+                            className={classes.input}
+                            label="Link do PDF (Google Drive, site, etc.)"
+                            placeholder="https://seusite.com/material.pdf"
+                            value={pdfLink}
+                            onChange={e => setPdfLink(e.target.value)}
+                            style={{ marginBottom: 16 }}
+                          />
+                          <TextField
+                            fullWidth
+                            variant="outlined"
+                            className={classes.input}
+                            label="Pergunta para iniciar o diálogo"
+                            placeholder="Posso te enviar um PDF com mais detalhes sobre a oferta?"
+                            value={pdfQuestion}
+                            onChange={e => setPdfQuestion(e.target.value)}
+                          />
+                          <Box mt={2}>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              className={classes.button}
+                              onClick={handleSavePdfConfig}
+                              disabled={pdfSaving}
+                            >
+                              {pdfSaving ? "Salvando..." : "Salvar configurações de PDF"}
+                            </Button>
+                          </Box>
+                          <Box mt={2} p={2} border="1px dashed rgba(255, 255, 255, 0.2)" borderRadius={8}>
+                            <Typography variant="subtitle2" gutterBottom style={{ color: theme.palette.text.primary }}>
+                              Pré-visualização da mensagem no Direct
+                            </Typography>
+                            <Box p={2} bgcolor={theme.palette.type === "dark" ? "rgba(255, 255, 255, 0.05)" : "#ffffff"} borderRadius={12}>
+                              <Typography variant="body2" style={{ color: theme.palette.text.primary, whiteSpace: "pre-wrap" }}>
+                                {`Olá Cliente! Vi seu comentário no seu interesse. Vou te atender aqui no direct para continuar a conversa. 😊`}
+                                {pdfLink ? `\n\n${pdfQuestion || "Posso te enviar um PDF com mais detalhes?"}\n${pdfLink}` : ""}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+
+                        <Box mb={4} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
+                          <Typography variant="h6" gutterBottom style={{ color: theme.palette.text.primary }}>
+                            Redes sociais conectadas para DM
+                          </Typography>
+                          {pagesLoading ? (
+                            <Box display="flex" alignItems="center" gap={2}>
+                              <CircularProgress size={20} />
+                              <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                                Carregando páginas conectadas...
+                              </Typography>
+                            </Box>
+                          ) : pagesError ? (
+                            <Typography variant="body2" style={{ color: "#f97316" }}>
+                              {pagesErrorMsg || "Não foi possível carregar as páginas conectadas."}
+                            </Typography>
+                          ) : Array.isArray(pages) && pages.length > 0 ? (
+                            <List dense>
+                              {pages.map((pg) => (
+                                <ListItem key={pg.id}>
+                                  <ListItemAvatar>
+                                    <Avatar>
+                                      <ConnectionIcon connectionType="facebook" />
+                                    </Avatar>
+                                  </ListItemAvatar>
+                                  <ListItemText
+                                    primary={
+                                      <Typography variant="subtitle2" style={{ color: theme.palette.text.primary }}>
+                                        {pg.name}
+                                      </Typography>
+                                    }
+                                    secondary={
+                                      <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                                        {pg.instagram_business_account
+                                          ? "Instagram profissional conectado para receber comentários e DMs."
+                                          : "Sem Instagram profissional conectado nesta página."}
+                                      </Typography>
+                                    }
+                                  />
+                                </ListItem>
+                              ))}
+                            </List>
+                          ) : (
+                            <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                              Nenhuma página Meta conectada ainda. Conecte em "Conexões" para ativar DM automático.
+                            </Typography>
+                          )}
+                        </Box>
+
+                        <Box mb={2} p={3} border="1px solid rgba(255, 255, 255, 0.1)" borderRadius={8} bgcolor="rgba(255, 255, 255, 0.05)">
+                          <Typography variant="h6" gutterBottom style={{ color: theme.palette.text.primary }}>
+                            Canais que recebem esses leads
+                          </Typography>
+                          <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)", marginBottom: 12 }}>
+                            Aqui você vê em quais canais o agente/robô pode atender os leads que chegam dos comentários.
+                          </Typography>
+                          {whatsAppsLoading ? (
+                            <Box display="flex" alignItems="center" gap={2}>
+                              <CircularProgress size={20} />
+                              <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                                Carregando canais de atendimento...
+                              </Typography>
+                            </Box>
+                          ) : Array.isArray(whatsApps) && whatsApps.length > 0 ? (
+                            <List dense>
+                              {whatsApps
+                                .filter((w) => w.channel === "facebook" || w.channel === "instagram")
+                                .map((w) => {
+                                  const hasAutomation = !!w.promptId || !!w.integrationId;
+                                  return (
+                                    <ListItem key={w.id}>
+                                      <ListItemAvatar>
+                                        <Avatar>
+                                          <ConnectionIcon connectionType={w.channel} />
+                                        </Avatar>
+                                      </ListItemAvatar>
+                                      <ListItemText
+                                        primary={
+                                          <Typography variant="subtitle2" style={{ color: theme.palette.text.primary }}>
+                                            {w.name || "Canal Meta"} ({w.channel})
+                                          </Typography>
+                                        }
+                                        secondary={
+                                          <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                                            Status: {w.status || "desconhecido"} •{" "}
+                                            {hasAutomation
+                                              ? "Agente/fluxo automático configurado para este canal."
+                                              : "Atendimento manual. Configure IA nas opções de OpenAI/Integrações."}
+                                          </Typography>
+                                        }
+                                      />
+                                    </ListItem>
+                                  );
+                                })}
+                            </List>
+                          ) : (
+                            <Typography variant="body2" style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+                              Nenhum canal de atendimento configurado ainda. Crie conexões em "Conexões".
+                            </Typography>
+                          )}
+                        </Box>
                     </Section>
                  </Card>
               </Grid>
            </Grid>
         </TabPanel>
 
-        <TabPanel value={tab} name={10}>
+        <TabPanel value={tab} name={9}>
            <Grid container spacing={3} justifyContent="center">
               <Grid item xs={12} md={6}>
                  <Card className={classes.card}>

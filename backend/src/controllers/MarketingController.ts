@@ -345,6 +345,19 @@ export const publishContent = async (
             imageUrl,
             message
           );
+        } else if (contentType === "story") {
+          if (!imageUrl) {
+            results.instagram = { error: "Story requer imagem ou vídeo" };
+            return;
+          }
+          const isVideo = /\.(mp4|mov)$/i.test(imageUrl);
+          result = await SocialMediaService.publishStoryToInstagram(
+            companyId,
+            instagramId,
+            imageUrl,
+            message,
+            isVideo
+          );
         } else {
           // Publicar foto normal
           if (!imageUrl) {
@@ -571,7 +584,21 @@ export const likePost = async (
     if (!objectId)
       return res.status(400).json({ error: "objectId é obrigatório" });
 
-    const tokenToUse = pageAccessToken || accessToken;
+    let tokenToUse = pageAccessToken || accessToken;
+
+    // Se for um post de página do Facebook no formato {pageId}_{postId}, tentar obter o token da página
+    if (!pageAccessToken && objectId.includes("_")) {
+      try {
+        const pageId = objectId.split("_")[0];
+        const pageResp = await axios.get(
+          `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
+          { params: { fields: "access_token", access_token: accessToken } }
+        );
+        if (pageResp.data?.access_token) {
+          tokenToUse = pageResp.data.access_token;
+        }
+      } catch (_) {}
+    }
 
     console.log(`[Marketing] Liking object: ${objectId}`);
 

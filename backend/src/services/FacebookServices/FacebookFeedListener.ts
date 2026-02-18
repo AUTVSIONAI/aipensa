@@ -7,6 +7,7 @@ import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketServi
 import { getProfile, sendText, replyComment } from "./graphAPI";
 import OpenAI from "openai";
 import { handleOpenAi } from "../IntegrationsServices/OpenAiService";
+import Setting from "../../models/Setting";
 
 interface IChange {
   field: string;
@@ -87,20 +88,57 @@ export const handleFacebookFeed = async (
         companyId
       );
 
-      // 2. Integração "Superagent" (IA + Gatilhos)
-      // Se houver uma integração de IA configurada para esta conexão (whatsapp.queues -> chatbot?)
-      // Por enquanto, vamos simular uma verificação básica de "Gatilho"
+      // 2. Gatilhos configuráveis de comentário para capturar leads
+      // Buscar lista personalizada nas configurações da empresa, se existir
+      let triggerWords = ["preço", "valor", "comprar", "eu quero", "info"];
+      try {
+        const setting = await Setting.findOne({
+          where: { companyId, key: "marketingCommentTriggers" }
+        });
+        if (setting?.value) {
+          const parsed = JSON.parse(setting.value);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            triggerWords = parsed.map((w: string) => String(w).toLowerCase());
+          }
+        }
+      } catch (err) {
+        console.error(
+          "[FacebookFeedListener] Erro ao carregar gatilhos personalizados:",
+          err
+        );
+      }
 
-      // Exemplo de Gatilho Simples: "preço", "valor", "comprar"
-      const triggerWords = ["preço", "valor", "comprar", "eu quero", "info"];
       const lowerMessage = messageText?.toLowerCase() || "";
-
       const hasTrigger = triggerWords.some(w => lowerMessage.includes(w));
 
       if (hasTrigger) {
         console.log(
           `[FacebookFeedListener] Gatilho detectado! Iniciando automação.`
         );
+
+        let pdfLink: string | null = null;
+        let pdfQuestion: string | null = null;
+
+        try {
+          const pdfLinkSetting = await Setting.findOne({
+            where: { companyId, key: "marketingPdfLink" }
+          });
+          const pdfQuestionSetting = await Setting.findOne({
+            where: { companyId, key: "marketingPdfQuestion" }
+          });
+
+          if (pdfLinkSetting?.value) {
+            pdfLink = pdfLinkSetting.value;
+          }
+          if (pdfQuestionSetting?.value) {
+            pdfQuestion = pdfQuestionSetting.value;
+          }
+        } catch (err) {
+          console.error(
+            "[FacebookFeedListener] Erro ao carregar configurações de PDF:",
+            err
+          );
+        }
 
         // Ação 1: Responder o comentário (Público)
         await replyComment(
@@ -119,15 +157,19 @@ export const handleFacebookFeed = async (
         );
 
         if (ticket) {
-          // Enviar mensagem de boas vindas na DM
-          await sendText(
-            contact.number,
-            `Olá ${senderName}! Vi seu comentário sobre "${messageText}". Como posso ajudar com sua compra?`,
-            whatsapp.facebookUserToken
-          );
+          await ticket.update({
+            channel: channel || ticket.channel
+          });
 
-          // Se tiver IA configurada no Ticket/Fila, deixar a IA assumir a partir daqui
-          // A IA será acionada quando o cliente responder a essa DM (via handleMessage padrão)
+          let dmText = `Olá ${senderName}! Vi seu comentário no seu interesse: "${messageText}". Vou te atender aqui no direct para continuar a conversa. 😊`;
+
+          if (pdfLink && pdfQuestion) {
+            dmText += `\n\n${pdfQuestion}\n${pdfLink}`;
+          } else if (pdfLink) {
+            dmText += `\n\nPosso te enviar um PDF rápido com detalhes e valores?\n${pdfLink}`;
+          }
+
+          await sendText(contact.number, dmText, whatsapp.facebookUserToken);
         }
       }
     }
