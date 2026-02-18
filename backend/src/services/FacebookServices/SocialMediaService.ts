@@ -11,15 +11,23 @@ const checkUrlAccessibility = async (url: string): Promise<boolean> => {
     const response = await axios.head(url, {
       timeout: 10000,
       headers: {
-        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
+        "User-Agent":
+          "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
       }
     });
-    
+
     const isAccessible = response.status >= 200 && response.status < 300;
-    console.log(`[checkUrlAccessibility] URL ${url} is ${isAccessible ? 'accessible' : 'not accessible'}. Status: ${response.status}`);
+    console.log(
+      `[checkUrlAccessibility] URL ${url} is ${
+        isAccessible ? "accessible" : "not accessible"
+      }. Status: ${response.status}`
+    );
     return isAccessible;
   } catch (error: any) {
-    console.error(`[checkUrlAccessibility] Error checking URL ${url}:`, error.message);
+    console.error(
+      `[checkUrlAccessibility] Error checking URL ${url}:`,
+      error.message
+    );
     return false;
   }
 };
@@ -47,17 +55,25 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
         channel: { [Op.or]: ["facebook", "instagram"] },
         [Op.or]: [
           { tokenMeta: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: "" }] } },
-          { facebookUserToken: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: "" }] } }
+          {
+            facebookUserToken: {
+              [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: "" }]
+            }
+          }
         ]
       },
       order: [["updatedAt", "DESC"]]
     });
 
     if (whatsapp) {
-      console.log(`[getFbConfig] Found Whatsapp connection ID ${whatsapp.id} for company ${companyId}`);
+      console.log(
+        `[getFbConfig] Found Whatsapp connection ID ${whatsapp.id} for company ${companyId}`
+      );
       accessToken = whatsapp.tokenMeta || whatsapp.facebookUserToken;
     } else {
-      console.log(`[getFbConfig] No Whatsapp connection found for company ${companyId}`);
+      console.log(
+        `[getFbConfig] No Whatsapp connection found for company ${companyId}`
+      );
     }
   }
 
@@ -72,9 +88,13 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
 
   // 3. Get Business ID and Ad Account ID from Settings
   if (companyId) {
-    const bid = await Setting.findOne({ where: { companyId, key: "facebook_business_id" } });
-    const act = await Setting.findOne({ where: { companyId, key: "facebook_ad_account_id" } });
-    
+    const bid = await Setting.findOne({
+      where: { companyId, key: "facebook_business_id" }
+    });
+    const act = await Setting.findOne({
+      where: { companyId, key: "facebook_ad_account_id" }
+    });
+
     if (!businessId) businessId = bid?.value || null;
     if (!adAccountId) adAccountId = act?.value || null;
   }
@@ -82,14 +102,20 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
   // 4. Try to fetch Ad Account ID if not set but we have a token
   if (accessToken && !adAccountId) {
     try {
-      const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/adaccounts`, {
-        params: { access_token: accessToken, fields: "account_id" }
-      });
+      const resp = await axios.get(
+        `https://graph.facebook.com/${GRAPH_VERSION}/me/adaccounts`,
+        {
+          params: { access_token: accessToken, fields: "account_id" }
+        }
+      );
       if (resp.data?.data?.length > 0) {
         adAccountId = resp.data.data[0].account_id;
       }
     } catch (err: any) {
-      console.error("[SocialMediaService] Error fetching ad accounts:", err.message);
+      console.error(
+        "[SocialMediaService] Error fetching ad accounts:",
+        err.message
+      );
     }
   }
 
@@ -102,7 +128,7 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
 const handleFacebookError = (error: any) => {
   const errorData = error.response?.data?.error || {};
   const errorMessage = JSON.stringify(errorData);
-  
+
   console.error("[SocialMediaService] Facebook API Error:", errorMessage);
 
   if (errorData.message) {
@@ -121,12 +147,16 @@ const handleFacebookError = (error: any) => {
     );
   }
   if (errorMessage.includes("publish_to_groups")) {
-      throw new Error("Erro de permissão: Não é possível postar em grupos sem permissão explícita.");
+    throw new Error(
+      "Erro de permissão: Não é possível postar em grupos sem permissão explícita."
+    );
   }
   if (errorData?.code === 190 || errorData?.code === 10) {
-     throw new Error("Sessão do Facebook expirada. Por favor, vá em Conexões e reconecte a página.");
+    throw new Error(
+      "Sessão do Facebook expirada. Por favor, vá em Conexões e reconecte a página."
+    );
   }
-  
+
   // Re-throw original error if not handled specifically
   throw error;
 };
@@ -139,7 +169,11 @@ const validateImageForInstagram = async (imageUrl: string): Promise<void> => {
     const height = image.bitmap.height;
     const ratio = width / height;
 
-    console.log(`[validateImageForInstagram] Dimensions: ${width}x${height}, Ratio: ${ratio.toFixed(2)}`);
+    console.log(
+      `[validateImageForInstagram] Dimensions: ${width}x${height}, Ratio: ${ratio.toFixed(
+        2
+      )}`
+    );
 
     // Accepted ratios: 1:1 (1), 4:5 (0.8), 1.91:1 (1.91)
     // Tolerance +/- 0.05
@@ -148,14 +182,17 @@ const validateImageForInstagram = async (imageUrl: string): Promise<void> => {
 
     if (!isValid) {
       // Tentar ajustar? Por enquanto, apenas erro.
-      throw new Error(`Aspect Ratio inválido: ${ratio.toFixed(2)}. Permitidos: 1:1 (Quadrado), 4:5 (Vertical), 1.91:1 (Horizontal).`);
-    }
-    
-    const mime = image.getMIME();
-    if (mime !== "image/jpeg" && mime !== "image/jpg") {
-         throw new Error(`Formato inválido: ${mime}. O Instagram requer JPG.`);
+      throw new Error(
+        `Aspect Ratio inválido: ${ratio.toFixed(
+          2
+        )}. Permitidos: 1:1 (Quadrado), 4:5 (Vertical), 1.91:1 (Horizontal).`
+      );
     }
 
+    const mime = image.getMIME();
+    if (mime !== "image/jpeg" && mime !== "image/jpg") {
+      throw new Error(`Formato inválido: ${mime}. O Instagram requer JPG.`);
+    }
   } catch (error) {
     console.error(`[validateImageForInstagram] Error: ${error.message}`);
     // Se falhar o download ou leitura, lançamos erro para ser capturado e retornado ao usuário
@@ -163,22 +200,26 @@ const validateImageForInstagram = async (imageUrl: string): Promise<void> => {
   }
 };
 
-export const checkTokenPermissions = async (companyId: number): Promise<any> => {
+export const checkTokenPermissions = async (
+  companyId: number
+): Promise<any> => {
   try {
     // Check token permissions first
     console.log("[publishToFacebook] Checking token permissions...");
     const tokenInfo = await checkTokenPermissions(companyId);
     console.log("[publishToFacebook] Token info:", tokenInfo);
 
-    console.log(`[publishReelsToInstagram] Publishing Reels for company ${companyId}, instagramId ${instagramId}, videoUrl ${videoUrl}`);
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     // Importar a função debugToken do graphAPI
-    const { debugToken } = require('./graphAPI');
+    const { debugToken } = require("./graphAPI");
     const debugInfo = await debugToken(accessToken);
-    
-    console.log("[checkTokenPermissions] Token permissions:", debugInfo.data?.scopes);
+
+    console.log(
+      "[checkTokenPermissions] Token permissions:",
+      debugInfo.data?.scopes
+    );
     return debugInfo.data;
   } catch (error) {
     console.error("[checkTokenPermissions] Error:", error);
@@ -198,22 +239,29 @@ export const publishToFacebook = async (
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     // Verificar permissões do token antes de tentar publicar
-    const { debugToken } = require('./graphAPI');
+    const { debugToken } = require("./graphAPI");
     const debugInfo = await debugToken(accessToken);
     const permissions = debugInfo.data?.scopes || [];
-    
+
     console.log(`[publishToFacebook] Token permissions:`, permissions);
-    
+
     // Verificar se o token ainda tem pages_manage_posts (que foi deprecado)
-    if (permissions.includes('pages_manage_posts')) {
-      console.error(`[publishToFacebook] Token still has deprecated pages_manage_posts permission!`);
-      throw new Error(`O token do Facebook contém permissões deprecadas (pages_manage_posts). Por favor, reconecte sua conta do Facebook em Configurações > Conexões.`);
+    if (permissions.includes("pages_manage_posts")) {
+      console.error(
+        `[publishToFacebook] Token still has deprecated pages_manage_posts permission!`
+      );
+      throw new Error(
+        `O token do Facebook contém permissões deprecadas (pages_manage_posts). Por favor, reconecte sua conta do Facebook em Configurações > Conexões.`
+      );
     }
 
     // Get Page Access Token
-    const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`, {
-      params: { fields: "access_token", access_token: accessToken }
-    });
+    const pageResp = await axios.get(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
+      {
+        params: { fields: "access_token", access_token: accessToken }
+      }
+    );
     const pageAccessToken = pageResp.data.access_token;
 
     const endpoint = imageUrl
@@ -233,13 +281,18 @@ export const publishToFacebook = async (
 
     if (scheduledTime) {
       body.published = false;
-      body.scheduled_publish_time = Math.floor(new Date(scheduledTime).getTime() / 1000);
+      body.scheduled_publish_time = Math.floor(
+        new Date(scheduledTime).getTime() / 1000
+      );
     }
 
     const resp = await axios.post(endpoint, body);
     return resp.data;
   } catch (error) {
-    console.error(`[publishReelsToInstagram] Error publishing Reels:`, error.response?.data || error.message);
+    console.error(
+      `[publishReelsToInstagram] Error publishing Reels:`,
+      error.response?.data || error.message
+    );
     handleFacebookError(error);
   }
 };
@@ -256,19 +309,22 @@ export const uploadImageToFacebook = async (
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     // Get Page Access Token
-    const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`, {
-      params: { fields: "access_token", access_token: accessToken }
-    });
+    const pageResp = await axios.get(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
+      {
+        params: { fields: "access_token", access_token: accessToken }
+      }
+    );
     const pageAccessToken = pageResp.data.access_token;
 
     // Preparar o upload
     const FormData = require("form-data");
     const form = new FormData();
-    form.append('source', imageBuffer, {
+    form.append("source", imageBuffer, {
       filename: filename,
-      contentType: 'image/jpeg'
+      contentType: "image/jpeg"
     });
-    form.append('access_token', pageAccessToken);
+    form.append("access_token", pageAccessToken);
 
     // Fazer upload
     const uploadResp = await axios.post(
@@ -302,13 +358,18 @@ export const publishVideoToFacebook = async (
     // Verificar se a URL está acessível publicamente
     const isAccessible = await checkUrlAccessibility(videoUrl);
     if (!isAccessible) {
-      throw new Error(`O vídeo não está acessível publicamente: ${videoUrl}. Verifique se a URL está disponível sem autenticação.`);
+      throw new Error(
+        `O vídeo não está acessível publicamente: ${videoUrl}. Verifique se a URL está disponível sem autenticação.`
+      );
     }
 
     // Get Page Access Token
-    const pageResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`, {
-      params: { fields: "access_token", access_token: accessToken }
-    });
+    const pageResp = await axios.get(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`,
+      {
+        params: { fields: "access_token", access_token: accessToken }
+      }
+    );
     const pageAccessToken = pageResp.data.access_token;
 
     const endpoint = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/videos`;
@@ -326,6 +387,31 @@ export const publishVideoToFacebook = async (
   }
 };
 
+// Função para validar requisitos de vídeo do Reels
+const validateReelsVideo = async (videoUrl: string): Promise<void> => {
+  try {
+    console.log(`[validateReelsVideo] Validating Reels video: ${videoUrl}`);
+
+    // Verificar formato da URL (deve ser MP4 ou MOV)
+    const urlLower = videoUrl.toLowerCase();
+    if (!urlLower.endsWith(".mp4") && !urlLower.endsWith(".mov")) {
+      console.warn(
+        `[validateReelsVideo] Video format may not be supported: ${videoUrl}`
+      );
+      // Não lançar erro, apenas avisar
+    }
+
+    // Para validações mais completas (duração, tamanho, etc.),
+    // precisaríamos baixar o vídeo ou ter informações do frontend
+    // Por enquanto, vamos confiar na validação do Instagram
+
+    console.log(`[validateReelsVideo] Basic validation completed`);
+  } catch (error) {
+    console.error(`[validateReelsVideo] Error during validation:`, error);
+    // Não lançar erro para não quebrar o fluxo
+  }
+};
+
 // Função para publicar Reels no Instagram
 export const publishReelsToInstagram = async (
   companyId: number,
@@ -337,15 +423,28 @@ export const publishReelsToInstagram = async (
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
-    console.log(`[publishReelsToInstagram] Creating Reels container for video: ${videoUrl}`);
+    console.log(
+      `[publishReelsToInstagram] Publishing Reels for company ${companyId}, instagramId ${instagramId}, videoUrl ${videoUrl}`
+    );
+
+    // Validar requisitos do Reels
+    if (!videoUrl || videoUrl.trim() === "") {
+      throw new Error("URL do vídeo é obrigatória para Reels");
+    }
+
+    // Validar formato do vídeo
+    await validateReelsVideo(videoUrl);
 
     // Verificar se a URL está acessível publicamente
     const isAccessible = await checkUrlAccessibility(videoUrl);
     if (!isAccessible) {
-      throw new Error(`O vídeo não está acessível publicamente: ${videoUrl}. Verifique se a URL está disponível sem autenticação.`);
+      throw new Error(
+        `O vídeo não está acessível publicamente: ${videoUrl}. Verifique se a URL está disponível sem autenticação.`
+      );
     }
 
     // Criar container para Reels
+    console.log(`[publishReelsToInstagram] Creating Reels container...`);
     const createContainer = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media`,
       null,
@@ -361,9 +460,16 @@ export const publishReelsToInstagram = async (
     );
 
     const creationId = createContainer.data.id;
+    console.log(
+      `[publishReelsToInstagram] Container created with ID: ${creationId}`
+    );
+
+    // Aguardar processamento do vídeo
+    console.log(`[publishReelsToInstagram] Waiting for video processing...`);
     await waitForInstagramMedia(creationId, accessToken);
 
     // Publicar Reels
+    console.log(`[publishReelsToInstagram] Publishing Reels...`);
     const publishResp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/${instagramId}/media_publish`,
       null,
@@ -375,27 +481,57 @@ export const publishReelsToInstagram = async (
       }
     );
 
+    console.log(`[publishReelsToInstagram] Reels published successfully!`);
     return publishResp.data;
   } catch (error) {
+    console.error(
+      `[publishReelsToInstagram] Error publishing Reels:`,
+      error.response?.data || error.message
+    );
     handleFacebookError(error);
   }
 };
 
-const waitForInstagramMedia = async (creationId: string, accessToken: string) => {
+const waitForInstagramMedia = async (
+  creationId: string,
+  accessToken: string
+) => {
   let attempts = 0;
+  console.log(
+    `[waitForInstagramMedia] Starting processing wait for creationId: ${creationId}`
+  );
+
   while (attempts < 20) {
     // Try for 40 seconds
-    const statusResp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${creationId}`, {
-      params: { fields: "status_code,status", access_token: accessToken }
-    });
+    const statusResp = await axios.get(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${creationId}`,
+      {
+        params: { fields: "status_code,status", access_token: accessToken }
+      }
+    );
     const status = statusResp.data.status_code;
-    
-    if (status === "FINISHED") return;
-    if (status === "ERROR") throw new Error("Instagram Video Processing Failed");
+
+    console.log(
+      `[waitForInstagramMedia] Attempt ${attempts + 1}, Status: ${status}`
+    );
+
+    if (status === "FINISHED") {
+      console.log(`[waitForInstagramMedia] Processing completed successfully!`);
+      return;
+    }
+    if (status === "ERROR") {
+      console.error(`[waitForInstagramMedia] Processing failed!`);
+      throw new Error(
+        `Instagram Video Processing Failed: ${
+          statusResp.data.status || "Unknown error"
+        }`
+      );
+    }
 
     await new Promise(r => setTimeout(r, 2000)); // Wait 2s
     attempts++;
   }
+  console.error(`[waitForInstagramMedia] Timeout after ${attempts} attempts`);
   throw new Error("Timeout waiting for Instagram video processing");
 };
 
@@ -457,12 +593,16 @@ export const publishToInstagram = async (
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
-    console.log(`[publishToInstagram] Creating container for image: ${imageUrl}`);
+    console.log(
+      `[publishToInstagram] Creating container for image: ${imageUrl}`
+    );
 
     // Verificar se a URL está acessível publicamente
     const isAccessible = await checkUrlAccessibility(imageUrl);
     if (!isAccessible) {
-      throw new Error(`A imagem não está acessível publicamente: ${imageUrl}. Verifique se a URL está disponível sem autenticação.`);
+      throw new Error(
+        `A imagem não está acessível publicamente: ${imageUrl}. Verifique se a URL está disponível sem autenticação.`
+      );
     }
 
     // Validate Image Aspect Ratio and Format
@@ -645,23 +785,23 @@ export const sendInstagramDM = async (
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");
 
     const messagePayload: any = {};
-    
+
     if (text) {
-        messagePayload.text = text;
+      messagePayload.text = text;
     }
 
     if (attachment) {
-        messagePayload.attachment = {
-            type: attachment.type,
-            payload: { 
-                url: attachment.url,
-                is_reusable: true
-            }
-        };
+      messagePayload.attachment = {
+        type: attachment.type,
+        payload: {
+          url: attachment.url,
+          is_reusable: true
+        }
+      };
     }
 
     if (!text && !attachment) {
-        throw new Error("Message must have text or attachment");
+      throw new Error("Message must have text or attachment");
     }
 
     const params = {
@@ -686,12 +826,15 @@ export const getConnectedPages = async (companyId: number): Promise<any[]> => {
   if (!accessToken) return [];
 
   try {
-    const resp = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`, {
-      params: {
-        access_token: accessToken,
-        fields: "id,name,access_token,instagram_business_account{id,username}"
+    const resp = await axios.get(
+      `https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`,
+      {
+        params: {
+          access_token: accessToken,
+          fields: "id,name,access_token,instagram_business_account{id,username}"
+        }
       }
-    });
+    );
     return resp.data.data || [];
   } catch (e: any) {
     console.error("[SocialMediaService] Error fetching pages:", e.message);
@@ -706,13 +849,15 @@ export const uploadAdImage = async (
 ): Promise<string> => {
   try {
     // 1. Fetch image data
-    const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+    const imageResponse = await axios.get(imageUrl, {
+      responseType: "arraybuffer"
+    });
     const imageBuffer = Buffer.from(imageResponse.data);
 
     // 2. Upload to Facebook using bytes (base64)
     // This avoids dependency on 'form-data' package or Node.js FormData/Blob compatibility issues.
     const base64Image = imageBuffer.toString("base64");
-    
+
     const resp = await axios.post(
       `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/adimages`,
       {
@@ -720,12 +865,11 @@ export const uploadAdImage = async (
         access_token: accessToken
       }
     );
-    
+
     // Response format: { images: { "filename": { hash: "..." } } }
     const images = resp.data.images;
     const firstKey = Object.keys(images)[0];
     return images[firstKey].hash;
-
   } catch (error) {
     handleFacebookError(error);
     throw error;
@@ -762,8 +906,9 @@ export const createFullAdCampaign = async (
     targeting: payload.targeting || { geo_locations: { countries: ["BR"] } }
   };
   // Adjust optimization_goal based on objective
-  if (campaignData.objective === "OUTCOME_TRAFFIC") adSetData.optimization_goal = "LINK_CLICKS";
-  
+  if (campaignData.objective === "OUTCOME_TRAFFIC")
+    adSetData.optimization_goal = "LINK_CLICKS";
+
   const adSet = await createAdSet(accessToken, adAccountId, adSetData);
   console.log(`[createFullAdCampaign] AdSet created: ${adSet.id}`);
 
@@ -771,15 +916,19 @@ export const createFullAdCampaign = async (
   // If image_url is provided, upload it first
   let image_hash = payload.image_hash;
   if (!image_hash && payload.image_url) {
-     image_hash = await uploadAdImage(accessToken, adAccountId, payload.image_url);
+    image_hash = await uploadAdImage(
+      accessToken,
+      adAccountId,
+      payload.image_url
+    );
   }
 
-  // We need a page_id. 
+  // We need a page_id.
   // If not provided, fetch connected pages and use the first one.
   let page_id = payload.page_id;
   if (!page_id) {
-     const pages = await getConnectedPages(companyId);
-     if (pages.length > 0) page_id = pages[0].id;
+    const pages = await getConnectedPages(companyId);
+    if (pages.length > 0) page_id = pages[0].id;
   }
   if (!page_id) throw new Error("No Facebook Page found to associate with Ad");
 
@@ -791,7 +940,7 @@ export const createFullAdCampaign = async (
     body: payload.ad_body || "Check this out!",
     title: payload.ad_title || "Special Offer"
   };
-  
+
   const creative = await createCreative(accessToken, adAccountId, creativeData);
   console.log(`[createFullAdCampaign] Creative created: ${creative.id}`);
 
