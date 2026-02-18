@@ -896,29 +896,32 @@ const Marketing = () => {
                 <Card className={classes.card}>
                     <Section icon={<AutoGraphIcon style={{ color: "white" }} />} title="Performance Geral (Últimos 7 dias)">
                         {!statusError && !insightsLoading && insights.length > 0 ? (
-                            <Chart
-                                options={{
-                                    chart: { id: "basic-bar", toolbar: { show: false }, background: 'transparent', fontFamily: 'Inherit' },
-                                    theme: { mode: theme.palette.type === "dark" ? "dark" : "light" },
-                                    xaxis: { 
-                                        categories: insights.map(i => new Date(i.date_start).toLocaleDateString().slice(0,5)).reverse(),
-                                        labels: { style: { colors: theme.palette.text.secondary } }
-                                    },
-                                    yaxis: { labels: { style: { colors: theme.palette.text.secondary } } },
-                                    colors: [theme.palette.primary.main, (theme.palette.success && theme.palette.success.main) ? theme.palette.success.main : theme.palette.secondary.main],
-                                    grid: { borderColor: theme.palette.divider },
-                                    dataLabels: { enabled: false },
-                                    stroke: { curve: 'smooth', width: 3 },
-                                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.2, stops: [0, 90, 100] } }
-                                }}
-                                series={[
-                                    { name: "Impressões", data: insights.map(i => i.impressions).reverse() },
-                                    { name: "Alcance", data: insights.map(i => i.reach).reverse() }
-                                ]}
-                                type="area"
-                                height={300}
-                                width="100%"
-                            />
+                          <Chart
+                            options={{
+                              chart: { id: "mkp-area", toolbar: { show: false }, background: 'transparent', fontFamily: 'inherit' },
+                              theme: { mode: theme.palette.type === "dark" ? "dark" : "light" },
+                              xaxis: { 
+                                categories: (insights || []).map((i, idx) => {
+                                  const d = i.date_start ? new Date(i.date_start) : null;
+                                  return d && !isNaN(d.valueOf()) ? d.toLocaleDateString().slice(0,5) : `Dia ${idx+1}`;
+                                }).reverse(),
+                                labels: { style: { colors: theme.palette.text.secondary } }
+                              },
+                              yaxis: { labels: { style: { colors: theme.palette.text.secondary } } },
+                              colors: [theme.palette.primary.main, (theme.palette.success && theme.palette.success.main) ? theme.palette.success.main : theme.palette.secondary.main],
+                              grid: { borderColor: theme.palette.divider },
+                              dataLabels: { enabled: false },
+                              stroke: { curve: 'smooth', width: 3 },
+                              fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.2, stops: [0, 90, 100] } }
+                            }}
+                            series={[
+                              { name: "Impressões", data: (insights || []).map(i => Number(i.impressions || 0)).reverse() },
+                              { name: "Alcance", data: (insights || []).map(i => Number(i.reach || 0)).reverse() }
+                            ]}
+                            type="area"
+                            height={300}
+                            width="100%"
+                          />
                         ) : (
                              <Box p={4} textAlign="center">
                                 {insightsLoading ? <CircularProgress /> : <Typography className={classes.mutedText}>Sem dados de insights disponíveis para exibir o gráfico.</Typography>}
@@ -941,20 +944,26 @@ const Marketing = () => {
                       <Box>
                         <Grid container spacing={3}>
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Usuário Conectado</Typography>
-                            <Typography variant="h6">{status?.me?.name || "-"}</Typography>
+                            <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Conta Conectada</Typography>
+                            <Typography variant="h6">{status?.me?.name ? `@${status.me.name}` : "Não conectado"}</Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Ad Account ID</Typography>
-                             <Typography variant="h6">{status?.adAccountId || "-"}</Typography>
+                            <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Integração</Typography>
+                            <Typography variant="h6" style={{ color: status?.adAccountId ? "#10b981" : "#ef4444" }}>
+                              {status?.adAccountId ? "Ativa" : "Pendente"}
+                            </Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Business Manager ID</Typography>
-                             <Typography variant="h6">{status?.businessId || "-"}</Typography>
+                            <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Facebook</Typography>
+                            <Typography variant="body2" style={{ color: theme.palette.text.primary }}>
+                              {status?.adAccountId ? "Conta de anúncios conectada" : "Nenhuma conta conectada"}
+                            </Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                             <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Status da API</Typography>
-                             <Typography variant="h6" style={{ color: "#10b981" }}>Ativo</Typography>
+                            <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>Instagram</Typography>
+                            <Typography variant="body2" style={{ color: theme.palette.text.primary }}>
+                              Conexão via página do Facebook
+                            </Typography>
                           </Grid>
                         </Grid>
                         {status && status.adAccountId && (

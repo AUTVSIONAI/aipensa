@@ -150,7 +150,9 @@ export const insights = async (
       access_token: accessToken,
       date_preset: datePreset,
       level: "account",
-      fields: "impressions,reach,clicks,spend,cpm,ctr"
+      // incluir datas e granularidade diária para alimentar o gráfico
+      time_increment: 1,
+      fields: "date_start,date_stop,impressions,reach,clicks,spend,cpm,ctr"
     };
     const resp = await axios.get(
       `https://graph.facebook.com/${GRAPH_VERSION}/act_${adAccountId}/insights`,
