@@ -117,12 +117,14 @@ routes.post("/webhooks/instagram", WebHooksController.webHook);
 routes.get("/health", (req, res) => res.json({ ok: true }));
 
 // Rota padrão para o endpoint raiz
-routes.get("/", (req, res) => res.json({ 
-  status: "running", 
-  message: "API Whaticket está funcionando",
-  version: "1.0.0",
-  documentation: "https://aipensa.com/docs"
-}));
+routes.get("/", (req, res) =>
+  res.json({
+    status: "running",
+    message: "API Whaticket está funcionando",
+    version: "1.0.0",
+    documentation: "https://aipensa.com/docs"
+  })
+);
 routes.use(instagramRoutes);
 routes.use(huggingFaceRoutes);
 

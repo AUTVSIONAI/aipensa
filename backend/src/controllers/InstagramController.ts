@@ -10,7 +10,7 @@ export const sendMessage = async (
   try {
     const { ticketId, message } = req.body || {};
     const { companyId } = (req as any).user;
-    
+
     console.log(`[InstagramController] Sending DM for ticket ${ticketId}`);
 
     const ticket = await ShowTicketService(Number(ticketId), companyId);
@@ -23,7 +23,7 @@ export const sendMessage = async (
     if (!connection) {
       return res.status(404).json({ error: "connection_not_found" });
     }
-    
+
     // Ensure we have a token
     const token = connection.facebookUserToken || connection.tokenMeta;
     if (!token) {
@@ -31,8 +31,10 @@ export const sendMessage = async (
     }
 
     const number = ticket.contact.number;
-    console.log(`[InstagramController] Sending to ${number} via connection ${connection.name}`);
-    
+    console.log(
+      `[InstagramController] Sending to ${number} via connection ${connection.name}`
+    );
+
     await sendText(number, message, token);
     return res.json({ ok: true });
   } catch (error: any) {

@@ -4,6 +4,10 @@ import * as HuggingFaceController from "../controllers/HuggingFaceController";
 
 const huggingFaceRoutes = Router();
 
-huggingFaceRoutes.post("/api/images/generate", isAuth, HuggingFaceController.generate);
+huggingFaceRoutes.post(
+  "/api/images/generate",
+  isAuth,
+  HuggingFaceController.generate
+);
 
 export default huggingFaceRoutes;

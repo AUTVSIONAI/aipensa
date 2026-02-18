@@ -15,8 +15,16 @@ agentRoutes.delete("/meta/clear", isAuth, MetaAuthController.clearIntegration);
 
 // Agent Tasks
 agentRoutes.post("/agent/task/create", isAuth, AgentTaskController.createTask);
-agentRoutes.post("/agent/task/confirm", isAuth, AgentTaskController.confirmTask);
-agentRoutes.get("/agent/task/:id/status", isAuth, AgentTaskController.getTaskStatus);
+agentRoutes.post(
+  "/agent/task/confirm",
+  isAuth,
+  AgentTaskController.confirmTask
+);
+agentRoutes.get(
+  "/agent/task/:id/status",
+  isAuth,
+  AgentTaskController.getTaskStatus
+);
 agentRoutes.get("/agent/tasks", isAuth, AgentTaskController.listTasks);
 
 export default agentRoutes;

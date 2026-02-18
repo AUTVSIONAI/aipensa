@@ -15,7 +15,10 @@ module.exports = {
   down: async (queryInterface: QueryInterface) => {
     const table: any = await queryInterface.describeTable("CompaniesSettings");
     if (table.enableAutoStatus) {
-      await queryInterface.removeColumn("CompaniesSettings", "enableAutoStatus");
+      await queryInterface.removeColumn(
+        "CompaniesSettings",
+        "enableAutoStatus"
+      );
     }
   }
 };

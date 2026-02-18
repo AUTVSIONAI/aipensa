@@ -56,28 +56,30 @@ const isAuthCompany = async (
     // Allow Company Admin to access their own company data
     const requestCompanyId = req.params.id ? parseInt(req.params.id, 10) : null;
     if (requestCompanyId && requestCompanyId === user.companyId) {
-       req.user = {
+      req.user = {
         id: user.id.toString(),
         profile: user.profile,
         companyId: user.companyId
       };
       return next();
     }
-    
-    // If not super and not own company, deny access
-    console.warn(`[isAuthCompany] Access denied. User: ${user.id}, Profile: ${user.profile}, Company: ${user.companyId}, Target: ${requestCompanyId}`);
-    throw new AppError("ERR_FORBIDDEN", 403);
 
+    // If not super and not own company, deny access
+    console.warn(
+      `[isAuthCompany] Access denied. User: ${user.id}, Profile: ${user.profile}, Company: ${user.companyId}, Target: ${requestCompanyId}`
+    );
+    throw new AppError("ERR_FORBIDDEN", 403);
   } catch (err) {
     if (err instanceof AppError) {
-       throw err;
+      throw err;
     }
-    console.warn(`[isAuthCompany] Verification failed: ${err instanceof Error ? err.message : "Unknown"}`);
-    // If both checks fail, return 401
-    throw new AppError(
-      "ERR_SESSION_EXPIRED", 
-      401
+    console.warn(
+      `[isAuthCompany] Verification failed: ${
+        err instanceof Error ? err.message : "Unknown"
+      }`
     );
+    // If both checks fail, return 401
+    throw new AppError("ERR_SESSION_EXPIRED", 401);
   }
 };
 

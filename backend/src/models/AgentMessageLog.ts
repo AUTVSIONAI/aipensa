@@ -1,4 +1,14 @@
-import { Table, Column, CreatedAt, Model, DataType, PrimaryKey, Default, ForeignKey, BelongsTo } from "sequelize-typescript";
+import {
+  Table,
+  Column,
+  CreatedAt,
+  Model,
+  DataType,
+  PrimaryKey,
+  Default,
+  ForeignKey,
+  BelongsTo
+} from "sequelize-typescript";
 import AgentTask from "./AgentTask";
 
 @Table({ tableName: "AgentMessageLogs" })

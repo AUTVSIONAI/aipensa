@@ -1,4 +1,16 @@
-import { Table, Column, CreatedAt, UpdatedAt, Model, DataType, PrimaryKey, Default, ForeignKey, BelongsTo, HasMany } from "sequelize-typescript";
+import {
+  Table,
+  Column,
+  CreatedAt,
+  UpdatedAt,
+  Model,
+  DataType,
+  PrimaryKey,
+  Default,
+  ForeignKey,
+  BelongsTo,
+  HasMany
+} from "sequelize-typescript";
 import User from "./User";
 import AgentMessageLog from "./AgentMessageLog";
 import MetaAdsCampaign from "./MetaAdsCampaign";
@@ -37,7 +49,7 @@ class AgentTask extends Model<AgentTask> {
 
   @HasMany(() => AgentMessageLog)
   logs: AgentMessageLog[];
-  
+
   @HasMany(() => MetaAdsCampaign)
   campaigns: MetaAdsCampaign[];
 }

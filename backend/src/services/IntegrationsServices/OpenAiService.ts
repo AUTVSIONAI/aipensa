@@ -582,7 +582,7 @@ const executePlan = async (plan: any, ticket: Ticket, contact: Contact): Promise
     }
 
     // Preparar dados para publicação
-    const publishData = {
+    const publishData: any = {
       accessToken,
       message: plan.payload.caption,
       imageUrl: plan.payload.image_url,
@@ -590,22 +590,7 @@ const executePlan = async (plan: any, ticket: Ticket, contact: Contact): Promise
       mediaType: plan.payload.media_type || "photo"
     };
 
-    // Determinar plataforma de destino
-    if (plan.type === "instagram_post") {
-      // Para Instagram, precisamos do Instagram ID
-      const { instagramId } = await getFbConfig(companyId);
-      if (!instagramId) {
-        return "❌ *Erro*: Instagram não conectado. Conecte seu Instagram no painel primeiro.";
-      }
-      publishData.instagramId = instagramId;
-    } else if (plan.type === "facebook_post") {
-      // Para Facebook, precisamos do Page ID
-      const { facebookPageId } = await getFbConfig(companyId);
-      if (!facebookPageId) {
-        return "❌ *Erro*: Página do Facebook não conectada. Conecte sua página no painel primeiro.";
-      }
-      publishData.facebookPageId = facebookPageId;
-    }
+    // IDs específicos de plataforma serão resolvidos no endpoint de marketing
 
     // Fazer requisição para o endpoint de publicação
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
@@ -850,6 +835,8 @@ Nada será postado sem sua aprovação na área do Agente IA.
 `;
       }
 
+      }
+
       // Append Task ID to confirmation for context (could use a cache, but text is simpler)
       // Or better, we store the pending task for this ticket/contact in a cache or rely on "last task" logic
       // For simplicity, we can ask user to reply SIM. The system needs to know which task to confirm.
@@ -958,6 +945,7 @@ Nada será postado sem sua aprovação na área do Agente IA.
       );
     }
   }
+  
   return response;
 };
 

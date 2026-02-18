@@ -1,4 +1,16 @@
-import { Table, Column, CreatedAt, UpdatedAt, Model, DataType, PrimaryKey, Default, ForeignKey, BelongsTo, HasMany } from "sequelize-typescript";
+import {
+  Table,
+  Column,
+  CreatedAt,
+  UpdatedAt,
+  Model,
+  DataType,
+  PrimaryKey,
+  Default,
+  ForeignKey,
+  BelongsTo,
+  HasMany
+} from "sequelize-typescript";
 import User from "./User";
 import MetaPage from "./MetaPage";
 import MetaAdsAccount from "./MetaAdsAccount";

@@ -49,7 +49,10 @@ export const createSubscription = async (
 
   const buscacompanyId = req.user?.companyId ?? 1;
 
-  const getSettingValue = async (key: string, companyId: number): Promise<string | null> => {
+  const getSettingValue = async (
+    key: string,
+    companyId: number
+  ): Promise<string | null> => {
     let setting = await Setting.findOne({ where: { companyId, key } });
     if (!setting && companyId !== 1) {
       setting = await Setting.findOne({ where: { companyId: 1, key } });
@@ -58,10 +61,24 @@ export const createSubscription = async (
   };
 
   try {
-    key_ASAAS_TOKEN = await getSettingValue("asaastoken", buscacompanyId) || process.env.ASAAS_TOKEN || null;
-    key_MP_ACCESS_TOKEN = await getSettingValue("mpaccesstoken", buscacompanyId) || process.env.MP_ACCESS_TOKEN || null;
-    key_STRIPE_PRIVATE = await getSettingValue("stripeprivatekey", buscacompanyId) || process.env.STRIPE_PRIVATE || process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY || null;
-    key_GERENCIANET_PIX_KEY = await getSettingValue("efichavepix", buscacompanyId) || process.env.GERENCIANET_PIX_KEY || null;
+    key_ASAAS_TOKEN =
+      (await getSettingValue("asaastoken", buscacompanyId)) ||
+      process.env.ASAAS_TOKEN ||
+      null;
+    key_MP_ACCESS_TOKEN =
+      (await getSettingValue("mpaccesstoken", buscacompanyId)) ||
+      process.env.MP_ACCESS_TOKEN ||
+      null;
+    key_STRIPE_PRIVATE =
+      (await getSettingValue("stripeprivatekey", buscacompanyId)) ||
+      process.env.STRIPE_PRIVATE ||
+      process.env.STRIPE_SECRET_KEY ||
+      process.env.STRIPE_API_KEY ||
+      null;
+    key_GERENCIANET_PIX_KEY =
+      (await getSettingValue("efichavepix", buscacompanyId)) ||
+      process.env.GERENCIANET_PIX_KEY ||
+      null;
   } catch (error) {
     console.error("Error retrieving settings:", error);
   }
@@ -207,11 +224,15 @@ export const createSubscription = async (
         apiVersion: "2022-11-15"
       });
 
-      console.log(`Creating Stripe session for Invoice #${invoiceId}, Amount: ${valorext}`);
+      console.log(
+        `Creating Stripe session for Invoice #${invoiceId}, Amount: ${valorext}`
+      );
 
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-      const successUrl = process.env.STRIPE_OK_URL || `${frontendUrl}/financeiro`;
-      const cancelUrl = process.env.STRIPE_CANCEL_URL || `${frontendUrl}/financeiro`;
+      const successUrl =
+        process.env.STRIPE_OK_URL || `${frontendUrl}/financeiro`;
+      const cancelUrl =
+        process.env.STRIPE_CANCEL_URL || `${frontendUrl}/financeiro`;
 
       console.log(`Stripe URLs - Success: ${successUrl}, Cancel: ${cancelUrl}`);
 
@@ -234,17 +255,17 @@ export const createSubscription = async (
         cancel_url: cancelUrl
       });
 
-    console.log("Stripe Session Created:", sessionStripe.id);
+      console.log("Stripe Session Created:", sessionStripe.id);
 
-    const invoicesX = await Invoices.findByPk(invoiceId);
-    const invoiX = await invoicesX.update({
-      id: invoiceId,
-      stripe_id: sessionStripe.id
-    });
+      const invoicesX = await Invoices.findByPk(invoiceId);
+      const invoiX = await invoicesX.update({
+        id: invoiceId,
+        stripe_id: sessionStripe.id
+      });
 
-    //console.log(sessionStripe);
+      //console.log(sessionStripe);
 
-    stripeURL = sessionStripe.url;
+      stripeURL = sessionStripe.url;
     } catch (error) {
       console.error("Error creating Stripe session:", error);
     }

@@ -30,7 +30,9 @@ interface AdAccountData {
   timezone_name: string;
 }
 
-export const exchangeToLongLivedToken = async (shortToken: string): Promise<TokenExchangeResponse> => {
+export const exchangeToLongLivedToken = async (
+  shortToken: string
+): Promise<TokenExchangeResponse> => {
   try {
     const appId = process.env.FACEBOOK_APP_ID;
     const appSecret = process.env.FACEBOOK_APP_SECRET;
@@ -83,7 +85,9 @@ export const getPages = async (token: string): Promise<PageData[]> => {
   return pages;
 };
 
-export const getAdAccounts = async (token: string): Promise<AdAccountData[]> => {
+export const getAdAccounts = async (
+  token: string
+): Promise<AdAccountData[]> => {
   let accounts: AdAccountData[] = [];
   let url = `${baseUrl}/me/adaccounts?fields=id,account_id,name,currency,timezone_name&limit=100`;
 
@@ -108,8 +112,8 @@ export const saveMetaIntegration = async (
   // 1. Exchange Token
   const longTokenData = await exchangeToLongLivedToken(shortToken);
   const longToken = longTokenData.access_token;
-  const expiresAt = longTokenData.expires_in 
-    ? new Date(Date.now() + longTokenData.expires_in * 1000) 
+  const expiresAt = longTokenData.expires_in
+    ? new Date(Date.now() + longTokenData.expires_in * 1000)
     : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Default 60 days
 
   // 2. Get User Profile
@@ -139,7 +143,7 @@ export const saveMetaIntegration = async (
 
   // 4. Fetch and Save Pages
   const pages = await getPages(longToken);
-  
+
   // Clear old pages? Or update? Better to update or upsert.
   // For simplicity, we can delete old ones not in the list, or just upsert.
   // Let's iterate.

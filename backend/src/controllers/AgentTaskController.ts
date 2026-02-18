@@ -3,7 +3,10 @@ import AgentTask from "../models/AgentTask";
 import { AgentExecutionQueue } from "../jobs";
 import Queue from "../libs/queue";
 
-export const createTask = async (req: Request, res: Response): Promise<Response> => {
+export const createTask = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const userId = parseInt(req.user.id);
   const { type, payload } = req.body;
 
@@ -21,7 +24,10 @@ export const createTask = async (req: Request, res: Response): Promise<Response>
   }
 };
 
-export const confirmTask = async (req: Request, res: Response): Promise<Response> => {
+export const confirmTask = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const userId = parseInt(req.user.id);
   const { taskId, confirmed } = req.body;
 
@@ -43,7 +49,10 @@ export const confirmTask = async (req: Request, res: Response): Promise<Response
   }
 };
 
-export const getTaskStatus = async (req: Request, res: Response): Promise<Response> => {
+export const getTaskStatus = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const userId = parseInt(req.user.id);
   const { id } = req.params;
 
@@ -57,13 +66,16 @@ export const getTaskStatus = async (req: Request, res: Response): Promise<Respon
   }
 };
 
-export const listTasks = async (req: Request, res: Response): Promise<Response> => {
+export const listTasks = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const userId = parseInt(req.user.id);
   try {
-    const tasks = await AgentTask.findAll({ 
-        where: { userId },
-        order: [["createdAt", "DESC"]],
-        limit: 50 
+    const tasks = await AgentTask.findAll({
+      where: { userId },
+      order: [["createdAt", "DESC"]],
+      limit: 50
     });
     return res.json(tasks);
   } catch (error: any) {

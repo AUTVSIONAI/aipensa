@@ -49,7 +49,8 @@ app.set("queues", {
   sendScheduledMessages
 });
 
-const normalizeOrigin = (value?: string) => (value ? value.replace(/\/$/, "") : value);
+const normalizeOrigin = (value?: string) =>
+  value ? value.replace(/\/$/, "") : value;
 const allowedOrigins = [
   normalizeOrigin(process.env.FRONTEND_URL),
   normalizeOrigin(process.env.BACKEND_URL),
@@ -98,7 +99,10 @@ app.use(
       }
       const isAllowed = allowedOrigins.some(allowedOrigin => {
         if (!allowedOrigin) return false;
-        return origin === allowedOrigin || origin.includes(allowedOrigin.replace(/^https?:\/\//, ""));
+        return (
+          origin === allowedOrigin ||
+          origin.includes(allowedOrigin.replace(/^https?:\/\//, ""))
+        );
       });
       if (process.env.NODE_ENV === "production") {
         if (isAllowed) {
@@ -128,20 +132,28 @@ app.use(bodyParser.json({ limit: "5mb" })); // Aumentar o limite de carga para 5
 app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
 // Middleware para debug de CORS e OPTIONS
 app.use((req, res, next) => {
-  console.log(`[CORS Debug] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
-  
+  console.log(
+    `[CORS Debug] ${req.method} ${req.url} - Origin: ${req.headers.origin}`
+  );
+
   // Adicionar headers de CORS extras para garantir
   res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
   res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With, Accept, Origin, X-CSRF-Token");
-  
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Authorization, Content-Type, X-Requested-With, Accept, Origin, X-CSRF-Token"
+  );
+
   // Se for OPTIONS, responder imediatamente
   if (req.method === "OPTIONS") {
     console.log(`[CORS Debug] Responding to OPTIONS for ${req.url}`);
     return res.status(200).end();
   }
-  
+
   next();
 });
 

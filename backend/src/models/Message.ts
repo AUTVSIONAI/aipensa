@@ -53,7 +53,9 @@ class Message extends Model<Message> {
     if (this.getDataValue("mediaUrl")) {
       // FIX: Remove PROXY_PORT dependency to avoid issues with api.aipensa.com:8080
       // Ensure BACKEND_URL in .env includes the port if necessary (e.g. http://localhost:8080)
-      return `${process.env.BACKEND_URL}/public/company${this.companyId}/${this.getDataValue("mediaUrl")}`;
+      return `${process.env.BACKEND_URL}/public/company${
+        this.companyId
+      }/${this.getDataValue("mediaUrl")}`;
     }
     return null;
   }

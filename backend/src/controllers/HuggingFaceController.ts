@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import GenerateImageService from "../services/HuggingFaceService/GenerateImageService";
 
-export const generate = async (req: Request, res: Response): Promise<Response> => {
+export const generate = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { prompt } = req.body;
 
   if (!prompt) {

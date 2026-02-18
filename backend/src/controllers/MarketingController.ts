@@ -164,7 +164,9 @@ export const insights = async (
     );
     const fbError = error?.response?.data?.error;
     if (fbError) {
-        console.error(`[Marketing] FB Error Detail: Code=${fbError.code}, Subcode=${fbError.error_subcode}, Message=${fbError.message}`);
+      console.error(
+        `[Marketing] FB Error Detail: Code=${fbError.code}, Subcode=${fbError.error_subcode}, Message=${fbError.message}`
+      );
     }
     return res
       .status(400)
@@ -210,7 +212,9 @@ export const pages = async (req: Request, res: Response): Promise<Response> => {
     );
     const fbError = error?.response?.data?.error;
     if (fbError) {
-        console.error(`[Marketing] FB Error Detail (Pages): Code=${fbError.code}, Subcode=${fbError.error_subcode}, Message=${fbError.message}`);
+      console.error(
+        `[Marketing] FB Error Detail (Pages): Code=${fbError.code}, Subcode=${fbError.error_subcode}, Message=${fbError.message}`
+      );
     }
     return res
       .status(400)
@@ -226,14 +230,20 @@ export const publishContent = async (
     const companyId = (req as any).user?.companyId;
     const userProfile = (req as any).user?.profile;
 
-    if (userProfile !== "admin" && !(await checkPlan(companyId, "useAutoPosts"))) {
+    if (
+      userProfile !== "admin" &&
+      !(await checkPlan(companyId, "useAutoPosts"))
+    ) {
       return res.status(403).json({
         error: "ERR_PLAN_LIMIT",
         message: "Seu plano não permite postagem automática."
       });
     }
 
-    if (userProfile !== "admin" && !(await checkPlanLimit(companyId, "limitPosts", "POST"))) {
+    if (
+      userProfile !== "admin" &&
+      !(await checkPlanLimit(companyId, "limitPosts", "POST"))
+    ) {
       return res.status(403).json({
         error: "ERR_PLAN_LIMIT",
         message: "Limite mensal de postagens atingido."
@@ -250,14 +260,14 @@ export const publishContent = async (
       return res.status(400).json({ error: "access_token ausente" });
     }
 
-    const { 
-      facebookPageId, 
-      instagramId, 
-      message, 
-      imageUrl, 
+    const {
+      facebookPageId,
+      instagramId,
+      message,
+      imageUrl,
       scheduledTime,
       contentType = "feed", // feed, reels, story, carousel
-      mediaType = "photo"   // photo, video
+      mediaType = "photo" // photo, video
     } = req.body;
 
     if (!message) {
@@ -276,7 +286,7 @@ export const publishContent = async (
     if (facebookPageId) {
       try {
         let result;
-        
+
         // Escolher o método baseado no tipo de conteúdo
         if (contentType === "reels" && mediaType === "video") {
           // Publicar Reels (vídeo)
@@ -310,7 +320,7 @@ export const publishContent = async (
             scheduledTime
           );
         }
-        
+
         results.facebook = result;
         await incrementUsage(companyId, "POST", 1, `FB-${result.id}`);
       } catch (err: any) {
@@ -323,7 +333,7 @@ export const publishContent = async (
     if (instagramId) {
       try {
         let result;
-        
+
         if (contentType === "reels") {
           // Publicar Reels
           if (!imageUrl) {
@@ -348,7 +358,7 @@ export const publishContent = async (
             message
           );
         }
-        
+
         results.instagram = result;
         await incrementUsage(companyId, "POST", 1, `IG-${result.id}`);
       } catch (err: any) {
@@ -457,12 +467,15 @@ export const getFeed = async (
         }
       });
     } catch (err: any) {
-      console.warn(`[Marketing] First attempt to fetch feed failed: ${err.message}. Retrying with simple fields.`);
+      console.warn(
+        `[Marketing] First attempt to fetch feed failed: ${err.message}. Retrying with simple fields.`
+      );
       // Retry with simpler fields (no comments expansion) to avoid 400 on restricted posts
-      const simpleFields = platform === "instagram" 
-        ? "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count"
-        : "id,message,created_time,full_picture,permalink_url";
-        
+      const simpleFields =
+        platform === "instagram"
+          ? "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count"
+          : "id,message,created_time,full_picture,permalink_url";
+
       resp = await axios.get(url, {
         params: {
           access_token: accessToken,
@@ -496,18 +509,19 @@ export const getFeed = async (
           platform: "instagram"
         };
       } else {
-        // Map Facebook comments to include a placeholder 'from' if missing, 
+        // Map Facebook comments to include a placeholder 'from' if missing,
         // since we removed it from the query to avoid 400 errors.
-        const mappedComments = item.comments?.data?.map((c: any) => ({
-             ...c,
-             from: c.from || { name: "Facebook User" }
-        })) || [];
-        
+        const mappedComments =
+          item.comments?.data?.map((c: any) => ({
+            ...c,
+            from: c.from || { name: "Facebook User" }
+          })) || [];
+
         // Update item with mapped comments
         if (item.comments) {
-            item.comments.data = mappedComments;
+          item.comments.data = mappedComments;
         }
-        
+
         return { ...item, platform: "facebook" };
       }
     });
@@ -520,7 +534,9 @@ export const getFeed = async (
     );
     const fbError = error?.response?.data?.error;
     if (fbError) {
-        console.error(`[Marketing] FB Error Detail (Feed): Code=${fbError.code}, Subcode=${fbError.error_subcode}, Message=${fbError.message}`);
+      console.error(
+        `[Marketing] FB Error Detail (Feed): Code=${fbError.code}, Subcode=${fbError.error_subcode}, Message=${fbError.message}`
+      );
     }
     return res
       .status(400)
@@ -569,8 +585,13 @@ export const likePost = async (
       );
       return res.json(resp.data);
     } catch (err: any) {
-       console.error(`[Marketing] Like failed: ${err.message}. Data:`, err.response?.data);
-       return res.status(400).json({ error: err.response?.data?.error?.message || err.message });
+      console.error(
+        `[Marketing] Like failed: ${err.message}. Data:`,
+        err.response?.data
+      );
+      return res
+        .status(400)
+        .json({ error: err.response?.data?.error?.message || err.message });
     }
   } catch (error: any) {
     console.error(
@@ -630,7 +651,10 @@ export const commentPost = async (
   }
 };
 
-export const wallet = async (req: Request, res: Response): Promise<Response> => {
+export const wallet = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
     const companyId = (req as any).user?.companyId;
 
@@ -644,8 +668,10 @@ export const wallet = async (req: Request, res: Response): Promise<Response> => 
 
     const walletInvoices = invoices.filter(inv => {
       const detail = inv.detail as any;
-      return typeof detail === "string" &&
-        detail.toLowerCase().includes("crédito de anúncios");
+      return (
+        typeof detail === "string" &&
+        detail.toLowerCase().includes("crédito de anúncios")
+      );
     });
 
     const totalCredits = walletInvoices.reduce((sum, inv) => {
@@ -1087,7 +1113,8 @@ export const sendInstagramMessage = async (
 
     if (!instagramId || !recipientId || (!message && !attachment)) {
       return res.status(400).json({
-        error: "Faltando parâmetros: instagramId, recipientId ou message/attachment."
+        error:
+          "Faltando parâmetros: instagramId, recipientId ou message/attachment."
       });
     }
 
