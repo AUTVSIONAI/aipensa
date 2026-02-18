@@ -4,7 +4,6 @@ import * as Yup from "yup";
 import { useHistory } from "react-router-dom";
 import usePlans from "../../hooks/usePlans";
 import { Link as RouterLink } from "react-router-dom";
-import { toast } from "react-toastify";
 import { Formik, Form, Field } from "formik";
 import {
     IconButton,
@@ -14,8 +13,6 @@ import {
     Grid,
     Box,
     Typography,
-    Container,
-    CssBaseline,
     FormControlLabel,
     Checkbox,
     Dialog,
@@ -23,17 +20,9 @@ import {
     DialogContent,
     DialogContentText,
     DialogActions,
-    AppBar,
-    Toolbar,
     CircularProgress,
     Fade,
     useTheme,
-    Drawer,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
-    Divider,
     Card,
     CardContent,
     CardActions,
@@ -49,12 +38,9 @@ import LockIcon from '@mui/icons-material/Lock';
 import PhoneIcon from '@mui/icons-material/Phone';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import Lock from "@material-ui/icons/Lock";
-import MenuIcon from '@mui/icons-material/Menu';
-import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import StarIcon from '@mui/icons-material/Star';
 import { makeStyles } from "@material-ui/core/styles";
-import { i18n } from "../../translate/i18n";
 import { openApi } from "../../services/api";
 import toastError from "../../errors/toastError";
 import moment from "moment";
@@ -64,8 +50,6 @@ import 'react-phone-number-input/style.css';
 import Link from "@material-ui/core/Link";
 import { versionSystem } from "../../../package.json";
 import { nomeEmpresa } from "../../../package.json";
-import wallfundo from "../../assets/f002.png";
-import ColorModeContext from "../../layout/themeContext";
 
 const Copyright = () => {
     return (

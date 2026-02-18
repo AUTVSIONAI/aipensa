@@ -92,9 +92,8 @@ const useAuth = () => {
         io.off(`company-${user.companyId}-user`);
         // io.disconnect();
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }
-  }, [user]);
+  }, [user, socket]);
 
   const handleLogin = async (userData) => {
     setLoading(true);
@@ -140,7 +139,6 @@ const useAuth = () => {
       } else {
         dueDate = data.user.company.dueDate;
       }
-      const hoje = moment(moment()).format("DD/MM/yyyy");
       const vencimento = moment(dueDate).format("DD/MM/yyyy");
 
       var diff = moment(dueDate).diff(moment(moment()).format());

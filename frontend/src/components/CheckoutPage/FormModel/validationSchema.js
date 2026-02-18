@@ -3,10 +3,7 @@ import checkoutFormModel from './checkoutFormModel';
 const {
   formField: {
     firstName,
-    address1,
-    city,
     zipcode,
-    country,
   }
 } = checkoutFormModel;
 

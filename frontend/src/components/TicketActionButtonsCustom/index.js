@@ -1,11 +1,10 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useCallback } from "react";
 import { useHistory } from "react-router-dom";
 
 import { Can } from "../Can";
 import { makeStyles } from "@material-ui/core/styles";
 import { IconButton, Menu } from "@material-ui/core";
-import { DeviceHubOutlined, History, MoreVert, PictureAsPdf, Replay, SwapHorizOutlined } from "@material-ui/icons";
-import { v4 as uuidv4 } from "uuid";
+import { MoreVert, Replay, SwapHorizOutlined } from "@material-ui/icons";
 
 import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
@@ -30,7 +29,6 @@ import HighlightOffIcon from "@material-ui/icons/HighlightOff";
 import UndoIcon from '@material-ui/icons/Undo';
 import CallIcon from '@mui/icons-material/Call';
 
-import ScheduleModal from "../ScheduleModal";
 import MenuItem from "@material-ui/core/MenuItem";
 import { Switch } from "@material-ui/core";
 import ShowTicketOpen from "../ShowTicketOpenModal";
@@ -95,7 +93,6 @@ const TicketActionButtonsCustom = ({ ticket }) => {
     const classes = useStyles();
     const theme = useTheme();
     const history = useHistory();
-    const [isMounted, setIsMounted] = useState(true);
     const [loading, setLoading] = useState(false);
     const { user } = useContext(AuthContext);
     const { setCurrentTicket, setTabOpen } = useContext(TicketsContext);
@@ -103,20 +100,17 @@ const TicketActionButtonsCustom = ({ ticket }) => {
     const formRef = React.useRef(null);
     const [confirmationOpen, setConfirmationOpen] = useState(false);
     const [transferTicketModalOpen, setTransferTicketModalOpen] = useState(false);
-    const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-    const [contactId, setContactId] = useState(null);
     const [acceptTicketWithouSelectQueueOpen, setAcceptTicketWithouSelectQueueOpen] = useState(false);
     const [showTicketLogOpen, setShowTicketLogOpen] = useState(false);
     const [openTicketMessageDialog, setOpenTicketMessageDialog] = useState(false);
     const [disableBot, setDisableBot] = useState(ticket.contact.disableBot);
 
-    const [showSchedules, setShowSchedules] = useState(false);
     const [enableIntegration, setEnableIntegration] = useState(ticket.useIntegration);
 
     const [openAlert, setOpenAlert] = useState(false);
     const [userTicketOpen, setUserTicketOpen] = useState("");
     const [queueTicketOpen, setQueueTicketOpen] = useState("");
-    const [logTicket, setLogTicket] = useState([]);
+    
 
     const { get: getSetting } = useCompanySettings()
     const { getPlanCompany } = usePlans();
@@ -127,25 +121,18 @@ const TicketActionButtonsCustom = ({ ticket }) => {
     const [openModal, setOpenModal] = useState(false); // Controle do modal de chamada
     const [wavoipUrl, setWavoipUrl] = useState(""); // URL do WAVoIP
 
-    useEffect(() => {
-        fetchData();
-
-        // Cleanup function to set isMounted to false when the component unmounts
-        return () => {
-            setIsMounted(false);
-        };
-    }, []);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         const companyId = user.companyId;
-        const planConfigs = await getPlanCompany(undefined, companyId);
-        setShowSchedules(planConfigs.plan.useSchedules);
+        await getPlanCompany(undefined, companyId);
         setOpenTicketMessageDialog(false);
         setDisableBot(ticket.contact.disableBot)
 
         setShowTicketLogOpen(false)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }
+    }, [user, getPlanCompany, ticket]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleClickOpen = async (e) => {
         const setting = await getSetting({
