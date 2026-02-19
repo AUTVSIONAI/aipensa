@@ -2239,7 +2239,7 @@ export const handleOpenAi = async (
   console.log(`[handleOpenAi] Body message: ${bodyMessage}`);
   if (!bodyMessage) return;
 
-  // 🔥 RESPOSTAS RÁPIDAS PARA COMANDOS COMUNS
+  // 🔥 RESPOSTAS RÁPIDAS PARA COMANDOS COMUNS (apenas quando usuário pedir menu/ajuda)
   const quickResponse = await getQuickResponse(
     bodyMessage,
     ticket,
@@ -2713,7 +2713,7 @@ export const handleOpenAi = async (
     console.error("[OpenAiService] Error fetching catalog:", e);
   }
 
-  const promptSystem = `Nas respostas utilize o nome ${sanitizeName(
+  let promptSystem = `Nas respostas utilize o nome ${sanitizeName(
     contact.name || "Amigo(a)"
   )} para identificar o cliente.\nData e Hora atual: ${new Date().toLocaleString(
     "pt-BR",
@@ -2837,6 +2837,22 @@ export const handleOpenAi = async (
 
   // 2. Build History
   messagesOpenAi.push({ role: "system", content: promptSystem });
+
+  // Hint para pedidos combinados de gerar imagem e postar em canais
+  try {
+    const n = (inputContent || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const wantsImage = n.includes("imagem") || n.includes("gerar imagem") || n.includes("criar imagem");
+    const wantsPost = n.includes("postar") || n.includes("publicar");
+    const wantsInstagram = n.includes("instagram") || n.includes("insta");
+    const wantsWhatsappStatus = n.includes("status") && n.includes("whatsapp");
+    if (wantsImage && wantsPost && (wantsInstagram || wantsWhatsappStatus)) {
+      messagesOpenAi.push({
+        role: "system",
+        content:
+          "Quando o usuário solicitar gerar imagem e postar em canais, gere a tag [GENERATE_IMAGE] com prompt detalhado em inglês e tamanho 1024x1024. Após gerar, crie duas ações [AGENT_PLAN]: uma para whatsapp_status (imagem e legenda) e outra para instagram_post (content_type: feed, imagem e legenda)."
+      });
+    }
+  } catch (e) {}
 
   for (
     let i = 0;
@@ -3082,51 +3098,6 @@ const getQuickResponse = async (
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
   const isAdmin = await verifyAdminPermission(contact);
-
-  // Comandos de WhatsApp Status
-  if (
-    normalizedMessage.includes("status") &&
-    normalizedMessage.includes("whatsapp")
-  ) {
-    if (normalizedMessage.includes("boa noite")) {
-      return "🌙 *Status de Boa Noite criado!*\n\n✅ Seu status foi programado e será publicado em breve no WhatsApp.\n\n📱 Para ver todos os seus status, acesse: *Marketing > Status WhatsApp*\n💡 Dica: Você pode criar status com imagens, vídeos ou apenas texto!";
-    }
-    if (normalizedMessage.includes("bom dia")) {
-      return "☀️ *Status de Bom Dia criado!*\n\n✅ Seu status foi programado e será publicado em breve no WhatsApp.\n\n📱 Para ver todos os seus status, acesse: *Marketing > Status WhatsApp*\n💡 Dica: Use imagens bonitas para aumentar o engajamento!";
-    }
-    return '📱 *Criar Status WhatsApp*\n\n📝 Para criar um status, diga:\n• "Criar status de boa noite"\n• "Criar status de bom dia"\n• "Criar status sobre [assunto]"\n\n📊 Seus status recentes aparecerão aqui em breve!';
-  }
-
-  // Comandos de Instagram
-  if (
-    normalizedMessage.includes("instagram") ||
-    normalizedMessage.includes("insta")
-  ) {
-    if (
-      normalizedMessage.includes("postar") ||
-      normalizedMessage.includes("publicar")
-    ) {
-      return '📸 *Publicar no Instagram*\n\n🎯 Para criar uma publicação:\n1. Envie uma imagem ou vídeo com legenda\n2. Digite: "Postar no Instagram"\n3. Ou diga: "Criar post com esta mídia"\n\n📌 Tipos de conteúdo disponíveis:\n• Feed (foto/vídeo)\n• Stories\n• Reels\n• Carrossel\n\nAcesse: *Marketing > Instagram* para mais opções!';
-    }
-    return "📱 *Instagram Business*\n\n✅ Conectado e pronto para publicar!\n\n🚀 O que você pode fazer:\n• Publicar fotos e vídeos\n• Criar Stories e Reels\n• Ver analytics\n• Responder comentários\n\n📊 Acesse: *Marketing > Instagram* para o painel completo!";
-  }
-
-  // Comandos de Facebook
-  if (
-    normalizedMessage.includes("facebook") ||
-    normalizedMessage.includes("face")
-  ) {
-    return "📘 *Facebook Business*\n\n✅ Página conectada e ativa!\n\n🚀 O que você pode fazer:\n• Publicar no feed\n• Criar eventos\n• Gerenciar comentários\n• Ver insights\n\n⚠️ *Importante*: Verifique se suas permissões de página estão atualizadas.\n📊 Acesse: *Marketing > Facebook* para mais opções!";
-  }
-
-  // Funções da Plataforma
-  if (
-    normalizedMessage.includes("funcoes") ||
-    normalizedMessage.includes("recursos") ||
-    normalizedMessage.includes("o que voce faz")
-  ) {
-    return '🤖 *Funções do AIPENSA IA*\n\n📱 *WhatsApp Business:*\n• Responder mensagens automaticamente\n• Criar status\n• Enviar produtos do catálogo\n• Gerenciar atendimento\n\n📸 *Redes Sociais:*\n• Postar no Instagram (Feed, Stories, Reels)\n• Publicar no Facebook\n• Agendar conteúdo\n• Analytics integrado\n\n🎨 *Criação de Conteúdo:*\n• Criar legendas\n• Gerar imagens com IA\n• Sugerir campanhas\n• Criar anúncios\n\n💡 *Dica*: Envie "menu" para ver todos os comandos disponíveis!';
-  }
 
   // Menu de Comandos
   if (
