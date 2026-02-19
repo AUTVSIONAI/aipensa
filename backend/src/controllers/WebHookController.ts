@@ -5,8 +5,7 @@ import { handleFacebookFeed } from "../services/FacebookServices/FacebookFeedLis
 // import { handleMessage } from "../services/FacebookServices/facebookMessageListener";
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const VERIFY_TOKEN =
-    process.env.WEBHOOK_VERIFY_TOKEN || process.env.VERIFY_TOKEN || "whaticket";
+  const VERIFY_TOKEN = "qualquer_string_secreta";
 
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
@@ -15,15 +14,13 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   if (mode && token) {
     if (
       mode === "subscribe" &&
-      (token === VERIFY_TOKEN || token === "aipensa_verify_2026")
+      token === VERIFY_TOKEN
     ) {
-      return res.status(200).send(challenge);
+      return res.status(200).send(String(challenge ?? ""));
     }
   }
 
-  return res.status(403).json({
-    message: "Forbidden"
-  });
+  return res.sendStatus(403);
 };
 
 export const webHook = async (
