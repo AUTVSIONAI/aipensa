@@ -1574,7 +1574,7 @@ const Marketing = () => {
                  <Card className={classes.card}>
                     <Section icon={<PostAddIcon style={{ color: theme.palette.text.primary }} />} title="Publicar Conteúdo">
                        <Typography variant="body2" style={{ color: theme.palette.text.secondary }} paragraph>
-                          Publique ou agende posts para seu Feed do Instagram e Facebook.
+                          Publique ou agende posts para o Feed, Stories e Reels do Instagram e Facebook.
                        </Typography>
                        <Grid container spacing={3}>
                           <Grid item xs={12} sm={6}>
@@ -1614,6 +1614,11 @@ const Marketing = () => {
                                  <MenuItem value="carousel">Carrossel</MenuItem>
                                </Select>
                              </FormControl>
+                          </Grid>
+                          <Grid item xs={12}>
+                            <Typography variant="caption" style={{ color: theme.palette.text.secondary }}>
+                              Instagram Feed: JPG quadrado (1:1), vertical (4:5) ou horizontal (1.91:1). Reels/Stories: vídeo MP4/MOV recomendado.
+                            </Typography>
                           </Grid>
                           <Grid item xs={12}>
                              <FormControl fullWidth variant="outlined" className={classes.input}>
@@ -1680,7 +1685,7 @@ const Marketing = () => {
                                             Clique para fazer Upload de Foto ou Vídeo
                                         </Typography>
                                         <Typography variant="body2" style={{ color: theme.palette.text.secondary }}>
-                                            Suporta JPG, PNG, MP4, MOV
+                                            Facebook: JPG/PNG/MP4/MOV. Instagram Feed: JPG. Reels/Stories: MP4/MOV recomendados.
                                         </Typography>
                                         <Button variant="contained" component="span" startIcon={<PublicIcon />} className={classes.button} style={{ marginTop: 24 }}>
                                             Selecionar da Galeria

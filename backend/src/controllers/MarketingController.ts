@@ -15,6 +15,8 @@ import {
 } from "../services/UsageTrackingServices/UsageTrackingService";
 
 import * as SocialMediaService from "../services/FacebookServices/SocialMediaService";
+import Schedule from "../models/Schedule";
+import { zonedTimeToUtc } from "date-fns-tz";
 
 const GRAPH_VERSION = "v19.0";
 
@@ -336,7 +338,41 @@ export const publishContent = async (
       try {
         let result;
 
-        if (contentType === "reels") {
+        if (scheduledTime) {
+          if (!imageUrl) {
+            results.instagram = {
+              error: "Instagram agendado requer URL de mídia"
+            };
+          } else {
+            const parsedDate = zonedTimeToUtc(
+              scheduledTime,
+              "America/Sao_Paulo"
+            );
+            const payload: any = {
+              platform: "instagram",
+              message,
+              contentType,
+              mediaType
+            };
+
+            if (mediaType === "video" || contentType === "reels") {
+              payload.video = imageUrl;
+            } else {
+              payload.image = imageUrl;
+            }
+
+            await Schedule.create({
+              body: `__SOCIAL_POST__${JSON.stringify(payload)}`,
+              sendAt: parsedDate.toISOString(),
+              companyId,
+              status: "PENDENTE"
+            });
+            results.instagram = {
+              scheduled: true,
+              sendAt: parsedDate.toISOString()
+            };
+          }
+        } else if (contentType === "reels") {
           // Publicar Reels
           if (!imageUrl) {
             throw new Error("Reels requer um vídeo");
