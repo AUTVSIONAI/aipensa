@@ -19,6 +19,7 @@ import { messageQueue, sendScheduledMessages } from "./queues";
 import BullQueue from "./libs/queue";
 import BullBoard from "bull-board";
 import basicAuth from "basic-auth";
+import * as WebHooksController from "./controllers/WebHookController";
 
 // Função de middleware para autenticação básica
 export const isBullAuth = (req, res, next) => {
@@ -161,6 +162,12 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(Sentry.Handlers.requestHandler());
 app.use("/public", express.static(uploadConfig.directory));
+
+// Webhook público (Meta/Instagram/Facebook) – montado ANTES de quaisquer rotas que possam ter middleware
+app.get("/webhook", WebHooksController.index);
+app.get("/webhooks/instagram", WebHooksController.index);
+app.post("/webhook", WebHooksController.webHook);
+app.post("/webhooks/instagram", WebHooksController.webHook);
 
 // Rotas
 app.use(routes);
