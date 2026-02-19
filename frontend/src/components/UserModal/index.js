@@ -369,13 +369,13 @@ const UserModal = ({ open, onClose, userId }) => {
     try {
       if (userId) {
         const { data } = await api.put(`/users/${userId}`, userData);
-        if (avatar && (!user?.profileImage || !user?.profileImage !== avatar.name)) {
+        if (avatar && (!user?.profileImage || user?.profileImage !== avatar.name)) {
           uploadAvatar(data);
         }
       } else {
-        await api.post("/users", userData);
+        const { data } = await api.post("/users", userData);
         if (!user?.profileImage && avatar) {
-          uploadAvatar(user);
+          uploadAvatar(data);
         }
       }
       if (userId === loggedInUser.id) {

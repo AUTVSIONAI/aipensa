@@ -16,7 +16,11 @@ const ProfileImageProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      setProfileImage(user.profileImage ? `${getBackendUrl()}/public/${user.profileImage}` : null);      
+      setProfileImage(
+        user.profileImage && user.companyId
+          ? `${getBackendUrl()}/public/company${user.companyId}/user/${user.profileImage}`
+          : null
+      );
     }
   }, [user]);
 

@@ -38,6 +38,9 @@ import {
 import GenerateImageService from "../HuggingFaceService/GenerateImageService";
 import { Op } from "sequelize";
 import { getWbot } from "../../libs/wbot";
+import ApiUsages from "../../models/ApiUsages";
+import { useDate } from "../../utils/useDate";
+import moment from "moment";
 
 type Session = WASocket & {
   id?: number;
@@ -100,10 +103,11 @@ const verifyAdminPermission = async (contact: Contact): Promise<boolean> => {
       } tags (raw): ${JSON.stringify(tags)}`
     );
 
-    // Check for "ADMIN" or "admin" tag
-    const hasPermission = contactWithTags.tags.some(
-      t => t.name.trim().toUpperCase() === "ADMIN"
-    );
+    // Check for ADMIN or ADM tag (adm liberado para conta de testes)
+    const hasPermission = contactWithTags.tags.some(t => {
+      const tag = t.name.trim().toUpperCase();
+      return tag === "ADMIN" || tag === "ADM";
+    });
     console.log(
       `[verifyAdminPermission] Contact ${contact.id} has permission: ${hasPermission}`
     );
@@ -270,6 +274,85 @@ const callOpenAI = async (
       // Continua para o próximo modelo
       console.log(`[callOpenAI] 🔄 Switching to next fallback model...`);
     }
+  }
+};
+
+// Função para chamar OpenAI com fallback para DeepSeek via OpenRouter
+const callOpenAiWithDeepSeekFallback = async (
+  messagesOpenAi: any[],
+  openAiSettings: IOpenAi
+): Promise<string | undefined> => {
+  // 1) Tentativa principal: OpenAI (fluxo padrão concentrado na OpenAI)
+  try {
+    const apiKey = await resolveApiKey("openai", openAiSettings.apiKey);
+
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY não configurada");
+    }
+
+    const client = new OpenAI({ apiKey });
+
+    // Modelo padrão barato para texto
+    const primaryModel =
+      openAiSettings.model && openAiSettings.model !== ""
+        ? openAiSettings.model
+        : "gpt-4o-mini";
+
+    const chat = await client.chat.completions.create({
+      model: primaryModel,
+      messages: messagesOpenAi,
+      max_tokens: openAiSettings.maxTokens,
+      temperature: openAiSettings.temperature
+    });
+
+    return chat.choices[0].message?.content || "";
+  } catch (error: any) {
+    console.error(
+      "[callOpenAiWithDeepSeekFallback] Erro na chamada principal OpenAI:",
+      error.message || error
+    );
+  }
+
+  // 2) Fallback: DeepSeek via OpenRouter (quando OpenAI falhar)
+  try {
+    const apiKey = await resolveApiKey("openrouter", openAiSettings.apiKey);
+    if (!apiKey) {
+      throw new Error("OPENROUTER_API_KEY não configurada");
+    }
+
+    const client = new OpenAI({
+      apiKey,
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultHeaders: {
+        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
+        "X-Title": "AIPENSA.COM"
+      }
+    });
+
+    const fallbackModel =
+      openAiSettings.model &&
+      openAiSettings.model.toLowerCase().startsWith("deepseek/")
+        ? openAiSettings.model
+        : "deepseek/deepseek-v3.2";
+
+    console.log(
+      `[callOpenAiWithDeepSeekFallback] Usando fallback DeepSeek: ${fallbackModel}`
+    );
+
+    const chat = await client.chat.completions.create({
+      model: fallbackModel,
+      messages: messagesOpenAi,
+      max_tokens: openAiSettings.maxTokens,
+      temperature: openAiSettings.temperature
+    });
+
+    return chat.choices[0].message?.content || "";
+  } catch (error: any) {
+    console.error(
+      "[callOpenAiWithDeepSeekFallback] Erro no fallback DeepSeek:",
+      error.message || error
+    );
+    throw error;
   }
 };
 
@@ -1736,11 +1819,39 @@ const handleImageGenerationAction = async (
 
   if (match && match[1]) {
     try {
-      if (!(await verifyAdminPermission(contact))) {
-        return (
-          response.replace(match[0], "").trim() +
-          "\n\n⛔ *Acesso Negado*: A geração de imagens requer permissão de administrador (Tag: ADMIN)."
+      const isAdmin = await verifyAdminPermission(contact);
+
+      if (!isAdmin) {
+        // Verificar se o plano da empresa permite uso do Agente (considerado plano pago)
+        const hasAgentAi = await checkPlanFeature(
+          ticket.companyId,
+          "useAgentAi"
         );
+
+        if (!hasAgentAi) {
+          return (
+            response.replace(match[0], "").trim() +
+            "\n\n⚠️ *Recurso indisponível*: Seu plano atual não inclui geração de imagens por IA. Fale com o suporte para ativar."
+          );
+        }
+
+        // Limite diário de geração de imagens para empresas com plano pago
+        const { dateToClient } = useDate();
+        const hoje: string = dateToClient(new Date());
+
+        const usage = await ApiUsages.findOne({
+          where: { dateUsed: hoje, companyId: ticket.companyId }
+        });
+
+        const usedImageToday = usage?.usedImage || 0;
+        const DAILY_LIMIT = 3;
+
+        if (usedImageToday >= DAILY_LIMIT) {
+          return (
+            response.replace(match[0], "").trim() +
+            "\n\n⚠️ *Limite diário atingido*: Você já utilizou as 3 gerações de imagem disponíveis para hoje no seu plano."
+          );
+        }
       }
 
       // Clean up the content to ensure valid JSON
@@ -1896,6 +2007,37 @@ const handleImageGenerationAction = async (
       }
 
       if (imageUrl) {
+        // Registrar uso diário de imagem (somente para não-admin)
+        try {
+          if (!isAdmin) {
+            const { dateToClient } = useDate();
+            const hoje: string = dateToClient(new Date());
+            const timestamp = moment().format();
+
+            let usage = await ApiUsages.findOne({
+              where: { dateUsed: hoje, companyId: ticket.companyId }
+            });
+
+            if (!usage) {
+              usage = await ApiUsages.create({
+                companyId: ticket.companyId,
+                dateUsed: hoje
+              });
+            }
+
+            await usage.update({
+              usedImage: (usage.dataValues["usedImage"] || 0) + 1,
+              UsedOnDay: (usage.dataValues["UsedOnDay"] || 0) + 1,
+              updatedAt: timestamp
+            });
+          }
+        } catch (err) {
+          console.error(
+            "[handleImageGeneration] Erro ao registrar uso diário de imagem:",
+            err
+          );
+        }
+
         // Definir label do provider baseado no usado
         let providerLabel = "";
         switch (usedProvider) {
@@ -2111,8 +2253,13 @@ export const handleOpenAi = async (
   }
   if (msg.messageStubType) return;
 
-  // Definir provider padrão se não estiver definido
+  // Definir provider e modelo padrão se não estiverem definidos
   const provider = openAiSettings.provider || "openai";
+
+  // Modelo padrão econômico para texto: gpt-4o-mini
+  if (!openAiSettings.model || openAiSettings.model === "gpt-3.5-turbo") {
+    openAiSettings.model = "gpt-4o-mini";
+  }
 
   // FIX: Intercept known broken/offline OpenRouter models to prevent 404/400 errors and latency
   const BROKEN_MODELS = [
@@ -2800,12 +2947,19 @@ export const handleOpenAi = async (
         }`;
       }
     } else {
-      response = await callOpenAI(
-        aiClient,
-        messagesOpenAi,
-        openAiSettings,
-        hasImages
-      );
+      if (provider === "openai") {
+        response = await callOpenAiWithDeepSeekFallback(
+          messagesOpenAi,
+          openAiSettings
+        );
+      } else {
+        response = await callOpenAI(
+          aiClient,
+          messagesOpenAi,
+          openAiSettings,
+          hasImages
+        );
+      }
     }
 
     // Sanitize Response (remove <think> tags, etc.)

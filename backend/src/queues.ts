@@ -49,7 +49,10 @@ import Plan from "./models/Plan";
 import {
   getConnectedPages,
   publishToFacebook,
-  publishToInstagram
+  publishToInstagram,
+  publishVideoToFacebook,
+  publishReelsToInstagram,
+  publishStoryToInstagram
 } from "./services/FacebookServices/SocialMediaService";
 
 const connection = process.env.REDIS_URI || "";
@@ -181,7 +184,10 @@ async function handleSendScheduledMessage(job) {
       } catch (err) {
         payload = {};
       }
-      const { platform, message, image } = payload;
+
+      const { platform, message, image, video, contentType, mediaType } =
+        payload;
+
       const pages = await getConnectedPages(schedule.companyId);
       if (pages.length === 0) {
         await scheduleRecord?.update({
@@ -190,9 +196,27 @@ async function handleSendScheduledMessage(job) {
         });
         throw new Error("Nenhuma página/conta conectada encontrada");
       }
+
       if (platform === "facebook") {
         const page = pages[0];
-        await publishToFacebook(schedule.companyId, page.id, message, image);
+        const mediaUrl = video || image;
+
+        if ((mediaType === "video" || contentType === "reels") && mediaUrl) {
+          await publishToFacebook(
+            schedule.companyId,
+            page.id,
+            message,
+            undefined
+          );
+          await publishVideoToFacebook(
+            schedule.companyId,
+            page.id,
+            mediaUrl,
+            message
+          );
+        } else {
+          await publishToFacebook(schedule.companyId, page.id, message, image);
+        }
       } else if (platform === "instagram") {
         const pageWithInsta = pages.find(p => p.instagram_business_account);
         if (!pageWithInsta) {
@@ -202,19 +226,37 @@ async function handleSendScheduledMessage(job) {
           });
           throw new Error("Instagram não conectado");
         }
-        if (!image) {
+
+        const igId = pageWithInsta.instagram_business_account.id;
+        const mediaUrl = video || image;
+
+        if (!mediaUrl) {
           await scheduleRecord?.update({
             sentAt: new Date(moment().format("YYYY-MM-DD HH:mm")),
             status: "ERRO"
           });
-          throw new Error("Imagem é obrigatória para Instagram");
+          throw new Error("Mídia é obrigatória para Instagram");
         }
-        await publishToInstagram(
-          schedule.companyId,
-          pageWithInsta.instagram_business_account.id,
-          image,
-          message
-        );
+
+        if (contentType === "reels") {
+          await publishReelsToInstagram(
+            schedule.companyId,
+            igId,
+            mediaUrl,
+            message
+          );
+        } else if (contentType === "story") {
+          const isVideo = /\.(mp4|mov|avi|mkv)$/i.test(mediaUrl);
+          await publishStoryToInstagram(
+            schedule.companyId,
+            igId,
+            mediaUrl,
+            message,
+            isVideo
+          );
+        } else {
+          await publishToInstagram(schedule.companyId, igId, mediaUrl, message);
+        }
       } else {
         await scheduleRecord?.update({
           sentAt: new Date(moment().format("YYYY-MM-DD HH:mm")),
@@ -222,6 +264,7 @@ async function handleSendScheduledMessage(job) {
         });
         throw new Error("Plataforma desconhecida");
       }
+
       await scheduleRecord?.update({
         sentAt: new Date(moment().format("YYYY-MM-DD HH:mm")),
         status: "ENVIADA"
