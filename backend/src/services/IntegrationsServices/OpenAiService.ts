@@ -280,7 +280,8 @@ const callOpenAI = async (
 // Função para chamar OpenAI com fallback para DeepSeek via OpenRouter
 const callOpenAiWithDeepSeekFallback = async (
   messagesOpenAi: any[],
-  openAiSettings: IOpenAi
+  openAiSettings: IOpenAi,
+  opts?: { hasImages?: boolean; longContext?: boolean }
 ): Promise<string | undefined> => {
   // 1) Tentativa principal: OpenAI (fluxo padrão concentrado na OpenAI)
   try {
@@ -292,11 +293,15 @@ const callOpenAiWithDeepSeekFallback = async (
 
     const client = new OpenAI({ apiKey });
 
-    // Modelo padrão barato para texto
-    const primaryModel =
-      openAiSettings.model && openAiSettings.model !== ""
-        ? openAiSettings.model
-        : "gpt-4o-mini";
+    // Seleção de modelo:
+    // - gpt-4o para visão (imagens) ou contexto muito grande
+    // - gpt-4o-mini para texto comum (barato)
+    const needVisionOrLarge = !!opts?.hasImages || !!opts?.longContext;
+    const primaryModel = needVisionOrLarge
+      ? "gpt-4o"
+      : openAiSettings.model && openAiSettings.model !== ""
+      ? openAiSettings.model
+      : "gpt-4o-mini";
 
     const chat = await client.chat.completions.create({
       model: primaryModel,
@@ -1844,7 +1849,8 @@ const handleImageGenerationAction = async (
         });
 
         const usedImageToday = usage?.usedImage || 0;
-        const DAILY_LIMIT = 3;
+        const DAILY_LIMIT =
+          parseInt(process.env.DAILY_IMAGE_LIMIT || "", 10) || 3;
 
         if (usedImageToday >= DAILY_LIMIT) {
           return (
@@ -2948,9 +2954,14 @@ export const handleOpenAi = async (
       }
     } else {
       if (provider === "openai") {
+        // Heurística de escalonamento: usa gpt-4o quando há imagem ou quando o contexto é muito grande
+        // Aproximação simples de tamanho de contexto por número de caracteres
+        const totalChars = JSON.stringify(messagesOpenAi).length;
+        const longContext = totalChars > 8000;
         response = await callOpenAiWithDeepSeekFallback(
           messagesOpenAi,
-          openAiSettings
+          openAiSettings,
+          { hasImages, longContext }
         );
       } else {
         response = await callOpenAI(

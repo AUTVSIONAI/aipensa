@@ -1,4 +1,5 @@
 import { Router } from "express";
+import Setting from "../models/Setting";
 
 import userRoutes from "./userRoutes";
 import authRoutes from "./authRoutes";
@@ -115,6 +116,56 @@ routes.post("/webhooks/instagram", WebHooksController.webHook);
 
 // Healthcheck
 routes.get("/health", (req, res) => res.json({ ok: true }));
+
+// Config/health info (sem expor segredos)
+routes.get("/health/config", async (req, res) => {
+  try {
+    const dailyImageLimit =
+      parseInt(process.env.DAILY_IMAGE_LIMIT || "", 10) || 3;
+
+    // Verificações básicas de configuração (true/false) sem retornar chaves
+    const openaiSetting =
+      (await Setting.findOne({
+        where: { companyId: 1, key: "userApiToken" }
+      })) || null;
+    const openrouterSetting =
+      (await Setting.findOne({
+        where: { companyId: 1, key: "openrouterApiKey" }
+      })) || null;
+    const whisperSetting =
+      (await Setting.findOne({
+        where: { companyId: 1, key: "openaikeyaudio" }
+      })) || null;
+
+    const openaiConfigured =
+      !!process.env.OPENAI_API_KEY || !!openaiSetting?.value;
+    const openrouterConfigured =
+      !!process.env.OPENROUTER_API_KEY || !!openrouterSetting?.value;
+    const whisperConfigured =
+      !!process.env.OPENAI_API_KEY || !!whisperSetting?.value;
+
+    return res.json({
+      status: "ok",
+      dailyImageLimit,
+      models: {
+        defaultText: "gpt-4o-mini",
+        escalateWhen: {
+          hasImages: true,
+          longContextChars: 8000
+        },
+        escalateModel: "gpt-4o",
+        fallback: "deepseek/deepseek-v3.2"
+      },
+      providers: {
+        openaiConfigured,
+        openrouterConfigured,
+        whisperConfigured
+      }
+    });
+  } catch (e: any) {
+    return res.status(500).json({ status: "error", message: e.message });
+  }
+});
 
 // Rota padrão para o endpoint raiz
 routes.get("/", (req, res) =>
