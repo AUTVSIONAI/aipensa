@@ -19,9 +19,14 @@ const GetMessageRangeService = async ({
 }: Request): Promise<Message[]> => {
   let messages: any;
   messages = await sequelize.query(
-    `select * from "Messages" m where "companyId" = ${companyId} and "createdAt" between '${startDate} 00:00:00' and '${lastDate} 23:59:59'`,
+    `select * from "Messages" m where "companyId" = :companyId and "createdAt" between :startDate and :lastDate`,
     {
-      type: QueryTypes.SELECT
+      type: QueryTypes.SELECT,
+      replacements: {
+        companyId,
+        startDate: `${startDate} 00:00:00`,
+        lastDate: `${lastDate} 23:59:59`
+      }
     }
   );
 

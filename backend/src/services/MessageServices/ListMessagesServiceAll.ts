@@ -34,32 +34,45 @@ const ListMessagesServiceAll = async ({
   if (dateStart && dateEnd) {
     if (fromMe) {
       ticketsCounter = await sequelize.query(
-        `select COUNT(*) from "Messages" m where "companyId" = ${companyId} and "fromMe" = ${fromMe} and "createdAt"  between '${dateStart} 00:00:00' and '${dateEnd} 23:59:59'`,
+        `select COUNT(*) from "Messages" m where "companyId" = :companyId and "fromMe" = :fromMe and "createdAt" between :dateStart and :dateEnd`,
         {
-          type: QueryTypes.SELECT
+          type: QueryTypes.SELECT,
+          replacements: {
+            companyId,
+            fromMe,
+            dateStart: `${dateStart} 00:00:00`,
+            dateEnd: `${dateEnd} 23:59:59`
+          }
         }
       );
     } else {
       ticketsCounter = await sequelize.query(
-        `select COUNT(*) from "Messages" m where "companyId" = ${companyId} and "createdAt" between '${dateStart} 00:00:00' and '${dateEnd} 23:59:59'`,
+        `select COUNT(*) from "Messages" m where "companyId" = :companyId and "createdAt" between :dateStart and :dateEnd`,
         {
-          type: QueryTypes.SELECT
+          type: QueryTypes.SELECT,
+          replacements: {
+            companyId,
+            dateStart: `${dateStart} 00:00:00`,
+            dateEnd: `${dateEnd} 23:59:59`
+          }
         }
       );
     }
   } else {
     if (fromMe) {
       ticketsCounter = await sequelize.query(
-        `select COUNT(*) from "Messages" m where "companyId" = ${companyId} and "fromMe" = ${fromMe}`,
+        `select COUNT(*) from "Messages" m where "companyId" = :companyId and "fromMe" = :fromMe`,
         {
-          type: QueryTypes.SELECT
+          type: QueryTypes.SELECT,
+          replacements: { companyId, fromMe }
         }
       );
     } else {
       ticketsCounter = await sequelize.query(
-        `select COUNT(*) from "Messages" m where "companyId" = ${companyId}`,
+        `select COUNT(*) from "Messages" m where "companyId" = :companyId`,
         {
-          type: QueryTypes.SELECT
+          type: QueryTypes.SELECT,
+          replacements: { companyId }
         }
       );
     }

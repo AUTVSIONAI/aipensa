@@ -5,10 +5,11 @@ import Whatsapp from "../../models/Whatsapp";
 
 const ShowMessageService = async (messageId: string) => {
   const message = await sequelize.query(
-    `select * from "Messages" where id = '${messageId}'`,
+    `select * from "Messages" where id = :messageId`,
     {
       model: Message,
-      mapToModel: true
+      mapToModel: true,
+      replacements: { messageId }
     }
   );
   if (message.length > 0) {

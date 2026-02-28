@@ -510,7 +510,8 @@ async function handleVerifyCampaigns(job) {
       const promises = campaigns.map(async campaign => {
         try {
           await sequelize.query(
-            `UPDATE "Campaigns" SET status = 'EM_ANDAMENTO' WHERE id = ${campaign.id}`
+            `UPDATE "Campaigns" SET status = 'EM_ANDAMENTO' WHERE id = :id`,
+            { replacements: { id: campaign.id } }
           );
 
           const now = moment();
@@ -1979,17 +1980,32 @@ async function handleInvoiceCreate() {
             // Due date already exists, no action needed
             //logger.info(`Fatura Existente`);
           } else if (openInvoices.length > 0) {
-            const updateSql = `UPDATE "Invoices" SET "dueDate" = '${date}' WHERE "id" = ${openInvoices[0].id};`;
-            await sequelize.query(updateSql, { type: QueryTypes.UPDATE });
+            await sequelize.query(
+              `UPDATE "Invoices" SET "dueDate" = :date WHERE "id" = :id`,
+              { type: QueryTypes.UPDATE, replacements: { date, id: openInvoices[0].id } }
+            );
 
             logger.info(`Fatura Atualizada ID: ${openInvoices[0].id}`);
           } else {
-            const valuePlan = plan.amount.replace(",", ".");
-            const sql = `INSERT INTO "Invoices" ("companyId", "dueDate", detail, status, value, users, connections, queues, "updatedAt", "createdAt")
-            VALUES (${c.id}, '${date}', '${plan.name}', 'open', ${valuePlan}, ${plan.users}, ${plan.connections}, ${plan.queues}, '${timestamp}', '${timestamp}');`;
-            const invoiceInsert = await sequelize.query(sql, {
-              type: QueryTypes.INSERT
-            });
+            const valuePlan = parseFloat(plan.amount.replace(",", "."));
+            const invoiceInsert = await sequelize.query(
+              `INSERT INTO "Invoices" ("companyId", "dueDate", detail, status, value, users, connections, queues, "updatedAt", "createdAt")
+              VALUES (:companyId, :date, :detail, 'open', :value, :users, :connections, :queues, :updatedAt, :createdAt)`,
+              {
+                type: QueryTypes.INSERT,
+                replacements: {
+                  companyId: c.id,
+                  date,
+                  detail: plan.name,
+                  value: valuePlan,
+                  users: plan.users,
+                  connections: plan.connections,
+                  queues: plan.queues,
+                  updatedAt: timestamp,
+                  createdAt: timestamp
+                }
+              }
+            );
 
             logger.info(`Fatura Gerada para o cliente: ${c.id}`);
             // Rest of the code for sending email
