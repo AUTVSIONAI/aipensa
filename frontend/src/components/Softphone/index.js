@@ -4,16 +4,15 @@ import { WebSocketInterface } from 'jssip';
 
 
   const config = {
-    domain: '192.168.2.4', // sip-server@your-domain.io
-    uri: 'sip:202@192.168.2.4', // sip:sip-user@your-domain.io
-    password: 'btelefonia12', //  PASSWORD ,
-    ws_servers: 'wss://202@192.168.2.4:8089/ws', //ws server
-    sockets: new WebSocketInterface('wss://192.168.2.4:8089/ws'),
-    display_name: '202',//jssip Display Name
-    websocket_url: 'wss://192.168.2.4:443',
-    sip_outbound_ur: 'udp://192.168.2.4:5060',
-    debug: true // Turn debug messages on
-
+    domain: process.env.REACT_APP_SIP_DOMAIN || '',
+    uri: process.env.REACT_APP_SIP_URI || '',
+    password: process.env.REACT_APP_SIP_PASSWORD || '',
+    ws_servers: process.env.REACT_APP_SIP_WS_SERVERS || '',
+    sockets: new WebSocketInterface(process.env.REACT_APP_SIP_WS_URL || 'wss://localhost:8089/ws'),
+    display_name: process.env.REACT_APP_SIP_DISPLAY_NAME || '',
+    websocket_url: process.env.REACT_APP_SIP_WEBSOCKET_URL || '',
+    sip_outbound_ur: process.env.REACT_APP_SIP_OUTBOUND_URL || '',
+    debug: process.env.NODE_ENV !== 'production'
   };
 const setConnectOnStartToLocalStorage =(newValue)=>{
 // Handle save the auto connect value to local storage

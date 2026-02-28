@@ -5,7 +5,7 @@ import { handleFacebookFeed } from "../services/FacebookServices/FacebookFeedLis
 // import { handleMessage } from "../services/FacebookServices/facebookMessageListener";
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const VERIFY_TOKEN = "qualquer_string_secreta";
+  const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "";
 
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];

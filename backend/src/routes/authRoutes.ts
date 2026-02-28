@@ -9,7 +9,7 @@ const authRoutes = Router();
 
 authRoutes.post("/signup", authLimiter, UserController.store);
 authRoutes.post("/login", authLimiter, SessionController.store);
-authRoutes.post("/refresh_token", SessionController.update);
+authRoutes.post("/refresh_token", authLimiter, SessionController.update);
 authRoutes.delete("/logout", SessionController.remove);
 authRoutes.get("/me", isAuth, SessionController.me);
 

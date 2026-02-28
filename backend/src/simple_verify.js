@@ -5,19 +5,14 @@ const path = require('path');
 // Adjust path to .env file
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-console.log('DB Config:', {
-    user: process.env.DB_USER || 'zapcash_user',
-    host: 'localhost', // Force localhost for local check
-    database: process.env.DB_NAME || 'zapcash_db',
-    port: 5433 // Force 5433 from .env observation
-});
+console.log('Connecting to DB...');
 
 const client = new Client({
-  user: process.env.DB_USER || 'zapcash_user',
-  host: 'localhost',
-  database: process.env.DB_NAME || 'zapcash_db',
-  password: process.env.DB_PASS || 'zapcash_secure_password',
-  port: 5433,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASS,
+  port: parseInt(process.env.DB_PORT) || 5433,
 });
 
 (async () => {
