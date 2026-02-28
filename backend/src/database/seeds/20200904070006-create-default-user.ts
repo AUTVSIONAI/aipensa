@@ -3,6 +3,11 @@ import { hash } from "bcryptjs";
 
 module.exports = {
   up: async (queryInterface: QueryInterface) => {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) {
+      throw new Error("ADMIN_PASSWORD environment variable is required for seeding");
+    }
+
     return queryInterface.sequelize.transaction(async t => {
       const userExists = await queryInterface.rawSelect(
         "Users",
@@ -15,7 +20,7 @@ module.exports = {
       );
 
       if (!userExists) {
-        const passwordHash = await hash("adminpro", 8);
+        const passwordHash = await hash(adminPassword, 8);
         return queryInterface.bulkInsert(
           "Users",
           [
