@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import logger from "../utils/logger";
 import Whatsapp from "../models/Whatsapp";
 import { handleMessage } from "../services/FacebookServices/facebookMessageListener";
 import { handleFacebookFeed } from "../services/FacebookServices/FacebookFeedListener";
@@ -29,7 +30,7 @@ export const webHook = async (
 ): Promise<Response> => {
   try {
     const { body } = req;
-    console.log(30, "WebHookController", { body });
+    logger.info("WebHookController: webhook received");
 
     if (body.object === "page" || body.object === "instagram") {
       let channel: string;

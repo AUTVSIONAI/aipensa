@@ -384,7 +384,7 @@ const typebotListener = async ({
       }
     }
 
-    console.log(373, "typebotListener", JSON.stringify(dataStart, null, 4));
+    logger.info("typebotListener: processing typebot flow");
     if (
       body.toLocaleLowerCase().trim() ===
       typebotKeywordRestart.toLocaleLowerCase().trim()

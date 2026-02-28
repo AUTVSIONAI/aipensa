@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import axios from "axios";
 import fs from "fs";
+import logger from "../utils/logger";
 import Setting from "../models/Setting";
 import Whatsapp from "../models/Whatsapp";
 import Plan from "../models/Plan";
@@ -450,7 +451,7 @@ export const getFeed = async (
   try {
     const companyId = (req as any).user?.companyId;
 
-    console.log(`[getFeed] CompanyId: ${companyId}, Query:`, req.query);
+    logger.info(`[getFeed] CompanyId: ${companyId}`);
 
     if (!(await checkPlan(companyId, "useMarketing"))) {
       return res.status(403).json({

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Op } from "sequelize";
+import logger from "../../utils/logger";
 import Setting from "../../models/Setting";
 import Whatsapp from "../../models/Whatsapp";
 import Jimp from "jimp";
@@ -205,9 +206,9 @@ export const checkTokenPermissions = async (
 ): Promise<any> => {
   try {
     // Check token permissions first
-    console.log("[publishToFacebook] Checking token permissions...");
+    logger.info("[publishToFacebook] Checking token permissions...");
     const tokenInfo = await checkTokenPermissions(companyId);
-    console.log("[publishToFacebook] Token info:", tokenInfo);
+    logger.info("[publishToFacebook] Token permissions checked");
 
     const { accessToken } = await getFbConfig(companyId);
     if (!accessToken) throw new Error("ERR_NO_TOKEN: Facebook Token not found");

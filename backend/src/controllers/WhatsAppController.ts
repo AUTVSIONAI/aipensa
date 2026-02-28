@@ -4,6 +4,7 @@ import cacheLayer from "../libs/cache";
 import { removeWbot, restartWbot } from "../libs/wbot";
 import Whatsapp from "../models/Whatsapp";
 import AppError from "../errors/AppError";
+import logger from "../utils/logger";
 import DeleteBaileysService from "../services/BaileysServices/DeleteBaileysService";
 import ShowCompanyService from "../services/CompanyService/ShowCompanyService";
 import {
@@ -143,9 +144,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     });
   }
 
-  console.log("================ WhatsAppController ==============");
-  console.log(req.body);
-  console.log("==================================================");
+  logger.info("WhatsAppController: store request received");
 
   const { whatsapp, oldDefaultWhatsapp } = await CreateWhatsAppService({
     name,
@@ -231,7 +230,7 @@ export const storeFacebook = async (
 
     const { data } = await getPageProfile(facebookUserId, facebookUserToken);
 
-    console.log("StoreFacebook Data:", JSON.stringify(data, null, 2));
+    logger.info(`StoreFacebook: received ${data.length} page(s)`);
 
     if (data.length === 0) {
       return res.status(400).json({

@@ -195,7 +195,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   } = req.query as IndexQuery;
   const { id: userId, companyId } = req.user;
 
-  console.log("index", { companyId, userId, searchParam });
+  logger.info("ContactController: listing contacts");
 
   let tagsIds: number[] = [];
 

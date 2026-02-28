@@ -131,7 +131,6 @@ class User extends Model<User> {
   @BeforeCreate
   static hashPassword = async (instance: User): Promise<void> => {
     if (instance.password) {
-      console.log(`[User Model] Hashing password for user ${instance.email}`);
       instance.passwordHash = await hash(instance.password, 8);
     }
   };

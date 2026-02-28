@@ -1,4 +1,5 @@
 import { getIO } from "../../libs/socket";
+import logger from "../../utils/logger";
 import Message from "../../models/Message";
 
 interface MessageData {
@@ -48,9 +49,9 @@ const CreateMessageService = async (
   }
 
   try {
-    console.log("criando mensagem: ", data);
+    logger.info("CreateMessageService: creating message");
     const newMessage = await Message.create(data);
-    console.log("mensagem criada: ", newMessage);
+    logger.info(`CreateMessageService: message created id=${newMessage.id}`);
     await newMessage.reload({
       include: [
         {

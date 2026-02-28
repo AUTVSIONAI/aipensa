@@ -718,7 +718,7 @@ const executePlan = async (
       }
 
       const { media_type, caption, image_url, video_url } = plan.payload;
-      console.log(`[executePlan] WhatsApp Status Payload:`, plan.payload);
+      logger.info(`[executePlan] Processing WhatsApp Status media_type=${media_type}`);
 
       const wbot = getWbot(whatsappId);
       const statusJid = "status@broadcast";

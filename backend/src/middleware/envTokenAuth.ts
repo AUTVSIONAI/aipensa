@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import logger from "../utils/logger";
 
 import AppError from "../errors/AppError";
 
@@ -15,7 +16,7 @@ const envTokenAuth = (
     const { token: bodyToken } = req.body as TokenPayload;
     const { token: queryToken } = req.query as TokenPayload;
 
-    console.log("|========= | middleware | ========|", req.query);
+    logger.info("envTokenAuth: validating token");
 
     if (queryToken === process.env.ENV_TOKEN) {
       return next();
@@ -25,7 +26,7 @@ const envTokenAuth = (
       return next();
     }
   } catch (e) {
-    console.log(e);
+    logger.error("envTokenAuth: token validation error");
   }
 
   throw new AppError("Token inválido", 403);

@@ -394,7 +394,7 @@ export const getBodyMessage = (msg: proto.IWebMessageInfo): string | null => {
   try {
     let type = getTypeMessage(msg);
 
-    if (type === undefined) console.log(JSON.stringify(msg));
+    if (type === undefined) logger.warn("wbotMessageListener: unknown message type received");
 
     const types = {
       conversation: msg.message?.conversation,
@@ -4147,7 +4147,7 @@ export const handleMessageIntegration = async (
           if (error) {
             throw new Error(error);
           } else {
-            console.log(response.body);
+            logger.info("wbotMessageListener: external request completed successfully");
           }
         });
       } catch (error) {

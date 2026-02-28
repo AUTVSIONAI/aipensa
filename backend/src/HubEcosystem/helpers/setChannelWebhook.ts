@@ -1,4 +1,5 @@
 import Whatsapp from "../../models/Whatsapp";
+import logger from "../../utils/logger";
 import { IChannel } from "../controllers/ChannelController";
 import { showHubToken } from "./showHubToken";
 const {
@@ -31,11 +32,11 @@ export const setChannelWebhook = async (
   // .updateSubscription("subscription-identifier", subscription)
   await client
     .createSubscription(subscription)
-    .then((response: any) => {
-      console.log("Webhook subscribed:", response);
+    .then(() => {
+      logger.info("setChannelWebhook: webhook subscribed successfully");
     })
     .catch((error: any) => {
-      console.log("Error:", error);
+      logger.error(`setChannelWebhook: subscription error - ${error.message || error}`);
     });
 
   await Whatsapp.update(

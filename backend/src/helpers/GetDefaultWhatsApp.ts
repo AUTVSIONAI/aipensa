@@ -1,4 +1,5 @@
 import AppError from "../errors/AppError";
+import logger from "../utils/logger";
 import Whatsapp from "../models/Whatsapp";
 import GetDefaultWhatsAppByUser from "./GetDefaultWhatsAppByUser";
 
@@ -10,7 +11,7 @@ const GetDefaultWhatsApp = async (
   let connection: Whatsapp;
   let defaultWhatsapp = null;
 
-  console.log({ whatsappId, companyId, userId });
+  logger.info("GetDefaultWhatsApp: looking up default connection");
 
   if (whatsappId) {
     defaultWhatsapp = await Whatsapp.findOne({

@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
+import logger from "../../utils/logger";
 
 import Queue from "../../models/Queue";
 import Whatsapp from "../../models/Whatsapp";
 import HubMessageListener from "../services/HubMessageListener";
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  console.log("aaa", req.body, req.params);
+  logger.info("HubEcosystem webhook index called");
 
   return res.send(req.query["hub.challenge"]);
 };
