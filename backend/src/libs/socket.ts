@@ -1,8 +1,11 @@
 import { Server as SocketIO } from "socket.io";
 import { Server } from "http";
 import { verify } from "jsonwebtoken";
+import { createAdapter } from "@socket.io/redis-adapter";
+import Redis from "ioredis";
 import AppError from "../errors/AppError";
 import authConfig from "../config/auth";
+import { REDIS_URI_CONNECTION } from "../config/redis";
 import User from "../models/User";
 import logger from "../utils/logger";
 
@@ -33,6 +36,17 @@ export const initIO = (httpServer: Server): SocketIO => {
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     }
   });
+
+  if (REDIS_URI_CONNECTION) {
+    try {
+      const pubClient = new Redis(REDIS_URI_CONNECTION);
+      const subClient = pubClient.duplicate();
+      io.adapter(createAdapter(pubClient, subClient));
+      logger.info("Socket.IO using Redis adapter for horizontal scaling");
+    } catch (err) {
+      logger.warn("Socket.IO Redis adapter failed, using default adapter");
+    }
+  }
 
   const workspaces = io.of(/^\/\w+$/);
   workspaces.on("connection", socket => {
