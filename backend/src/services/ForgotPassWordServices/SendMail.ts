@@ -239,16 +239,18 @@ a[x-apple-data-detectors] {
   }
 };
 const filterEmail = async (email: string) => {
-  const sql = `SELECT * FROM "Users"  WHERE email ='${email}'`;
+  const sql = `SELECT * FROM "Users" WHERE email = :email`;
   const result = await database.query(sql, {
-    type: sequelize.QueryTypes.SELECT
+    type: sequelize.QueryTypes.SELECT,
+    replacements: { email }
   });
   return { hasResult: result.length > 0, data: [result] };
 };
 const insertToken = async (email: string, tokenSenha: string) => {
-  const sqls = `UPDATE "Users" SET "resetPassword"= '${tokenSenha}' WHERE email ='${email}'`;
+  const sqls = `UPDATE "Users" SET "resetPassword" = :tokenSenha WHERE email = :email`;
   const results = await database.query(sqls, {
-    type: sequelize.QueryTypes.UPDATE
+    type: sequelize.QueryTypes.UPDATE,
+    replacements: { email, tokenSenha }
   });
   return { hasResults: results.length > 0, datas: results };
 };

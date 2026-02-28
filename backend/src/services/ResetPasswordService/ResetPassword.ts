@@ -1,6 +1,8 @@
 import sequelize from "sequelize";
 import database from "../../database";
 import { hash } from "bcryptjs";
+import logger from "../../utils/logger";
+
 const ResetPassword = async (
   email: string,
   token: string,
@@ -22,30 +24,35 @@ const ResetPassword = async (
         return { status: 404, message: "Token não encontrado" };
       }
     } catch (err) {
-      console.log(err);
+      logger.error(err);
     }
   }
 };
 export default ResetPassword;
+
 const filterUser = async (email: string, token: string) => {
-  const sql = `SELECT * FROM "Users"  WHERE email = '${email}' AND "resetPassword" != ''`;
+  const sql = `SELECT * FROM "Users" WHERE email = :email AND "resetPassword" != ''`;
   const result = await database.query(sql, {
-    type: sequelize.QueryTypes.SELECT
+    type: sequelize.QueryTypes.SELECT,
+    replacements: { email }
   });
   return { hasResult: result.length > 0, data: result };
 };
+
 const insertHasPassword = async (
   email: string,
   token: string,
   convertPassword: string
 ) => {
-  const sqlValida = `SELECT * FROM "Users"  WHERE email = '${email}' AND "resetPassword" = '${token}'`;
+  const sqlValida = `SELECT * FROM "Users" WHERE email = :email AND "resetPassword" = :token`;
   const resultado = await database.query(sqlValida, {
-    type: sequelize.QueryTypes.SELECT
+    type: sequelize.QueryTypes.SELECT,
+    replacements: { email, token }
   });
-  const sqls = `UPDATE  "Users"  SET "passwordHash"= '${convertPassword}' , "resetPassword" = '' WHERE email= '${email}' AND "resetPassword" = '${token}'`;
+  const sqls = `UPDATE "Users" SET "passwordHash" = :convertPassword, "resetPassword" = '' WHERE email = :email AND "resetPassword" = :token`;
   const results = await database.query(sqls, {
-    type: sequelize.QueryTypes.UPDATE
+    type: sequelize.QueryTypes.UPDATE,
+    replacements: { convertPassword, email, token }
   });
   return { hasResults: results.length > 0, datas: resultado };
 };

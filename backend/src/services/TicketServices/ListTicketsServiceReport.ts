@@ -32,12 +32,17 @@ export default async function ListTicketsServiceReport(
   const offset = (page - 1) * pageSize;
 
   const onlyRated = params.onlyRated === "true" ? true : false;
+
+  const replacements: Record<string, any> = {
+    companyId: Number(companyId),
+    pageSize,
+    offset
+  };
+
   let query = "";
-  console.log(params);
   if (onlyRated) {
     query = `
-
-  select 
+  select
 	  t.id,
 	  w."name" as "whatsappName",
     c."name" as "contactName",
@@ -56,7 +61,7 @@ export default async function ListTicketsServiceReport(
     TO_CHAR(tt."createdAt", 'DD/MM/YYYY HH24:MI') as "createdAt",
     TO_CHAR(tt."finishedAt", 'DD/MM/YYYY HH24:MI') as "closedAt",
     coalesce((
-      (date_part('day', age(coalesce(tt."ratingAt", tt."finishedAt") , tt."createdAt"))) || ' d, ' || 
+      (date_part('day', age(coalesce(tt."ratingAt", tt."finishedAt") , tt."createdAt"))) || ' d, ' ||
       (date_part('hour', age(coalesce(tt."ratingAt", tt."finishedAt"), tt."createdAt"))) || ' hrs e ' ||
       (date_part('minutes', age(coalesce(tt."ratingAt", tt."finishedAt"), tt."createdAt"))) || ' m'
     ), '0') "supportTime",
@@ -65,24 +70,24 @@ export default async function ListTicketsServiceReport(
   LEFT JOIN (
         SELECT DISTINCT ON ("ticketId") *
         FROM "TicketTraking"
-        WHERE "companyId" = ${companyId}
+        WHERE "companyId" = :companyId
         ORDER BY "ticketId", "id" DESC
     ) tt ON t.id = tt."ticketId"
 	inner join "UserRatings" ur on
    		t.id = ur."ticketId"
        and ur.rate > 0
-    left join "Contacts" c on 
-      t."contactId" = c.id 
-    left join "Whatsapps" w on 
-      t."whatsappId" = w.id 
+    left join "Contacts" c on
+      t."contactId" = c.id
+    left join "Whatsapps" w on
+      t."whatsappId" = w.id
     left join "Users" u on
-      t."userId" = u.id 
+      t."userId" = u.id
     left join "Queues" q on
-      t."queueId" = q.id 
+      t."queueId" = q.id
   -- filterPeriod`;
   } else {
     query = `
-  select 
+  select
 	  t.id,
 	  w."name" as "whatsappName",
     c."name" as "contactName",
@@ -101,7 +106,7 @@ export default async function ListTicketsServiceReport(
     TO_CHAR(tt."createdAt", 'DD/MM/YYYY HH24:MI') as "createdAt",
     TO_CHAR(tt."finishedAt", 'DD/MM/YYYY HH24:MI') as "closedAt",
     coalesce((
-      (date_part('day', age(coalesce(tt."ratingAt", tt."finishedAt") , tt."createdAt"))) || ' d, ' || 
+      (date_part('day', age(coalesce(tt."ratingAt", tt."finishedAt") , tt."createdAt"))) || ' d, ' ||
       (date_part('hour', age(coalesce(tt."ratingAt", tt."finishedAt"), tt."createdAt"))) || ' hrs e ' ||
       (date_part('minutes', age(coalesce(tt."ratingAt", tt."finishedAt"), tt."createdAt"))) || ' m'
     ), '0') "supportTime",
@@ -110,48 +115,70 @@ export default async function ListTicketsServiceReport(
   LEFT JOIN (
         SELECT DISTINCT ON ("ticketId") *
         FROM "TicketTraking"
-        WHERE "companyId" = ${companyId}
+        WHERE "companyId" = :companyId
         ORDER BY "ticketId", "id" DESC
     ) tt ON t.id = tt."ticketId"
 	left join "UserRatings" ur on
    		t.id = ur."ticketId"
-    left join "Contacts" c on 
-      t."contactId" = c.id 
-    left join "Whatsapps" w on 
-      t."whatsappId" = w.id 
+    left join "Contacts" c on
+      t."contactId" = c.id
+    left join "Whatsapps" w on
+      t."whatsappId" = w.id
     left join "Users" u on
-      t."userId" = u.id 
+      t."userId" = u.id
     left join "Queues" q on
-      t."queueId" = q.id 
+      t."queueId" = q.id
   -- filterPeriod`;
   }
-  let where = `where t."companyId" = ${companyId}`;
+
+  let where = `where t."companyId" = :companyId`;
 
   if (_.has(params, "dateFrom")) {
-    where += ` and t."createdAt" >= '${params.dateFrom} 00:00:00'`;
+    replacements.dateFrom = `${params.dateFrom} 00:00:00`;
+    where += ` and t."createdAt" >= :dateFrom`;
   }
 
   if (_.has(params, "dateTo")) {
-    where += ` and t."createdAt" <= '${params.dateTo} 23:59:59'`;
+    replacements.dateTo = `${params.dateTo} 23:59:59`;
+    where += ` and t."createdAt" <= :dateTo`;
   }
 
   if (params.whatsappId !== undefined && params.whatsappId.length > 0) {
-    where += ` and t."whatsappId" in (${params.whatsappId})`;
+    const whatsappIds = params.whatsappId.map(Number).filter(n => !isNaN(n));
+    if (whatsappIds.length > 0) {
+      replacements.whatsappIds = whatsappIds;
+      where += ` and t."whatsappId" in (:whatsappIds)`;
+    }
   }
+
   if (params.users.length > 0) {
-    where += ` and t."userId" in (${params.users})`;
+    const userIds = params.users.map(Number).filter(n => !isNaN(n));
+    if (userIds.length > 0) {
+      replacements.userIds = userIds;
+      where += ` and t."userId" in (:userIds)`;
+    }
   }
 
   if (params.queueIds.length > 0) {
-    where += ` and COALESCE(t."queueId",0) in (${params.queueIds})`;
+    const queueIds = params.queueIds.map(Number).filter(n => !isNaN(n));
+    if (queueIds.length > 0) {
+      replacements.queueIds = queueIds;
+      where += ` and COALESCE(t."queueId",0) in (:queueIds)`;
+    }
   }
 
   if (params.status.length > 0) {
-    where += ` and t."status" in ('${params.status.join("','")}')`;
+    const allowedStatuses = ["open", "closed", "pending", "group", "nps", "lgpd"];
+    const safeStatuses = params.status.filter(s => allowedStatuses.includes(s));
+    if (safeStatuses.length > 0) {
+      replacements.statuses = safeStatuses;
+      where += ` and t."status" in (:statuses)`;
+    }
   }
 
   if (params.contactId !== undefined && params.contactId !== "") {
-    where += ` and t."contactId" in (${params.contactId})`;
+    replacements.contactId = Number(params.contactId);
+    where += ` and t."contactId" = :contactId`;
   }
 
   if (params.onlyRated === "true") {
@@ -165,14 +192,16 @@ export default async function ListTicketsServiceReport(
     ${where}  `;
 
   const totalTicketsResult = await sequelize.query(totalTicketsQuery, {
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
+    replacements
   });
   const totalTickets = totalTicketsResult[0];
 
-  const paginatedQuery = `${finalQuery} ORDER BY t."createdAt" DESC LIMIT ${pageSize} OFFSET ${offset}`;
+  const paginatedQuery = `${finalQuery} ORDER BY t."createdAt" DESC LIMIT :pageSize OFFSET :offset`;
 
   const responseData: any[] = await sequelize.query(paginatedQuery, {
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
+    replacements
   });
 
   return { tickets: responseData, totalTickets };
