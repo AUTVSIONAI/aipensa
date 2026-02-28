@@ -1,5 +1,8 @@
 import { Router } from "express";
 import Setting from "../models/Setting";
+import sequelize from "../database";
+import cacheLayer from "../libs/cache";
+import logger from "../utils/logger";
 
 import userRoutes from "./userRoutes";
 import authRoutes from "./authRoutes";
@@ -114,8 +117,33 @@ routes.use(marketingRoutes);
 routes.get("/webhooks/instagram", WebHooksController.index);
 routes.post("/webhooks/instagram", WebHooksController.webHook);
 
-// Healthcheck
-routes.get("/health", (req, res) => res.json({ ok: true }));
+// Healthcheck with DB and Redis verification
+routes.get("/health", async (req, res) => {
+  const checks: Record<string, string> = {};
+  let healthy = true;
+
+  try {
+    await sequelize.authenticate();
+    checks.database = "ok";
+  } catch (err) {
+    checks.database = "error";
+    healthy = false;
+    logger.error("Health check: database failed", err);
+  }
+
+  try {
+    const redis = cacheLayer.getRedisInstance();
+    await redis.ping();
+    checks.redis = "ok";
+  } catch (err) {
+    checks.redis = "error";
+    healthy = false;
+    logger.error("Health check: redis failed", err);
+  }
+
+  const status = healthy ? 200 : 503;
+  return res.status(status).json({ ok: healthy, checks });
+});
 
 // Config/health info (sem expor segredos)
 routes.get("/health/config", async (req, res) => {
