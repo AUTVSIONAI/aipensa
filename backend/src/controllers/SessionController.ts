@@ -25,40 +25,6 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
         .status(400)
         .json({ error: "E-mail e senha são obrigatórios." });
     }
-    if (process.env.DEV_FAKE_AUTH === "true") {
-      const serializedUser: any = {
-        id: 1,
-        name: "Admin",
-        email: email || "admin@admin",
-        companyId: 1,
-        company: {
-          id: 1,
-          name: "Empresa Admin - Não Deletar!",
-          dueDate: "2099-12-31T00:00:00.000Z"
-        },
-        profile: "admin",
-        super: true,
-        queues: [],
-        token: "dev"
-      };
-      const token = createAccessToken(serializedUser);
-      const refreshToken = createRefreshToken(serializedUser);
-      SendRefreshToken(res, refreshToken);
-      const io = getIO();
-      io.of(serializedUser.companyId.toString()).emit(
-        `company-${serializedUser.companyId}-auth`,
-        {
-          action: "update",
-          user: {
-            id: serializedUser.id,
-            email: serializedUser.email,
-            companyId: serializedUser.companyId,
-            token: serializedUser.token
-          }
-        }
-      );
-      return res.status(200).json({ token, user: serializedUser });
-    }
     const { token, serializedUser, refreshToken } = await AuthUserService({
       email,
       password
