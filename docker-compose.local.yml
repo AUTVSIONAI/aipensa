@@ -33,7 +33,7 @@ services:
       - db
       - redis
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       DB_HOST: db
       DB_USER: zapcash_user
       DB_PASS: zapcash_secure_password
@@ -43,7 +43,7 @@ services:
       JWT_REFRESH_SECRET: local_refresh_secret
       REDIS_URI: redis://:zapcash_redis_pass@redis:6379
       REDIS_OPT_LIMITER_MAX: 1
-      BACKEND_URL: http://localhost:8081
+      BACKEND_URL: http://localhost:8082
       FRONTEND_URL: http://localhost:3001
       VERIFY_TOKEN: ${VERIFY_TOKEN}
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
@@ -51,7 +51,7 @@ services:
       PROXY_PORT: 8080
       PORT: 8080
     ports:
-      - "8081:8080"
+      - "8082:8080"
     volumes:
       - ./backend/public:/app/public
     networks:
@@ -61,7 +61,7 @@ services:
     build:
       context: ./frontend
       args:
-        REACT_APP_BACKEND_URL: http://localhost:8081
+        REACT_APP_BACKEND_URL: http://localhost:8082
         REACT_APP_FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
     restart: always
     depends_on:
