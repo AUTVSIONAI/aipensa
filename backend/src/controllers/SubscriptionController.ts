@@ -1,51 +1,28 @@
 import { Request, Response } from "express";
 import * as Yup from "yup";
-import Gerencianet from "gn-api-sdk-typescript";
 import AppError from "../errors/AppError";
 
-import options from "../config/Gn";
 import Company from "../models/Company";
 import Invoices from "../models/Invoices";
 import { getIO } from "../libs/socket";
 import Setting from "../models/Setting";
-import UpdateUserService from "../services/UserServices/UpdateUserService";
 import Stripe from "stripe";
-var axios = require("axios");
 import Plan from "../models/Plan";
 import ListWhatsAppsService from "../services/WhatsappService/ListWhatsAppsService";
 import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
 import * as Sentry from "@sentry/node";
-
-// const app = express();
+import logger from "../utils/logger";
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const gerencianet = new Gerencianet(options);
-
-  return res.json(gerencianet.getSubscriptions());
+  throw new AppError("Not implemented", 501);
 };
 
 export const createSubscription = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  console.log("--- CreateSubscription Request ---");
-  console.log("Body:", req.body);
-  console.log("User:", req.user);
-
-  //let mercadopagoURL;
   let stripeURL;
-  let pix;
-  let qrcode;
-  let asaasURL;
-  // let key_STRIPE_PRIVATE = process.env.STRIPE_PRIVATE;
-  // let key_MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
-  // let key_GERENCIANET_PIX_KEY = process.env.GERENCIANET_PIX_KEY;
-  // let key_ASAAS_TOKEN = process.env.ASAAS_TOKEN;
-
   let key_STRIPE_PRIVATE = null;
-  let key_MP_ACCESS_TOKEN = null;
-  let key_GERENCIANET_PIX_KEY = null;
-  let key_ASAAS_TOKEN = null;
 
   const buscacompanyId = req.user?.companyId ?? 1;
 
@@ -61,34 +38,16 @@ export const createSubscription = async (
   };
 
   try {
-    key_ASAAS_TOKEN =
-      (await getSettingValue("asaastoken", buscacompanyId)) ||
-      process.env.ASAAS_TOKEN ||
-      null;
-    key_MP_ACCESS_TOKEN =
-      (await getSettingValue("mpaccesstoken", buscacompanyId)) ||
-      process.env.MP_ACCESS_TOKEN ||
-      null;
     key_STRIPE_PRIVATE =
       (await getSettingValue("stripeprivatekey", buscacompanyId)) ||
       process.env.STRIPE_PRIVATE ||
       process.env.STRIPE_SECRET_KEY ||
       process.env.STRIPE_API_KEY ||
       null;
-    key_GERENCIANET_PIX_KEY =
-      (await getSettingValue("efichavepix", buscacompanyId)) ||
-      process.env.GERENCIANET_PIX_KEY ||
-      null;
   } catch (error) {
-    console.error("Error retrieving settings:", error);
+    logger.error("Error retrieving settings:", error);
   }
 
-  console.log("Keys loaded:");
-  console.log("Stripe:", key_STRIPE_PRIVATE ? "Loaded" : "Missing");
-  console.log("Asaas:", key_ASAAS_TOKEN ? "Loaded" : "Missing");
-  console.log("MP:", key_MP_ACCESS_TOKEN ? "Loaded" : "Missing");
-
-  const gerencianet = new Gerencianet(options);
   const { companyId } = req.user;
 
   const schema = Yup.object().shape({
@@ -99,7 +58,6 @@ export const createSubscription = async (
 
   const isValid = await schema.isValid(req.body);
   if (!isValid) {
-    console.log("Validation Failed:", req.body);
     throw new AppError("Dados Incorretos - Contate o Suporte!", 400);
   }
 
@@ -118,105 +76,18 @@ export const createSubscription = async (
   } = req.body;
 
   let valorNumber: number;
-  // Fix for price format (e.g. "297.00" becoming 29700)
   if (typeof price === "number") {
     valorNumber = price;
   } else {
     const priceStr = String(price);
-    // If it looks like US format (dot but no comma), parse as float
     if (priceStr.includes(".") && !priceStr.includes(",")) {
       valorNumber = parseFloat(priceStr);
     } else {
-      // Fallback to BR format (dot as thousand separator)
       valorNumber = Number(priceStr.replace(/\./g, "").replace(",", "."));
     }
   }
 
-  const valor = Number(
-    valorNumber
-      .toLocaleString("pt-br", { minimumFractionDigits: 2 })
-      .replace(",", ".")
-  );
   const valorext = valorNumber;
-
-  async function createMercadoPagoPreference() {
-    if (key_MP_ACCESS_TOKEN) {
-      const mercadopago = require("mercadopago");
-      mercadopago.configure({
-        access_token: key_MP_ACCESS_TOKEN
-      });
-
-      let preference = {
-        external_reference: String(invoiceId),
-        notification_url: String(process.env.MP_NOTIFICATION_URL),
-        items: [
-          {
-            title: `#Fatura:${invoiceId}`,
-            unit_price: valor,
-            quantity: 1
-          }
-        ]
-      };
-
-      try {
-        const response = await mercadopago.preferences.create(preference);
-        //console.log("mercres", response);
-        let mercadopagoURLb = response.body.init_point;
-        //console.log("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        //console.log(mercadopagoURLb);
-        return mercadopagoURLb; // Retorna o valor para uso externo
-      } catch (error) {
-        console.log(error);
-        return null; // Em caso de erro, retorna null ou um valor padrão adequado
-      }
-    }
-  }
-
-  const mercadopagoURL = await createMercadoPagoPreference();
-
-  console.log(mercadopagoURL);
-
-  if (key_ASAAS_TOKEN && valor > 10) {
-    var optionsGetAsaas = {
-      method: "POST",
-      url: `https://api.asaas.com/v3/paymentLinks`,
-      headers: {
-        "Content-Type": "application/json",
-        access_token: key_ASAAS_TOKEN
-      },
-      data: {
-        name: `#Fatura:${invoiceId}`,
-        description: `#Fatura:${invoiceId}`,
-        //"endDate": "2021-02-05",
-        value: price
-          .toLocaleString("pt-br", { minimumFractionDigits: 2 })
-          .replace(",", "."),
-        //"value": "50",
-        billingType: "UNDEFINED",
-        chargeType: "DETACHED",
-        dueDateLimitDays: 1,
-        subscriptionCycle: null,
-        maxInstallmentCount: 1,
-        notificationEnabled: true
-      }
-    };
-
-    while (asaasURL === undefined) {
-      try {
-        const response = await axios.request(optionsGetAsaas);
-        asaasURL = response.data.url;
-
-        console.log("asaasURL:", asaasURL);
-
-        // Handle the response here
-        // You can proceed with the rest of your code that depends on asaasURL
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    }
-  }
-
-  //console.log(asaasURL);
 
   if (key_STRIPE_PRIVATE) {
     try {
@@ -224,17 +95,11 @@ export const createSubscription = async (
         apiVersion: "2022-11-15"
       });
 
-      console.log(
-        `Creating Stripe session for Invoice #${invoiceId}, Amount: ${valorext}`
-      );
-
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
       const successUrl =
         process.env.STRIPE_OK_URL || `${frontendUrl}/financeiro`;
       const cancelUrl =
         process.env.STRIPE_CANCEL_URL || `${frontendUrl}/financeiro`;
-
-      console.log(`Stripe URLs - Success: ${successUrl}, Cancel: ${cancelUrl}`);
 
       const sessionStripe = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
@@ -255,45 +120,15 @@ export const createSubscription = async (
         cancel_url: cancelUrl
       });
 
-      console.log("Stripe Session Created:", sessionStripe.id);
-
       const invoicesX = await Invoices.findByPk(invoiceId);
-      const invoiX = await invoicesX.update({
+      await invoicesX.update({
         id: invoiceId,
         stripe_id: sessionStripe.id
       });
 
-      //console.log(sessionStripe);
-
       stripeURL = sessionStripe.url;
     } catch (error) {
-      console.error("Error creating Stripe session:", error);
-    }
-  }
-
-  if (key_GERENCIANET_PIX_KEY) {
-    const body = {
-      calendario: {
-        expiracao: 3600
-      },
-      valor: {
-        original: price
-          .toLocaleString("pt-br", { minimumFractionDigits: 2 })
-          .replace(",", ".")
-      },
-      chave: key_GERENCIANET_PIX_KEY,
-      solicitacaoPagador: `#Fatura:${invoiceId}`
-    };
-
-    try {
-      pix = await gerencianet.pixCreateImmediateCharge(null, body);
-
-      qrcode = await gerencianet.pixGenerateQRCode({
-        id: pix.loc.id
-      });
-    } catch (error) {
-      console.log(error);
-      //throw new AppError("Validation fails", 400);
+      logger.error("Error creating Stripe session:", error);
     }
   }
 
@@ -304,311 +139,110 @@ export const createSubscription = async (
   }
 
   return res.json({
-    ...pix,
     valorext,
-    qrcode,
-    stripeURL,
-    mercadopagoURL,
-    asaasURL
+    stripeURL
   });
-};
-
-export const createWebhook = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const schema = Yup.object().shape({
-    chave: Yup.string().required(),
-    url: Yup.string().required()
-  });
-
-  console.log(req.body);
-
-  try {
-    await schema.validate(req.body, { abortEarly: false });
-  } catch (err) {
-    if (err instanceof Yup.ValidationError) {
-      const errors = err.errors.join("\n");
-      throw new AppError(`Validation error(s):\n${errors}`, 400);
-    } else {
-      throw err;
-    }
-  }
-
-  const { chave, url } = req.body;
-
-  const body = {
-    webhookUrl: url
-  };
-
-  const params = {
-    chave
-  };
-
-  try {
-    const gerencianet = new Gerencianet(options);
-    const create = await gerencianet.pixConfigWebhook(params, body);
-    return res.json(create);
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-export const webhook = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const { type } = req.params;
-  const { evento } = req.body;
-
-  //console.log(req.body);
-  //console.log(req.params);
-
-  if (evento === "teste_webhook") {
-    return res.json({ ok: true });
-  }
-  if (req.body.pix) {
-    const gerencianet = new Gerencianet(options);
-    req.body.pix.forEach(async (pix: any) => {
-      const detahe = await gerencianet.pixDetailCharge({
-        txid: pix.txid
-      });
-
-      if (detahe.status === "CONCLUIDA") {
-        const { solicitacaoPagador } = detahe;
-        const invoiceID = solicitacaoPagador.replace("#Fatura:", "");
-        const invoices = await Invoices.findByPk(invoiceID);
-        const companyId = invoices.companyId;
-        const company = await Company.findByPk(companyId);
-
-        const expiresAt = new Date(company.dueDate);
-        expiresAt.setDate(expiresAt.getDate() + 30);
-        const date = expiresAt.toISOString().split("T")[0];
-
-        if (company) {
-          await company.update({
-            dueDate: date
-          });
-          const invoi = await invoices.update({
-            id: invoiceID,
-            txid: pix.txid,
-            status: "paid"
-          });
-          await company.reload();
-          const io = getIO();
-          const companyUpdate = await Company.findOne({
-            where: {
-              id: companyId
-            }
-          });
-
-          try {
-            const companyId = company.id;
-            const whatsapps = await ListWhatsAppsService({
-              companyId: companyId
-            });
-            if (whatsapps.length > 0) {
-              whatsapps.forEach(whatsapp => {
-                StartWhatsAppSession(whatsapp, companyId);
-              });
-            }
-          } catch (e) {
-            Sentry.captureException(e);
-          }
-
-          io.emit(`company-${companyId}-payment`, {
-            action: detahe.status,
-            company: companyUpdate
-          });
-        }
-      }
-    });
-  }
-
-  return res.json({ ok: true });
 };
 
 export const stripewebhook = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { type } = req.params;
-  const { evento } = req.body;
+  const sig = req.headers["stripe-signature"];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  //console.log(req.body);
-  //console.log(req.params);
+  if (!webhookSecret) {
+    logger.error("STRIPE_WEBHOOK_SECRET not configured");
+    return res.status(500).json({ error: "Webhook not configured" });
+  }
 
-  if (req.body.data.object.id) {
-    if (req.body.type === "checkout.session.completed") {
-      const stripe_id = req.body.data.object.id;
+  if (!sig) {
+    return res.status(400).json({ error: "Missing stripe-signature header" });
+  }
 
-      const invoices = await Invoices.findOne({
-        where: { stripe_id: stripe_id }
-      });
-      const invoiceID = invoices.id;
+  let key_STRIPE_PRIVATE =
+    process.env.STRIPE_PRIVATE ||
+    process.env.STRIPE_SECRET_KEY ||
+    process.env.STRIPE_API_KEY ||
+    null;
 
-      const companyId = invoices.companyId;
-      const company = await Company.findByPk(companyId);
+  if (!key_STRIPE_PRIVATE) {
+    logger.error("Stripe private key not configured");
+    return res.status(500).json({ error: "Payment not configured" });
+  }
 
-      let newDueDate = new Date(company.dueDate);
-      const now = new Date();
-      if (newDueDate < now) {
-        newDueDate = now;
-      }
-      newDueDate.setDate(newDueDate.getDate() + 30);
-      const date = newDueDate.toISOString().split("T")[0];
+  const stripe = new Stripe(key_STRIPE_PRIVATE, {
+    apiVersion: "2022-11-15"
+  });
 
-      if (company) {
-        await company.update({
-          dueDate: date
-        });
-        const invoi = await invoices.update({
-          id: invoiceID,
-          status: "paid"
-        });
-        await company.reload();
-        const io = getIO();
-        const companyUpdate = await Company.findOne({
-          where: {
-            id: companyId
-          }
-        });
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err: any) {
+    logger.error(`Stripe webhook signature verification failed: ${err.message}`);
+    return res.status(400).json({ error: "Invalid signature" });
+  }
 
-        try {
-          const companyId = company.id;
-          const whatsapps = await ListWhatsAppsService({
-            companyId: companyId
-          });
-          if (whatsapps.length > 0) {
-            whatsapps.forEach(whatsapp => {
-              StartWhatsAppSession(whatsapp, companyId);
-            });
-          }
-        } catch (e) {
-          Sentry.captureException(e);
-        }
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const stripe_id = session.id;
 
-        io.emit(`company-${companyId}-payment`, {
-          action: "CONCLUIDA",
-          company: companyUpdate
-        });
-      }
+    const invoices = await Invoices.findOne({
+      where: { stripe_id }
+    });
+
+    if (!invoices) {
+      logger.warn(`Stripe webhook: no invoice found for session ${stripe_id}`);
+      return res.json({ ok: true });
     }
+
+    const invoiceID = invoices.id;
+    const companyId = invoices.companyId;
+    const company = await Company.findByPk(companyId);
+
+    if (!company) {
+      logger.warn(`Stripe webhook: no company found for id ${companyId}`);
+      return res.json({ ok: true });
+    }
+
+    let newDueDate = new Date(company.dueDate);
+    const now = new Date();
+    if (newDueDate < now) {
+      newDueDate = now;
+    }
+    newDueDate.setDate(newDueDate.getDate() + 30);
+    const date = newDueDate.toISOString().split("T")[0];
+
+    await company.update({ dueDate: date });
+    await invoices.update({
+      id: invoiceID,
+      status: "paid"
+    });
+    await company.reload();
+
+    const io = getIO();
+    const companyUpdate = await Company.findOne({
+      where: { id: companyId }
+    });
+
+    try {
+      const whatsapps = await ListWhatsAppsService({
+        companyId
+      });
+      if (whatsapps.length > 0) {
+        whatsapps.forEach(whatsapp => {
+          StartWhatsAppSession(whatsapp, companyId);
+        });
+      }
+    } catch (e) {
+      Sentry.captureException(e);
+    }
+
+    io.emit(`company-${companyId}-payment`, {
+      action: "CONCLUIDA",
+      company: companyUpdate
+    });
   }
 
   return res.json({ ok: true });
-};
-
-export const mercadopagowebhook = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  //console.log(req.body);
-  //console.log(req.params);
-
-  let key_MP_ACCESS_TOKEN = null;
-
-  try {
-    const buscacompanyId = 1;
-
-    const getmptoken = await Setting.findOne({
-      where: { companyId: buscacompanyId, key: "mpaccesstoken" }
-    });
-    key_MP_ACCESS_TOKEN = getmptoken?.value;
-  } catch (error) {
-    console.error("Error retrieving settings:", error);
-  }
-
-  const mercadopago = require("mercadopago");
-  mercadopago.configure({
-    access_token: key_MP_ACCESS_TOKEN
-  });
-
-  //console.log("*********************************");
-  //console.log(req.body.id);
-  //console.log("*********************************");
-
-  if (req.body.action === "payment.updated") {
-    try {
-      const payment = await mercadopago.payment.get(req.body.data.id);
-
-      console.log("DETALHES DO PAGAMENTO:", payment.body);
-      console.log("ID DA FATURA:", payment.body.external_reference);
-
-      if (!payment.body.transaction_details.transaction_id) {
-        console.log("SEM PAGAMENTO:", payment.body.external_reference);
-        return;
-      }
-
-      const invoices = await Invoices.findOne({
-        where: { id: payment.body.external_reference }
-      });
-      const invoiceID = invoices.id;
-
-      if (invoices && invoices.status === "paid") {
-        console.log("FATURA JÁ PAGA");
-        return;
-      }
-
-      const companyId = invoices.companyId;
-      const company = await Company.findByPk(companyId);
-
-      let newDueDate = new Date(company.dueDate);
-      const now = new Date();
-      if (newDueDate < now) {
-        newDueDate = now;
-      }
-      newDueDate.setDate(newDueDate.getDate() + 30);
-      const date = newDueDate.toISOString().split("T")[0];
-
-      if (company) {
-        await company.update({
-          dueDate: date
-        });
-        const invoi = await invoices.update({
-          id: invoiceID,
-          txid: payment.body.transaction_details.transaction_id,
-          status: "paid"
-        });
-        await company.reload();
-        const io = getIO();
-        const companyUpdate = await Company.findOne({
-          where: {
-            id: companyId
-          }
-        });
-
-        try {
-          const companyId = company.id;
-          const whatsapps = await ListWhatsAppsService({
-            companyId: companyId
-          });
-          if (whatsapps.length > 0) {
-            whatsapps.forEach(whatsapp => {
-              StartWhatsAppSession(whatsapp, companyId);
-            });
-          }
-        } catch (e) {
-          Sentry.captureException(e);
-        }
-
-        io.emit(`company-${companyId}-payment`, {
-          action: "CONCLUIDA",
-          company: companyUpdate
-        });
-      }
-
-      res.status(200).json(payment.body);
-    } catch (error) {
-      console.error("Erro ao tentar ler o pagamento:", error);
-      res.status(500).json({ error: "Erro ao identificar o pagamento" });
-    }
-  }
-};
-
-export const asaaswebhook = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  res.status(200).json(req.body);
 };
