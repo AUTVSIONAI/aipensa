@@ -6,6 +6,22 @@ import { isEmpty, isNil } from "lodash";
 
 const publicFolder = path.resolve(__dirname, "..", "..", "public");
 
+const ALLOWED_TYPE_ARCH = [
+  "announcements",
+  "logo",
+  "avatar",
+  "audios",
+  "documents",
+  "images",
+  "videos"
+];
+
+const BLOCKED_EXTENSIONS = [
+  ".exe", ".bat", ".cmd", ".sh", ".msi", ".com", ".scr",
+  ".pif", ".vbs", ".vbe", ".js", ".wsh", ".wsf", ".ps1",
+  ".dll", ".cpl", ".inf", ".hta", ".reg"
+];
+
 export default {
   directory: publicFolder,
   storage: multer.diskStorage({
@@ -13,6 +29,16 @@ export default {
       let companyId;
       companyId = req.user?.companyId;
       const { typeArch, fileId } = req.body;
+
+      // Validate typeArch against whitelist
+      if (typeArch && !ALLOWED_TYPE_ARCH.includes(typeArch)) {
+        return cb(new Error("Invalid file type category"), "");
+      }
+
+      // Validate fileId against path traversal
+      if (fileId && (fileId.includes("..") || fileId.includes("/") || fileId.includes("\\"))) {
+        return cb(new Error("Invalid file identifier"), "");
+      }
 
       if (companyId === undefined && isNil(companyId) && isEmpty(companyId)) {
         const authHeader = req.headers.authorization;
@@ -39,11 +65,17 @@ export default {
 
       if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, { recursive: true });
-        fs.chmodSync(folder, 0o777);
+        fs.chmodSync(folder, 0o755);
       }
       return cb(null, folder);
     },
     filename(req, file, cb) {
+      // Block executable file extensions
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (BLOCKED_EXTENSIONS.includes(ext)) {
+        return cb(new Error("File type not allowed"), "");
+      }
+
       const { typeArch } = req.body;
 
       const fileName =
@@ -54,5 +86,9 @@ export default {
             file.originalname.replace("/", "-").replace(/ /g, "_");
       return cb(null, fileName);
     }
-  })
+  }),
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25 MB
+    files: 5
+  }
 };

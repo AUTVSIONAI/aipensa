@@ -5,6 +5,7 @@ import ContactListItem from "../../models/ContactListItem";
 import CheckContactNumber from "../WbotServices/CheckNumber";
 import logger from "../../utils/logger";
 import Contact from "../../models/Contact";
+import sanitizeCell from "../../helpers/sanitizeCell";
 // import CheckContactNumber from "../WbotServices/CheckNumber";
 
 export async function ImportContactsService(
@@ -21,7 +22,7 @@ export async function ImportContactsService(
     let email = "";
 
     if (has(row, "nome") || has(row, "Nome")) {
-      name = row["nome"] || row["Nome"];
+      name = sanitizeCell(row["nome"] || row["Nome"]);
     }
 
     if (
@@ -30,7 +31,7 @@ export async function ImportContactsService(
       has(row, "Numero") ||
       has(row, "Número")
     ) {
-      number = row["numero"] || row["número"] || row["Numero"] || row["Número"];
+      number = sanitizeCell(row["numero"] || row["número"] || row["Numero"] || row["Número"]);
       number = `${number}`.replace(/\D/g, "");
     }
 
@@ -40,7 +41,7 @@ export async function ImportContactsService(
       has(row, "Email") ||
       has(row, "E-mail")
     ) {
-      email = row["email"] || row["e-mail"] || row["Email"] || row["E-mail"];
+      email = sanitizeCell(row["email"] || row["e-mail"] || row["Email"] || row["E-mail"]);
     }
 
     return { name, number, email, companyId };
