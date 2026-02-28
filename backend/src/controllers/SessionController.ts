@@ -125,7 +125,7 @@ export const remove = async (
     console.error("Error updating user status on logout:", err);
   }
 
-  res.clearCookie("jrt");
+  res.clearCookie("jrt", { path: "/auth" });
 
   return res.send();
 };

@@ -70,32 +70,25 @@ if (
   app.use("/admin/queues", isBullAuth, BullBoard.UI);
 }
 
-// Middlewares
-// app.use(helmet({
-//   contentSecurityPolicy: {
-//     directives: {
-//       defaultSrc: ["'self'", "https://localhost:8080"],
-//       imgSrc: ["'self'", "data:", "https://localhost:8080"],
-//       scriptSrc: ["'self'", "https://localhost:8080"],
-//       styleSrc: ["'self'", "'unsafe-inline'", "https://localhost:8080"],
-//       connectSrc: ["'self'", "https://localhost:8080"]
-//     }
-//   },
-//   crossOriginResourcePolicy: false, // Permite recursos de diferentes origens
-//   crossOriginEmbedderPolicy: false, // Permite incorporação de diferentes origens
-//   crossOriginOpenerPolicy: false, // Permite abertura de diferentes origens
-//   // crossOriginResourcePolicy: {
-//   //   policy: "cross-origin" // Permite carregamento de recursos de diferentes origens
-//   // }
-// }));
+// Security headers
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // API-only, no HTML to protect
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false
+  })
+);
 
-// CORS deve vir ANTES de outros middlewares
+// CORS with origin whitelist
 app.use(
   cors({
     credentials: true,
     origin: (origin, cb) => {
-      console.log(`[CORS] Origin: ${origin}`);
-      return cb(null, true);
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return cb(null, true);
+      }
+      return cb(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -111,35 +104,9 @@ app.use(
   })
 );
 
-app.use(compression()); // Compressão HTTP
-app.use(bodyParser.json({ limit: "5mb" })); // Aumentar o limite de carga para 5 MB
+app.use(compression());
+app.use(bodyParser.json({ limit: "5mb" }));
 app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
-// Middleware para debug de CORS e OPTIONS
-app.use((req, res, next) => {
-  console.log(
-    `[CORS Debug] ${req.method} ${req.url} - Origin: ${req.headers.origin}`
-  );
-
-  // Adicionar headers de CORS extras para garantir
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Authorization, Content-Type, X-Requested-With, Accept, Origin, X-CSRF-Token"
-  );
-
-  // Se for OPTIONS, responder imediatamente
-  if (req.method === "OPTIONS") {
-    console.log(`[CORS Debug] Responding to OPTIONS for ${req.url}`);
-    return res.status(200).end();
-  }
-
-  next();
-});
 
 app.use(cookieParser());
 app.use(express.json());

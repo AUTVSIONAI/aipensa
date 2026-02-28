@@ -34,7 +34,13 @@ export const SendRefreshToken = (res: Response, token: string): void => {
     sameSite = "lax";
   }
 
-  const options: any = { httpOnly: true, sameSite, secure, path: "/" };
+  const options: any = {
+    httpOnly: true,
+    sameSite,
+    secure,
+    path: "/auth",
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  };
   if (domain) options.domain = domain;
   res.cookie("jrt", token, options);
 };
