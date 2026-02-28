@@ -9,7 +9,7 @@ const companyRoutes = express.Router();
 companyRoutes.get("/companies/list", isAuth, CompanyController.list);
 companyRoutes.get("/companies", isAuth, CompanyController.index);
 companyRoutes.get("/companies/:id", isAuth, CompanyController.show);
-companyRoutes.post("/companies", CompanyController.store);
+companyRoutes.post("/companies", isAuth, CompanyController.store);
 companyRoutes.put("/companies/:id", isAuth, CompanyController.update);
 companyRoutes.put(
   "/companies/:id/schedules",

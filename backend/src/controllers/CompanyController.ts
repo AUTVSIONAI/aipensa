@@ -77,6 +77,15 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
+  const authHeader = req.headers.authorization;
+  const [, token] = authHeader.split(" ");
+  const decoded = verify(token, authConfig.secret) as TokenPayload;
+  const requestUser = await User.findByPk(decoded.id);
+
+  if (!requestUser || requestUser.super !== true) {
+    throw new AppError("ERR_NO_SUPER_PERMISSION", 403);
+  }
+
   const newCompany: CompanyData = req.body;
 
   const schema = Yup.object().shape({

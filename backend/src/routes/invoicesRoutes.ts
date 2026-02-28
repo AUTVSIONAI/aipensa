@@ -5,7 +5,7 @@ import * as QueueOptionController from "../controllers/QueueOptionController";
 import * as InvoicesController from "../controllers/InvoicesController";
 const invoiceRoutes = express.Router();
 invoiceRoutes.get("/invoices", isAuth, InvoicesController.index);
-invoiceRoutes.get("/invoices/list", InvoicesController.list);
+invoiceRoutes.get("/invoices/list", isAuth, InvoicesController.list);
 invoiceRoutes.get("/invoices/all", isAuth, InvoicesController.list);
 invoiceRoutes.get("/invoices/:id", isAuth, InvoicesController.show);
 invoiceRoutes.post("/invoices", isAuth, InvoicesController.store);
