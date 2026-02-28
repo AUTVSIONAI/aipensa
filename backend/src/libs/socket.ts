@@ -1,98 +1,100 @@
 import { Server as SocketIO } from "socket.io";
 import { Server } from "http";
+import { verify } from "jsonwebtoken";
 import AppError from "../errors/AppError";
-import { instrument } from "@socket.io/admin-ui";
+import authConfig from "../config/auth";
 import User from "../models/User";
 import logger from "../utils/logger";
 
 let io: SocketIO;
 
+const normalizeOrigin = (value?: string) =>
+  value ? value.replace(/\/$/, "") : value;
+
+const allowedOrigins = [
+  normalizeOrigin(process.env.FRONTEND_URL),
+  normalizeOrigin(process.env.BACKEND_URL),
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://aipensa.com",
+  "https://api.aipensa.com"
+].filter(Boolean);
+
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        // Permitir todas as origens para resolver problemas de conexão
-        return callback(null, true);
+        if (!origin || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error("Not allowed by CORS"));
       },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    },
-    allowRequest: (req, callback) => {
-      callback(null, true);
     }
   });
 
-  // if (process.env.SOCKET_ADMIN && JSON.parse(process.env.SOCKET_ADMIN)) {
-  //   User.findByPk(1).then(
-  //     (adminUser) => {
-  //       instrument(io, {
-  //         auth: {
-  //           type: "basic",
-  //           username: adminUser.email,
-  //           password: adminUser.passwordHash
-  //         },
-  //         mode: "development",
-  //       });
-  //     }
-  //   );
-  // }
-
   const workspaces = io.of(/^\/\w+$/);
   workspaces.on("connection", socket => {
-    const { userId } = socket.handshake.query;
-    console.log(`Client connected: ${socket.id} ${socket.nsp.name}`);
+    const token =
+      socket.handshake.auth?.token ||
+      socket.handshake.query?.token;
 
-    // Caso o userId seja passado, armazene no socket
-    if (userId) {
-      socket.data.userId = userId;
+    if (!token || typeof token !== "string") {
+      logger.warn(`Socket rejected: no token provided (${socket.id})`);
+      socket.disconnect(true);
+      return;
     }
+
+    // Strip JSON quotes if token was stored with JSON.stringify
+    const cleanToken = token.replace(/^"|"$/g, "");
+
+    try {
+      const decoded = verify(cleanToken, authConfig.secret) as any;
+      socket.data.userId = decoded.id;
+      socket.data.companyId = decoded.companyId;
+    } catch (err) {
+      logger.warn(`Socket rejected: invalid token (${socket.id})`);
+      socket.disconnect(true);
+      return;
+    }
+
+    logger.info(`Socket connected: ${socket.id} ns=${socket.nsp.name} user=${socket.data.userId}`);
 
     let offlineTimeout: NodeJS.Timeout | null = null;
 
-    // Quando o cliente se desconectar
     socket.on("disconnect", async () => {
       const userId = socket.data.userId;
-      console.log(`Client disconnected: ${socket.id}`);
+      logger.info(`Socket disconnected: ${socket.id}`);
 
       if (userId) {
-        // Inicia o timer de 60 segundos se tiver necessidade
         offlineTimeout = setTimeout(async () => {
           try {
-            // Atualiza o status do usuário para offline instant
             await User.update({ online: false }, { where: { id: userId } });
-            console.log(
-              `User ${userId} marcado como off-line após fechar o navegador`
-            );
           } catch (error) {
-            console.error("Erro ao marcar o usuário como offline:", error);
+            logger.error("Error marking user offline:", error);
           }
-        }, 0); // instant para marcar como offline
+        }, 0);
       }
     });
 
-    // Quando o cliente reconectar
     socket.on("reconnect", async () => {
       const userId = socket.data.userId;
-      console.log(`Client reconnected: ${socket.id}`);
 
       if (offlineTimeout) {
-        // Se o cliente reconectar, limpa o timer
         clearTimeout(offlineTimeout);
         offlineTimeout = null;
       }
 
       if (userId) {
         try {
-          // Atualiza o status para "online"
           await User.update({ online: true }, { where: { id: userId } });
-          console.log(`User ${userId} marcado como on-line`);
         } catch (error) {
-          console.error("Erro ao marcar o usuário como online:", error);
+          logger.error("Error marking user online:", error);
         }
       }
     });
 
-    // Outros eventos de conexão
     socket.on("joinChatBox", (ticketId: string) => {
       socket.join(ticketId);
     });

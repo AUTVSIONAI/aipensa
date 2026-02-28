@@ -1,25 +1,27 @@
 import { createContext } from "react";
 import openSocket from "socket.io-client";
-// import config from "../../services/config";
 
 const socketManager = {
 	currentSocket: null,
 
 	GetSocket: function () {
-		const publicToken = localStorage.getItem("public-token");
+		const token = localStorage.getItem("token");
 
-		if (publicToken !== this.currentToken) {
+		if (token !== this.currentToken) {
 			if (this.currentSocket) {
 				this.currentSocket.disconnect();
 			}
 
-			this.currentToken = publicToken;
+			this.currentToken = token;
+
+			// Strip JSON quotes if present
+			const cleanToken = token ? token.replace(/^"|"$/g, "") : null;
+
 			this.currentSocket = openSocket(process.env.REACT_APP_BACKEND_URL, {
 				transports: ["websocket"],
 				pingTimeout: 18000,
 				pingInterval: 18000,
-				query: publicToken ? { token: publicToken } : {},
-				// auth: publicToken ? { token: publicToken } : {},
+				auth: cleanToken ? { token: cleanToken } : {},
 			});
 		}
 		return this.currentSocket;
