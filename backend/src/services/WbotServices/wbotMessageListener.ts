@@ -101,7 +101,6 @@ import ListSettingsService from "../SettingServices/ListSettingsService";
 
 const os = require("os");
 
-const request = require("request");
 
 let i = 0;
 
@@ -4134,22 +4133,11 @@ export const handleMessageIntegration = async (
 
   if (queueIntegration.type === "n8n" || queueIntegration.type === "webhook") {
     if (queueIntegration?.urlN8N) {
-      const options = {
-        method: "POST",
-        url: queueIntegration?.urlN8N,
-        headers: {
-          "Content-Type": "application/json"
-        },
-        json: msg
-      };
       try {
-        request(options, function (error, response) {
-          if (error) {
-            throw new Error(error);
-          } else {
-            logger.info("wbotMessageListener: external request completed successfully");
-          }
+        await axios.post(queueIntegration.urlN8N, msg, {
+          headers: { "Content-Type": "application/json" }
         });
+        logger.info("wbotMessageListener: external request completed successfully");
       } catch (error) {
         throw new Error(error);
       }
