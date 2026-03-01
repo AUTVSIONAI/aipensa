@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
+import isAuth from "../middleware/isAuth";
 
 const uploadRouter = Router();
 
@@ -17,7 +18,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Criar a rota para upload
-uploadRouter.post("/upload", upload.single("file"), (req, res) => {
+uploadRouter.post("/upload", isAuth, upload.single("file"), (req, res) => {
   if (!req.file) {
     return res
       .status(400)
