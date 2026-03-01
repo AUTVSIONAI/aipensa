@@ -1,108 +1,75 @@
+import "dotenv/config";
+import os from "os";
+import cluster from "cluster";
 import gracefulShutdown from "http-graceful-shutdown";
 import app from "./app";
 import { initIO } from "./libs/socket";
 import logger from "./utils/logger";
 import { StartAllWhatsAppsSessions } from "./services/WbotServices/StartAllWhatsAppsSessions";
 import Company from "./models/Company";
+import BullQueue from "./libs/queue";
 import { startQueueProcess } from "./queues";
-
-const express = require("express");
-const os = require("os");
-const cluster = require("cluster");
+import { ensureCompaniesSettingsColumns } from "./utils/ensureCompaniesSettingsColumns";
+import { ensureFlowSeeds } from "./utils/ensureFlowSeeds";
 
 const PORT = process.env.PORT || 4000;
-
 const clusterWorkerSize = os.cpus().length;
 
-logger.info("clusterWorkerSize: %d", clusterWorkerSize);
+const startServer = async (server: any) => {
+  await ensureCompaniesSettingsColumns();
+  await ensureFlowSeeds();
+  const companies = await Company.findAll({
+    where: { status: true },
+    attributes: ["id"]
+  });
 
-if (clusterWorkerSize > 1) {
-  if (cluster.isMaster) {
-    for (let i = 0; i < clusterWorkerSize; i++) {
-      cluster.fork();
-    }
+  const allPromises: any[] = [];
+  companies.map(async c => {
+    const promise = StartAllWhatsAppsSessions(c.id);
+    allPromises.push(promise);
+  });
 
-    cluster.on("exit", function (worker) {
-      logger.warn("Worker %d has exited", worker.id);
-    });
-  } else {
-    const app = express();
+  Promise.all(allPromises).then(async () => {
+    await startQueueProcess();
+  });
 
-    const server = app.listen(process.env.PORT, async () => {
-      const companies = await Company.findAll();
-      const allPromises: any[] = [];
-      companies.map(async c => {
-        const promise = StartAllWhatsAppsSessions(c.id);
-        allPromises.push(promise);
-      });
-
-      Promise.all(allPromises).then(async () => {
-        await startQueueProcess();
-      });
-      logger.info(
-        `Server started on port: ${process.env.PORT} and worker ${process.pid}`
-      );
-    });
-
-    process.on("uncaughtException", err => {
-      console.error(
-        `${new Date().toUTCString()} uncaughtException:`,
-        err.message
-      );
-      console.error(err.stack);
-      process.exit(1);
-    });
-
-    process.on("unhandledRejection", (reason, p) => {
-      console.error(
-        `${new Date().toUTCString()} unhandledRejection:`,
-        reason,
-        p
-      );
-      process.exit(1);
-    });
-
-    initIO(server);
-    gracefulShutdown(server);
+  if (process.env.REDIS_URI_ACK && process.env.REDIS_URI_ACK !== "") {
+    BullQueue.process();
   }
-} else {
-  const app = express();
+};
 
-  app.listen(PORT, function () {
+if (clusterWorkerSize > 1 && cluster.isMaster) {
+  logger.info("Master process %d starting %d workers", process.pid, clusterWorkerSize);
+
+  for (let i = 0; i < clusterWorkerSize; i++) {
+    cluster.fork();
+  }
+
+  cluster.on("exit", (worker, code, signal) => {
+    logger.warn("Worker %d exited (code: %s, signal: %s). Restarting...", worker.id, code, signal);
+    cluster.fork();
+  });
+} else {
+  const server = app.listen(PORT, async () => {
+    await startServer(server);
     logger.info(
-      `Express server listening on port ${PORT} with the single worker ${process.pid}`
+      "Server started on port %s (worker PID: %d)",
+      PORT,
+      process.pid
     );
   });
+
+  initIO(server);
+  gracefulShutdown(server);
+
+  process.on("uncaughtException", err => {
+    logger.error("uncaughtException: %s", err.message);
+    logger.error(err.stack);
+    setTimeout(() => process.exit(1), 5000);
+  });
+
+  process.on("unhandledRejection", (reason, p) => {
+    logger.error("unhandledRejection: %s", reason);
+    setTimeout(() => process.exit(1), 5000);
+  });
 }
-
-// const server = app.listen(process.env.PORT, async () => {
-//   const companies = await Company.findAll();
-//   const allPromises: any[] = [];
-//   companies.map(async c => {
-//     const promise = StartAllWhatsAppsSessions(c.id);
-//     allPromises.push(promise);
-//   });
-
-//   Promise.all(allPromises).then(async () => {
-//     await startQueueProcess();
-//   });
-//   logger.info(`Server started on port: ${process.env.PORT}`);
-// });
-
-// process.on("uncaughtException", err => {
-//   console.error(`${new Date().toUTCString()} uncaughtException:`, err.message);
-//   console.error(err.stack);
-//   process.exit(1);
-// });
-
-// process.on("unhandledRejection", (reason, p) => {
-//   console.error(
-//     `${new Date().toUTCString()} unhandledRejection:`,
-//     reason,
-//     p
-//   );
-//   process.exit(1);
-// });
-
-// initIO(server);
-// gracefulShutdown(server);

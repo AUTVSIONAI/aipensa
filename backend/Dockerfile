@@ -39,8 +39,8 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 # Copiar package.json
 COPY package.json ./
 
-# Instalar apenas dependências de produção
-RUN npm install --only=production --legacy-peer-deps
+# Instalar apenas dependências de produção + PM2
+RUN npm install --only=production --legacy-peer-deps && npm install -g pm2
 
 # Copiar a aplicação compilada do estágio de build
 COPY --from=builder /app/dist ./dist
@@ -60,4 +60,4 @@ ENV PORT=8080
 RUN chown -R node:node /app
 USER node
 
-CMD ["node", "dist/server.js"]
+CMD ["pm2-runtime", "dist/server.js", "-i", "max"]
