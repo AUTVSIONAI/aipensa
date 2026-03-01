@@ -437,7 +437,7 @@ async function handleSendScheduledMessage(job) {
       // Realizar a soma da data com base no intervalo e valor do intervalo
       let novaData = new Date(dataExistente); // Clone da data existente para não modificar a original
 
-      console.log(unidadeIntervalo);
+      logger.debug("unidadeIntervalo: %s", unidadeIntervalo);
       if (unidadeIntervalo !== "minuts") {
         novaData.setDate(
           novaData.getDate() +
@@ -452,7 +452,7 @@ async function handleSendScheduledMessage(job) {
         novaData.setMinutes(
           novaData.getMinutes() + Number(schedule.valorIntervalo)
         );
-        console.log(novaData);
+        logger.debug("novaData: %s", novaData);
       }
 
       if (schedule.tipoDias === 5 && !isDiaUtil(novaData)) {
@@ -625,7 +625,7 @@ async function getSettings(campaign): Promise<CampaignSettings> {
       variables
     };
   } catch (error) {
-    console.log(error);
+    logger.error(error, "Queue error");
     throw error; // rejeita a Promise com o erro original
   }
 }
@@ -1270,7 +1270,7 @@ async function handleDispatchCampaign(job) {
   } catch (err: any) {
     Sentry.captureException(err);
     logger.error(err.message);
-    console.log(err.stack);
+    logger.error("Stack: %s", err.stack);
   }
 }
 
