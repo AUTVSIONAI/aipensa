@@ -10,6 +10,13 @@ router.use(clinicLimiter);
 
 router.post("/clinic-schedule", async (req: Request, res: Response) => {
   const { patientInfo, medicId, date, time } = req.body;
+
+  if (!patientInfo || !medicId || !date || !time) {
+    return res.status(400).json({
+      error: "Missing required fields: patientInfo, medicId, date, time"
+    });
+  }
+
   try {
     const result = await handleAppointmentRequest(
       patientInfo,

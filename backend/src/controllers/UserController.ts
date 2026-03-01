@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
 import { isEmpty, isNil } from "lodash";
+import * as Yup from "yup";
 import CheckSettingsHelper, { CheckSettings1 } from "../helpers/CheckSettings";
 import AppError from "../errors/AppError";
 
@@ -42,6 +43,19 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
+  const storeSchema = Yup.object().shape({
+    name: Yup.string().required().min(2),
+    email: Yup.string().required().email(),
+    password: Yup.string().required().min(6),
+    profile: Yup.string().oneOf(["admin", "user", "supervisor"]).nullable()
+  });
+
+  try {
+    await storeSchema.validate(req.body);
+  } catch (err: any) {
+    throw new AppError(err.message);
+  }
+
   const {
     email,
     password,
@@ -265,6 +279,19 @@ export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  const updateSchema = Yup.object().shape({
+    name: Yup.string().min(2),
+    email: Yup.string().email(),
+    password: Yup.string().min(6),
+    profile: Yup.string().oneOf(["admin", "user", "supervisor"])
+  });
+
+  try {
+    await updateSchema.validate(req.body);
+  } catch (err: any) {
+    throw new AppError(err.message);
+  }
+
   // if (req.user.profile !== "admin") {
   //   throw new AppError("ERR_NO_PERMISSION", 403);
   // }
