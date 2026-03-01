@@ -69,7 +69,7 @@ export const status = async (
       });
     }
 
-    console.log(`[Marketing] Status: Validating token...`);
+    logger.info("[Marketing] Validating token");
     try {
       const meResp = await axios.get(
         `https://graph.facebook.com/${GRAPH_VERSION}/me`,

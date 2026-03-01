@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import logger from "../utils/logger";
 import CreateWebHookService from "../services/WebhookService/CreateWebHookService";
 import DeleteWebHookService from "../services/WebhookService/DeleteWebHookService";
 import UpdateWebHookService from "../services/WebhookService/UpdateWebHookService";
@@ -113,7 +114,7 @@ export const FlowDataUpdate = async (
 
   const keys = Object.keys(bodyData);
 
-  console.log(keys);
+  logger.info("[FlowBuilder] Updating flow data");
 
   const webhook = await FlowUpdateDataService({
     companyId,

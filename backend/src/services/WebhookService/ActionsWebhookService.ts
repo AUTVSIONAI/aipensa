@@ -647,8 +647,7 @@ export const ActionsWebhookService = async (
 
       if (nodeSelected.type === "file") {
         if (!nodeSelected.data.url || nodeSelected.data.url === "undefined") {
-          console.error("URL do arquivo não definida no nó do tipo file");
-          console.log("nodeSelected.data:", nodeSelected.data);
+          logger.error("URL do arquivo não definida no nó do tipo file");
           continue;
         }
 

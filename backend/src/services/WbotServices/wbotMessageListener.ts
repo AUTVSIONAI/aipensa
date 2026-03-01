@@ -5053,14 +5053,12 @@ const handleMessage = async (
           typebot: lastFlow.data.typebotIntegration
         });
       } catch (error) {
-        console.log("Erro no typebotListener: ", error);
+        logger.error("Erro no typebotListener");
         // get axios error  data and status code
         const axiosError = error as AxiosError;
         const { data, status } = axiosError.response || {};
 
-        console.log("axiosError", axiosError);
-        console.log("data", data);
-        console.log("status: ", status);
+        logger.warn({ status }, "typebotListener axios error");
 
         if (status === 404 && (data as any)?.message === "Session not found.") {
           await ticket.destroy();
@@ -5084,19 +5082,8 @@ const handleMessage = async (
       return;
     } else {
       //check motives
-      console.log(
-        "!isNil(ticket.typebotSessionId): ",
-        !isNil(ticket.typebotSessionId)
-      );
-      console.log("ticket.typebotStatus: ", ticket.typebotStatus);
-      console.log("!msg.key.fromMe: ", !msg.key.fromMe);
-      console.log(
-        "!isNil(ticket.typebotSessionTime): ",
-        !isNil(ticket.typebotSessionTime)
-      );
-      console.log("ticket.useIntegration: ", ticket.useIntegration);
+      logger.info("Typebot check: session/status conditions not met for ticket");
     }
-    console.log("F - check typebot");
     if (
       !ticket.imported &&
       !msg.key.fromMe &&

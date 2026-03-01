@@ -1,5 +1,6 @@
 import * as Yup from "yup";
 import AppError from "../../errors/AppError";
+import logger from "../../utils/logger";
 import Company from "../../models/Company";
 import User from "../../models/User";
 import sequelize from "../../database";
@@ -107,21 +108,14 @@ const CreateCompanyService = async (
       { transaction: t }
     );
 
-    console.log(
-      `[CreateCompanyService] VERSION 3.0 - Company created: ${createdCompany.id}, Email: '${createdCompany.email}'`
-    );
-    console.log(
-      `[CreateCompanyService] User created: ${user.id}, Email: '${user.email}', CompanyId: ${user.companyId}`
-    );
+    logger.info("[CreateCompanyService] Company and user created successfully");
 
     return { company: createdCompany, user };
   });
 
   const { company: createdCompany } = txResult;
 
-  console.log(
-    `[CreateCompanyService] Creating CompaniesSettings for company ${createdCompany.id}...`
-  );
+  logger.info("[CreateCompanyService] Creating CompaniesSettings");
   try {
     await CompaniesSettings.create({
       companyId: createdCompany.id,
@@ -155,14 +149,9 @@ const CreateCompanyService = async (
       AcceptCallWhatsappMessage: "",
       sendQueuePositionMessage: ""
     });
-    console.log(
-      `[CreateCompanyService] CompaniesSettings created successfully.`
-    );
+    logger.info("[CreateCompanyService] CompaniesSettings created successfully");
   } catch (err) {
-    console.error(
-      `[CreateCompanyService] ERROR creating CompaniesSettings (não bloqueante):`,
-      err
-    );
+    logger.error(err, "[CreateCompanyService] ERROR creating CompaniesSettings (não bloqueante)");
   }
 
   try {
@@ -181,30 +170,22 @@ const CreateCompanyService = async (
       temperature: 1
     });
   } catch (e) {
-    console.log("Falha ao criar prompt padrão, continuando...", e);
+    logger.warn("[CreateCompanyService] Falha ao criar prompt padrão, continuando...");
   }
 
   // Verify persistence immediately
   try {
     const checkUser = await User.findOne({ where: { email: email } });
     if (checkUser) {
-      console.log(
-        `[CreateCompanyService] SUCCESS: User '${email}' found in DB after commit. ID: ${checkUser.id}, CompanyId: ${checkUser.companyId}`
-      );
+      logger.info("[CreateCompanyService] User found in DB after commit");
       // Force password re-hash check
       const valid = await checkUser.checkPassword(password || process.env.DEFAULT_ADMIN_PASSWORD || "ch@ng3m3!");
-      console.log(
-        `[CreateCompanyService] Password check immediately after creation: ${
-          valid ? "VALID" : "INVALID"
-        }`
-      );
+      logger.info("[CreateCompanyService] Password check after creation: %s", valid ? "VALID" : "INVALID");
     } else {
-      console.error(
-        `[CreateCompanyService] CRITICAL ERROR: User '${email}' NOT found in DB after commit!`
-      );
+      logger.error("[CreateCompanyService] CRITICAL: User NOT found in DB after commit!");
     }
   } catch (e) {
-    console.error("[CreateCompanyService] Error verifying user:", e);
+    logger.error(e, "[CreateCompanyService] Error verifying user");
   }
 
   return createdCompany;

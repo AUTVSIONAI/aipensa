@@ -33,9 +33,6 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 export const remove = async (req: Request, res: Response): Promise<Response> => {
   const { ticketId } = req.params;
 
-  console.log("remove");
-  console.log(req.params);
-
   try {
     await TicketTag.destroy({ where: { ticketId } });
     return res.status(200).json({ message: 'Ticket tags removed successfully.' });

@@ -1,4 +1,5 @@
 import Setting from "../../models/Setting";
+import logger from "../../utils/logger";
 
 interface Request {
   key: string;
@@ -17,9 +18,7 @@ const publicSettingsKeys = [
 const GetPublicSettingService = async ({
   key
 }: Request): Promise<string | undefined> => {
-  console.log("|======== GetPublicSettingService ========|");
-  console.log("key", key);
-  console.log("|=========================================|");
+  logger.info("[GetPublicSettingService] called");
 
   if (!publicSettingsKeys.includes(key)) {
     return null;

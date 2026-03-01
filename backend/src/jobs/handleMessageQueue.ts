@@ -1,5 +1,6 @@
 import { getWbot } from "../libs/wbot";
 import { handleMessage } from "../services/WbotServices/wbotMessageListener";
+import logger from "../utils/logger";
 
 export default {
   key: `${process.env.DB_NAME}-handleMessage`,
@@ -13,22 +14,22 @@ export default {
         wbot === undefined ||
         companyId === undefined
       ) {
-        console.log("message, wbot, companyId", message, wbot, companyId);
+        logger.warn("handleMessageQueue: missing required data (message, wbot, or companyId)");
       }
 
       const w = getWbot(wbot);
 
       if (!w) {
-        console.log("wbot not found", wbot);
+        logger.warn("handleMessageQueue: wbot not found");
       }
 
       try {
         await handleMessage(message, w, companyId);
       } catch (error) {
-        console.log(error);
+        logger.error(error, "handleMessageQueue: error handling message");
       }
     } catch (error) {
-      console.log("error", error);
+      logger.error(error, "handleMessageQueue: unexpected error");
     }
   }
 };

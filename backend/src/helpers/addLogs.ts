@@ -1,6 +1,7 @@
 import * as fsp from "fs/promises";
 import path from "path";
 import * as fs from "fs";
+import logger from "../utils/logger";
 // const filePath = 'caminho/do/seu/arquivo.txt';
 
 export async function addLogs({ fileName, text, forceNewFile = false }) {
@@ -8,7 +9,6 @@ export async function addLogs({ fileName, text, forceNewFile = false }) {
   const filePath = path.resolve(logs, fileName);
 
   try {
-    console.log(logs);
     if (!fs.existsSync(logs)) {
       fs.mkdirSync(logs);
     }
@@ -17,16 +17,16 @@ export async function addLogs({ fileName, text, forceNewFile = false }) {
   try {
     if (forceNewFile) {
       await fsp.writeFile(filePath, `${text} \n`);
-      console.log(`Novo Arquivo de log adicionado ${filePath}\n \n ${text}`);
+      logger.info("[addLogs] New log file created");
     } else await fsp.appendFile(filePath, `${text} \n`);
-    console.log(`Texto adicionado ao arquivo de log ${filePath}\n \n ${text}`);
+    logger.info("[addLogs] Text appended to log file");
   } catch (err) {
     if (err.code === "ENOENT") {
       // O arquivo não existe, então cria e adiciona o texto
       await fsp.writeFile(filePath, `${text} \n`);
-      console.log(`Novo Arquivo de log adicionado ${filePath}\n \n ${text}`);
+      logger.info("[addLogs] New log file created (ENOENT fallback)");
     } else {
-      console.error("Erro ao manipular o arquivo de log:", err);
+      logger.error(err, "Erro ao manipular o arquivo de log");
     }
   }
 }

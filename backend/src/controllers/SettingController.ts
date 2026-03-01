@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 import { getIO } from "../libs/socket";
+import logger from "../utils/logger";
 import AppError from "../errors/AppError";
 
 import { head } from "lodash";
@@ -39,9 +40,7 @@ export const showOne = async (
   const { companyId } = req.user;
   const { settingKey: key } = req.params;
 
-  console.log("|======== GetPublicSettingService ========|");
-  console.log("key", key);
-  console.log("|=========================================|");
+  logger.info("[SettingController] showOne called");
 
   const settingsTransfTicket = await ListSettingsServiceOne({
     companyId: companyId,
@@ -169,7 +168,7 @@ export const certUpload = async (
 
   const files = req.files as Express.Multer.File[];
   const file = head(files);
-  console.log(file);
+  logger.info("[SettingController] File uploaded");
   return res.send({ mensagem: "Arquivo Anexado" });
 };
 

@@ -80,7 +80,7 @@ export const getFbConfig = async (companyId: number): Promise<FbConfig> => {
 
   // 2. Fallback: Check Settings table
   if (!accessToken && companyId) {
-    console.log(`[getFbConfig] Checking Settings table for fallback token`);
+    logger.info("[getFbConfig] Checking Settings table for fallback token");
     const at = await Setting.findOne({
       where: { companyId, key: "facebook_access_token" }
     });

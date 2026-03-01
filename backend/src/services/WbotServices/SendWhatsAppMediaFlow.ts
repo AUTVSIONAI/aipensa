@@ -9,6 +9,7 @@ import { exec } from "child_process";
 import path from "path";
 import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 import AppError from "../../errors/AppError";
+import logger from "../../utils/logger";
 import GetTicketWbot from "../../helpers/GetTicketWbot";
 import Ticket from "../../models/Ticket";
 import mime from "mime-types";
@@ -129,23 +130,13 @@ const SendWhatsAppMediaFlow = async ({
     // CORREÇÃO: Se o mime-types detectou como 'application' mas o arquivo é vídeo, corrigir
     if (typeMessage === "application" && isVideoFile(media)) {
       typeMessage = "video";
-      console.log(
-        "CORREÇÃO APLICADA: Arquivo detectado como vídeo baseado na extensão"
-      );
+      logger.info("FlowBuilder: file reclassified as video based on extension");
     }
-
-    console.log("=== DEBUG FLOWBUILDER VIDEO ===");
-    console.log("Media path:", media);
-    console.log("MIME type original:", mimetype);
-    console.log("Type message corrigido:", typeMessage);
-    console.log("Media name:", mediaName);
-    console.log("É arquivo de vídeo:", isVideoFile(media));
-    console.log("================================");
 
     let options: AnyMessageContent;
 
     if (typeMessage === "video") {
-      console.log("DETECTOU COMO VIDEO - OK!");
+      logger.info("FlowBuilder: sending video");
       options = {
         video: fs.readFileSync(pathMedia),
         caption: body,
@@ -153,8 +144,7 @@ const SendWhatsAppMediaFlow = async ({
         // gifPlayback: true
       };
     } else if (typeMessage === "audio") {
-      console.log("DETECTOU COMO AUDIO");
-      console.log("record", isRecord);
+      logger.info("FlowBuilder: sending audio");
       if (isRecord) {
         const convert = await processAudio(pathMedia);
         options = {
@@ -175,7 +165,7 @@ const SendWhatsAppMediaFlow = async ({
         fs.unlinkSync(convert);
       }
     } else if (typeMessage === "document" || typeMessage === "text") {
-      console.log("DETECTOU COMO DOCUMENT/TEXT");
+      logger.info("FlowBuilder: sending document");
       options = {
         document: fs.readFileSync(pathMedia),
         caption: body,
@@ -183,7 +173,7 @@ const SendWhatsAppMediaFlow = async ({
         mimetype: mimetype
       };
     } else if (typeMessage === "application") {
-      console.log("DETECTOU COMO APPLICATION");
+      logger.info("FlowBuilder: sending application file");
       options = {
         document: fs.readFileSync(pathMedia),
         caption: body,
@@ -191,7 +181,7 @@ const SendWhatsAppMediaFlow = async ({
         mimetype: mimetype
       };
     } else {
-      console.log("DETECTOU COMO IMAGEM");
+      logger.info("FlowBuilder: sending image");
       options = {
         image: fs.readFileSync(pathMedia),
         caption: body
@@ -204,7 +194,7 @@ const SendWhatsAppMediaFlow = async ({
       }
     });
 
-    console.log("Enviando com opções:", Object.keys(options));
+    logger.info("FlowBuilder: sending media message");
 
     const sentMessage = await wbot.sendMessage(
       `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`,
@@ -218,7 +208,7 @@ const SendWhatsAppMediaFlow = async ({
     return sentMessage;
   } catch (err) {
     Sentry.captureException(err);
-    console.log(err);
+    logger.error(err, "ERR_SENDING_WAPP_MSG");
     throw new AppError("ERR_SENDING_WAPP_MSG");
   }
 };

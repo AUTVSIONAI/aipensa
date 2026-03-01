@@ -14,6 +14,7 @@ import {
 } from "../WbotServices/wbotMessageListener";
 
 import { isNil, isNull } from "lodash";
+import logger from "../../utils/logger";
 import axios from "axios";
 import fs from "fs";
 import path, { join } from "path";
@@ -2236,7 +2237,7 @@ export const handleOpenAi = async (
   }
 
   const bodyMessage = getBodyMessage(msg);
-  console.log(`[handleOpenAi] Body message: ${bodyMessage}`);
+  logger.info("[handleOpenAi] Processing message");
   if (!bodyMessage) return;
 
   // 🔥 RESPOSTAS RÁPIDAS PARA COMANDOS COMUNS (apenas quando usuário pedir menu/ajuda)
@@ -2248,13 +2249,13 @@ export const handleOpenAi = async (
     msg
   );
   if (quickResponse) {
-    console.log(`[handleOpenAi] Quick response triggered for: ${bodyMessage}`);
+    logger.info("[handleOpenAi] Quick response triggered");
     await sendQuickMessage(wbot, msg.key.remoteJid, quickResponse, msg);
     return;
   }
 
   if (!openAiSettings) {
-    console.log(`[handleOpenAi] No openAiSettings provided`);
+    logger.info("[handleOpenAi] No openAiSettings provided");
     return;
   }
   if (msg.messageStubType) return;

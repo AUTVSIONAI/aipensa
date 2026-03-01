@@ -54,7 +54,7 @@ export const showTypingIndicator = async (
     });
     return data;
   } catch (error) {
-    console.log(error);
+    logger.error(error, "Facebook Graph API error");
   }
 };
 
@@ -70,7 +70,7 @@ export const sendText = async (
     });
     return data;
   } catch (error) {
-    console.log(error);
+    logger.error(error, "Facebook Graph API error");
   }
 };
 
@@ -85,14 +85,14 @@ export const replyComment = async (
     });
     return data;
   } catch (error) {
-    console.error("Error replying comment:", error?.response?.data || error);
+    logger.error("Error replying comment");
     // Tentar fallback para /comments se /replies falhar (depende se é top-level ou reply)
     try {
       await apiBase(token).post(`${commentId}/comments`, {
         message: message
       });
     } catch (e) {
-      console.error("Fallback reply failed:", e?.response?.data);
+      logger.error("Fallback reply failed");
     }
   }
 };
@@ -115,7 +115,7 @@ export const sendAttachmentFromUrl = async (
     });
     return data;
   } catch (error) {
-    console.log(error);
+    logger.error(error, "Facebook Graph API error");
   }
 };
 
@@ -158,7 +158,7 @@ export const getProfile = async (id: string, token: string): Promise<any> => {
     const { data } = await apiBase(token).get(id);
     return data;
   } catch (error) {
-    console.log(error);
+    logger.error(error, "Facebook Graph API error");
     throw new Error("ERR_FETCHING_FB_USER_PROFILE_2");
   }
 };
@@ -173,7 +173,7 @@ export const getPageProfile = async (
     );
     return data;
   } catch (error) {
-    console.log(error);
+    logger.error(error, "Facebook Graph API error");
     throw new Error("ERR_FETCHING_FB_PAGES");
   }
 };
@@ -183,14 +183,11 @@ export const profilePsid = async (id: string, token: string): Promise<any> => {
     const { data } = await apiBase(token).get(`${id}`);
     return data;
   } catch (error) {
-    console.log("Error profilePsid first attempt:", error?.message);
+    logger.warn("Error profilePsid first attempt: %s", error?.message);
     try {
       return await getProfile(id, token);
     } catch (e) {
-      console.log(
-        "Error profilePsid second attempt (fallback used):",
-        e?.message
-      );
+      logger.warn("Error profilePsid second attempt (fallback used): %s", e?.message);
       return {
         id: id,
         name: "Instagram User " + id.substring(0, 4),
@@ -214,7 +211,7 @@ export const subscribeApp = async (id: string, token: string): Promise<any> => {
     });
     return data;
   } catch (error) {
-    console.log(error);
+    logger.error(error, "Facebook Graph API error");
     throw new Error("ERR_SUBSCRIBING_PAGE_TO_MESSAGE_WEBHOOKS");
   }
 };
@@ -263,7 +260,7 @@ export const getAccessTokenFromPage = async (
     );
     return data.access_token;
   } catch (error) {
-    console.log(error);
+    logger.error(error, "Facebook Graph API error");
     throw new Error("ERR_FETCHING_FB_USER_TOKEN");
   }
 };
@@ -292,7 +289,7 @@ export const debugToken = async (token: string): Promise<any> => {
     );
     return data;
   } catch (error) {
-    console.error("Error debugging token:", error);
+    logger.error("Error debugging token");
     throw error;
   }
 };

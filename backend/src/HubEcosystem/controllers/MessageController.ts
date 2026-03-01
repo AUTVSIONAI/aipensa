@@ -4,13 +4,14 @@ import Ticket from "../../models/Ticket";
 import { SendTextMessageService } from "../services/SendTextMessageService";
 import Whatsapp from "../../models/Whatsapp";
 import { SendMediaMessageService } from "../services/SendMediaMessageService";
+import logger from "../../utils/logger";
 
 export const send = async (req: Request, res: Response): Promise<Response> => {
   const { body: message } = req.body;
   const { ticketId } = req.params;
   const medias = req.files as Express.Multer.File[];
 
-  console.log("sending hub message controller");
+  logger.info("Sending hub message");
 
   const ticket = await Ticket.findByPk(ticketId, {
     include: [
@@ -51,7 +52,7 @@ export const send = async (req: Request, res: Response): Promise<Response> => {
 
     return res.status(200).json({ message: "Message sent" });
   } catch (error) {
-    console.log(error);
+    logger.error(error, "Error sending hub message");
 
     return res.status(400).json({ message: error });
   }

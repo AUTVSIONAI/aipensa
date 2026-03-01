@@ -5,6 +5,7 @@ import stringSimilarity from "string-similarity";
 // import multer from 'multer';
 
 import formatBody from "../../helpers/Mustache";
+import logger from "../../utils/logger";
 import Contact from "../../models/Contact";
 import { default as Setting } from "../../models/Setting";
 import Ticket from "../../models/Ticket";
@@ -136,9 +137,7 @@ export async function verifyChatbot(
 
       if (foundQueue) {
         const foundQueueId = foundQueue.id;
-        console.log(
-          `Fila encontrada - Nome: ${foundQueue.name}, ID: ${foundQueueId}`
-        );
+        logger.info("Fila encontrada para typebot");
 
         // Chame a função UpdateTicketService com o ID da fila
         await UpdateTicketService({
@@ -163,7 +162,7 @@ export async function verifyChatbot(
         );
       } else {
         if (receivedMessage === resetFlux?.value) {
-          console.log("Reiniciando Fluxo no TypeBot");
+          logger.info("Reiniciando Fluxo no TypeBot");
           startChatResponse = await typebotService.startChat(
             token,
             receivedMessage,
@@ -177,7 +176,7 @@ export async function verifyChatbot(
             typebotSessionId: startChatResponse.sessionId
           });
         } else {
-          console.log("Verificando Se Fluxo Existe No TypeBot");
+          logger.info("Verificando Se Fluxo Existe No TypeBot");
           try {
             // Tente chamar continueChat
             startChatResponse = await typebotService.continueChat(
@@ -186,11 +185,8 @@ export async function verifyChatbot(
             );
           } catch (continueChatError) {
             // Se houver um erro no continueChat, chame startChat
-            console.error(
-              "Erro ao continuar o TypeBot. Iniciando um novo TypeBot.",
-              continueChatError
-            );
-            console.log("Criando Novo Fluxo No TypeBot");
+            logger.error("Erro ao continuar o TypeBot. Iniciando um novo TypeBot.");
+            logger.info("Criando Novo Fluxo No TypeBot");
             startChatResponse = await typebotService.startChat(
               token,
               receivedMessage,
@@ -219,17 +215,14 @@ export async function verifyChatbot(
 
             if (matchingAction) {
               const secondsToWait = matchingAction.wait?.secondsToWaitFor || 0;
-              console.log(
-                `Bloco de espera encontrado: ${matchingAction.lastBubbleBlockId}`
-              );
-              console.log(`Espere por ${secondsToWait} segundos...`);
+              logger.info("Bloco de espera encontrado no typebot");
               await wait(secondsToWait);
             }
           } catch (matchingActionError) {
             try {
-              console.log("Nenhum Bloco de espera encontrado");
+              logger.info("Nenhum Bloco de espera encontrado");
             } catch (nestedError) {
-              console.log("Prosseguindo");
+              logger.info("Prosseguindo");
             }
             // Lidar com o erro, se necessário, ou apenas continuar a execução
           }
@@ -305,7 +298,7 @@ export async function verifyChatbot(
           }
 
           if (message.type === "image") {
-            console.log(`url da imagem: ${message.content?.url}`);
+            logger.info("Typebot: processing image message");
             try {
               const url = message.content?.url;
 

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import * as Yup from "yup";
 import fs from "fs";
 import AppError from "../errors/AppError";
+import logger from "../utils/logger";
 import GetDefaultWhatsApp from "../helpers/GetDefaultWhatsApp";
 import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
 import Message from "../models/Message";
@@ -338,7 +339,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
           })
         );
       } catch (error) {
-        console.log(medias);
+        logger.error("Error sending API media");
         throw new AppError("Error sending API media: " + error.message);
       }
     } else {
