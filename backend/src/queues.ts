@@ -2029,23 +2029,28 @@ handleRandomUser();
 export async function startQueueProcess() {
   logger.info("Iniciando processamento de filas");
 
-  messageQueue.process("SendMessage", handleSendMessage);
+  const msgConcurrency = Number(process.env.QUEUE_CONCURRENCY_MESSAGE) || 3;
+  const campaignConcurrency = Number(process.env.QUEUE_CONCURRENCY_CAMPAIGN) || 3;
+  const contactConcurrency = Number(process.env.QUEUE_CONCURRENCY_CONTACT) || 5;
+  const scheduleConcurrency = Number(process.env.QUEUE_CONCURRENCY_SCHEDULE) || 3;
 
-  scheduleMonitor.process("Verify", handleVerifySchedules);
+  messageQueue.process("SendMessage", msgConcurrency, handleSendMessage);
 
-  sendScheduledMessages.process("SendMessage", handleSendScheduledMessage);
+  scheduleMonitor.process("Verify", handleVerifySchedules); // cron — keep concurrency=1
 
-  campaignQueue.process("VerifyCampaignsDaatabase", handleVerifyCampaigns);
+  sendScheduledMessages.process("SendMessage", scheduleConcurrency, handleSendScheduledMessage);
 
-  campaignQueue.process("ProcessCampaign", handleProcessCampaign);
+  campaignQueue.process("VerifyCampaignsDaatabase", handleVerifyCampaigns); // cron — keep concurrency=1
 
-  campaignQueue.process("PrepareContact", handlePrepareContact);
+  campaignQueue.process("ProcessCampaign", campaignConcurrency, handleProcessCampaign);
 
-  campaignQueue.process("DispatchCampaign", handleDispatchCampaign);
+  campaignQueue.process("PrepareContact", contactConcurrency, handlePrepareContact);
 
-  userMonitor.process("VerifyLoginStatus", handleLoginStatus);
+  campaignQueue.process("DispatchCampaign", campaignConcurrency, handleDispatchCampaign);
 
-  queueMonitor.process("VerifyQueueStatus", handleVerifyQueue);
+  userMonitor.process("VerifyLoginStatus", handleLoginStatus); // cron — keep concurrency=1
+
+  queueMonitor.process("VerifyQueueStatus", handleVerifyQueue); // cron — keep concurrency=1
 
   scheduleMonitor.add(
     "Verify",
