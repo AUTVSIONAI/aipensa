@@ -3,6 +3,7 @@ import Setting from "../models/Setting";
 import sequelize from "../database";
 import cacheLayer from "../libs/cache";
 import logger from "../utils/logger";
+import isAuth from "../middleware/isAuth";
 
 import userRoutes from "./userRoutes";
 import authRoutes from "./authRoutes";
@@ -145,8 +146,8 @@ routes.get("/health", async (req, res) => {
   return res.status(status).json({ ok: healthy, checks });
 });
 
-// Config/health info (sem expor segredos)
-routes.get("/health/config", async (req, res) => {
+// Config/health info (requires authentication — exposes provider status)
+routes.get("/health/config", isAuth, async (req, res) => {
   try {
     const dailyImageLimit =
       parseInt(process.env.DAILY_IMAGE_LIMIT || "", 10) || 3;

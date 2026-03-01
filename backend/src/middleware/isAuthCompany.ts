@@ -27,6 +27,8 @@ const isAuthCompany = async (
   const [, token] = authHeader.split(" ");
 
   // 1. Check Static Token (API Integration)
+  // IMPORTANT: COMPANY_TOKEN must be a unique, strong secret per deployment.
+  // Generate with: openssl rand -hex 32
   const companyToken = process.env.COMPANY_TOKEN;
   if (companyToken && token === companyToken) {
     return next();
