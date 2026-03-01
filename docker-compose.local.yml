@@ -18,7 +18,7 @@ services:
   redis:
     image: redis:6-alpine
     restart: always
-    command: ["redis-server", "--requirepass", "zapcash_redis_pass"]
+    command: ["redis-server", "--requirepass", "zapcash_redis_pass", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
     ports:
       - "6380:6379"
     volumes:
