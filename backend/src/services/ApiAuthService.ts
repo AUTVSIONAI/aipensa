@@ -1,8 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://sandboxapicore.imaginasoft.pt/api/v1";
-const USERNAME = "sandboxapi_nsapi_266844693";
-const PASSWORD = "ieN83R8ilgqPu6RCEsUFdg9H22OzfKG2wjSoSsnt@AqYKsntqJIF&Ux2$2O1";
+const API_BASE_URL = process.env.IMAGINASOFT_API_URL || "https://sandboxapicore.imaginasoft.pt/api/v1";
+const USERNAME = process.env.IMAGINASOFT_USERNAME || "";
+const PASSWORD = process.env.IMAGINASOFT_PASSWORD || "";
 
 interface AuthResponse {
   token: string; // Certifique-se de que a API retorna o token neste formato

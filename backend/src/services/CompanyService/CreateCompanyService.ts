@@ -97,7 +97,7 @@ const CreateCompanyService = async (
       {
         name: companyUserName || name,
         email: createdCompany.email,
-        password: (password || "mudar123").trim(),
+        password: (password || process.env.DEFAULT_ADMIN_PASSWORD || "ch@ng3m3!").trim(),
         profile: "admin",
         companyId: createdCompany.id,
         super: false,
@@ -192,7 +192,7 @@ const CreateCompanyService = async (
         `[CreateCompanyService] SUCCESS: User '${email}' found in DB after commit. ID: ${checkUser.id}, CompanyId: ${checkUser.companyId}`
       );
       // Force password re-hash check
-      const valid = await checkUser.checkPassword(password || "mudar123");
+      const valid = await checkUser.checkPassword(password || process.env.DEFAULT_ADMIN_PASSWORD || "ch@ng3m3!");
       console.log(
         `[CreateCompanyService] Password check immediately after creation: ${
           valid ? "VALID" : "INVALID"
