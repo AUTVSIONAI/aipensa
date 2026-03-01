@@ -245,13 +245,7 @@ export const ActionsWebhookFacebookService = async (
 
         if (elementNowSelected.includes("img")) {
           const mediaPath =
-            process.env.BACKEND_URL === "https://localhost:8090"
-              ? `${__dirname.split("src")[0].split("\\").join("/")}public/${
-                  nodeSelected.data.elements.filter(
-                    item => item.number === elementNowSelected
-                  )[0].value
-                }`
-              : `${__dirname.split("dist")[0].split("\\").join("/")}public/${
+            `${__dirname.split(__dirname.includes("/dist/") || __dirname.includes("\\dist\\") ? "dist" : "src")[0].split("\\").join("/")}public/${
                   nodeSelected.data.elements.filter(
                     item => item.number === elementNowSelected
                   )[0].value
@@ -308,13 +302,7 @@ export const ActionsWebhookFacebookService = async (
 
         if (elementNowSelected.includes("audio")) {
           const mediaDirectory =
-            process.env.BACKEND_URL === "https://localhost:8090"
-              ? `${__dirname.split("src")[0].split("\\").join("/")}public/${
-                  nodeSelected.data.elements.filter(
-                    item => item.number === elementNowSelected
-                  )[0].value
-                }`
-              : `${__dirname.split("dist")[0].split("\\").join("/")}public/${
+            `${__dirname.split(__dirname.includes("/dist/") || __dirname.includes("\\dist\\") ? "dist" : "src")[0].split("\\").join("/")}public/${
                   nodeSelected.data.elements.filter(
                     item => item.number === elementNowSelected
                   )[0].value
@@ -394,13 +382,7 @@ export const ActionsWebhookFacebookService = async (
 
         if (elementNowSelected.includes("video")) {
           const mediaDirectory =
-            process.env.BACKEND_URL === "https://localhost:8090"
-              ? `${__dirname.split("src")[0].split("\\").join("/")}public/${
-                  nodeSelected.data.elements.filter(
-                    item => item.number === elementNowSelected
-                  )[0].value
-                }`
-              : `${__dirname.split("dist")[0].split("\\").join("/")}public/${
+            `${__dirname.split(__dirname.includes("/dist/") || __dirname.includes("\\dist\\") ? "dist" : "src")[0].split("\\").join("/")}public/${
                   nodeSelected.data.elements.filter(
                     item => item.number === elementNowSelected
                   )[0].value
@@ -457,11 +439,7 @@ export const ActionsWebhookFacebookService = async (
 
     if (nodeSelected.type === "img") {
       const mediaPath =
-        process.env.BACKEND_URL === "https://localhost:8090"
-          ? `${__dirname.split("src")[0].split("\\").join("/")}public/${
-              nodeSelected.data.url
-            }`
-          : `${__dirname.split("dist")[0].split("\\").join("/")}public/${
+        `${__dirname.split(__dirname.includes("/dist/") || __dirname.includes("\\dist\\") ? "dist" : "src")[0].split("\\").join("/")}public/${
               nodeSelected.data.url
             }`;
 
@@ -513,11 +491,7 @@ export const ActionsWebhookFacebookService = async (
 
     if (nodeSelected.type === "audio") {
       const mediaDirectory =
-        process.env.BACKEND_URL === "https://localhost:8090"
-          ? `${__dirname.split("src")[0].split("\\").join("/")}public/${
-              nodeSelected.data.url
-            }`
-          : `${__dirname.split("dist")[0].split("\\").join("/")}public/${
+        `${__dirname.split(__dirname.includes("/dist/") || __dirname.includes("\\dist\\") ? "dist" : "src")[0].split("\\").join("/")}public/${
               nodeSelected.data.url
             }`;
 
@@ -574,11 +548,7 @@ export const ActionsWebhookFacebookService = async (
 
     if (nodeSelected.type === "video") {
       const mediaDirectory =
-        process.env.BACKEND_URL === "https://localhost:8090"
-          ? `${__dirname.split("src")[0].split("\\").join("/")}public/${
-              nodeSelected.data.url
-            }`
-          : `${__dirname.split("dist")[0].split("\\").join("/")}public/${
+        `${__dirname.split(__dirname.includes("/dist/") || __dirname.includes("\\dist\\") ? "dist" : "src")[0].split("\\").join("/")}public/${
               nodeSelected.data.url
             }`;
 
