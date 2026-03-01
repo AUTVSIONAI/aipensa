@@ -31,16 +31,14 @@ export const TicketsDayService = async ({
     SELECT
       COUNT(*) AS total,
       extract(hour from tick."createdAt") AS horario
-      --to_char(DATE(tick."createdAt"), 'dd-mm-YYYY') as horario
     FROM
       "Tickets" tick
     WHERE
-      tick."companyId" = ${companyId}
-      and DATE(tick."createdAt") >= '${initialDate} 00:00:00'
-      AND DATE(tick."createdAt") <= '${finalDate} 23:59:59'
+      tick."companyId" = :companyId
+      and DATE(tick."createdAt") >= :initialDate
+      AND DATE(tick."createdAt") <= :finalDate
     GROUP BY
       extract(hour from tick."createdAt")
-      --to_char(DATE(tick."createdAt"), 'dd-mm-YYYY')
     ORDER BY
       horario asc;
     `;
@@ -52,9 +50,9 @@ export const TicketsDayService = async ({
   FROM
     "Tickets" tick
   WHERE
-    tick."companyId" = ${companyId}
-    and DATE(tick."createdAt") >= '${initialDate}'
-    AND DATE(tick."createdAt") <= '${finalDate}'
+    tick."companyId" = :companyId
+    and DATE(tick."createdAt") >= :initialDate
+    AND DATE(tick."createdAt") <= :finalDate
   GROUP BY
     to_char(DATE(tick."createdAt"), 'dd/mm/YYYY')
   ORDER BY
@@ -63,7 +61,16 @@ export const TicketsDayService = async ({
   }
 
   const data: DataReturn[] = await sequelize.query(sql, {
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
+    replacements: {
+      companyId,
+      initialDate: initialDate.trim() === finalDate?.trim()
+        ? `${initialDate} 00:00:00`
+        : initialDate,
+      finalDate: initialDate.trim() === finalDate?.trim()
+        ? `${finalDate} 23:59:59`
+        : finalDate
+    }
   });
 
   data.forEach(register => {

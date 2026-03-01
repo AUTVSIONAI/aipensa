@@ -26,10 +26,11 @@ export const TicketsAttendance = async ({
   finalDate,
   companyId
 }: Request): Promise<Return> => {
-  const sqlUsers = `select u.name from "Users" u where u."companyId" = ${companyId}`;
+  const sqlUsers = `select u.name from "Users" u where u."companyId" = :companyId`;
 
   const users: dataUser[] = await sequelize.query(sqlUsers, {
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
+    replacements: { companyId }
   });
 
   const sql = `
@@ -40,17 +41,22 @@ export const TicketsAttendance = async ({
     "Tickets" tt
     left join "Users" u on u.id = tt."userId"
   where
-    tt."companyId" = ${companyId}
+    tt."companyId" = :companyId
     and tt."userId" is not null
-    and tt."createdAt" >= '${initialDate} 00:00:00'
-    and tt."createdAt" <= '${finalDate} 23:59:59'
+    and tt."createdAt" >= :initialDate
+    and tt."createdAt" <= :finalDate
   group by
     nome
   ORDER BY
     nome asc`;
 
   const data: DataReturn[] = await sequelize.query(sql, {
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
+    replacements: {
+      companyId,
+      initialDate: `${initialDate} 00:00:00`,
+      finalDate: `${finalDate} 23:59:59`
+    }
   });
 
   users.map(user => {

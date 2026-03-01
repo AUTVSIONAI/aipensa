@@ -1967,9 +1967,10 @@ async function handleInvoiceCreate() {
 
           const plan = await Plan.findByPk(c.planId);
 
-          const sql = `SELECT * FROM "Invoices" WHERE "companyId" = ${c.id} AND "status" = 'open';`;
+          const sql = `SELECT * FROM "Invoices" WHERE "companyId" = :companyId AND "status" = 'open';`;
           const openInvoices = (await sequelize.query(sql, {
-            type: QueryTypes.SELECT
+            type: QueryTypes.SELECT,
+            replacements: { companyId: c.id }
           })) as { id: number; dueDate: Date }[];
           const existingInvoice = openInvoices.find(
             invoice =>
