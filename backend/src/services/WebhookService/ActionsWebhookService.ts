@@ -512,20 +512,11 @@ export const ActionsWebhookService = async (
             await SendMessage(whatsapp, {
               number: numberClient,
               body: "",
-              mediaPath:
-                `${__dirname.split(__dirname.includes("/dist/") || __dirname.includes("\\dist\\") ? "dist" : "src")[0].split("\\").join("/")}public/${
-                      nodeSelected.data.elements.filter(
-                        item => item.number === elementNowSelected
-                      )[0].value
-                    }`
-                  : `${__dirname
-                      .split("dist")[0]
-                      .split("\\")
-                      .join("/")}public/${
-                      nodeSelected.data.elements.filter(
-                        item => item.number === elementNowSelected
-                      )[0].value
-                    }`
+              mediaPath: `${__dirname.split(__dirname.includes("/dist/") || __dirname.includes("\\dist\\") ? "dist" : "src")[0].split("\\").join("/")}public/${
+                nodeSelected.data.elements.filter(
+                  item => item.number === elementNowSelected
+                )[0].value
+              }`
             });
             await intervalWhats("1");
           }

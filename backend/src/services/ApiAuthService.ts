@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.IMAGINASOFT_API_URL || "https://sandboxapicore.imaginasoft.pt/api/v1";
+const API_BASE_URL =
+  process.env.IMAGINASOFT_API_URL ||
+  "https://sandboxapicore.imaginasoft.pt/api/v1";
 const USERNAME = process.env.IMAGINASOFT_USERNAME || "";
 const PASSWORD = process.env.IMAGINASOFT_PASSWORD || "";
 

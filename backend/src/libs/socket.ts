@@ -40,9 +40,7 @@ export const initIO = (httpServer: Server): SocketIO => {
 
   const workspaces = io.of(/^\/\w+$/);
   workspaces.on("connection", socket => {
-    const token =
-      socket.handshake.auth?.token ||
-      socket.handshake.query?.token;
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
 
     if (!token || typeof token !== "string") {
       logger.warn(`Socket rejected: no token provided (${socket.id})`);
@@ -63,7 +61,9 @@ export const initIO = (httpServer: Server): SocketIO => {
       return;
     }
 
-    logger.info(`Socket connected: ${socket.id} ns=${socket.nsp.name} user=${socket.data.userId}`);
+    logger.info(
+      `Socket connected: ${socket.id} ns=${socket.nsp.name} user=${socket.data.userId}`
+    );
 
     let offlineTimeout: NodeJS.Timeout | null = null;
 

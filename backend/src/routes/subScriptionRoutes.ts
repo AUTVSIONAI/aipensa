@@ -1,6 +1,5 @@
 import express from "express";
 import isAuth from "../middleware/isAuth";
-import { webhookLimiter } from "../middleware/rateLimiter";
 
 import * as SubscriptionController from "../controllers/SubscriptionController";
 
@@ -12,11 +11,7 @@ subscriptionRoutes.post(
   SubscriptionController.createSubscription
 );
 
-subscriptionRoutes.post(
-  "/subscription/stripewebhook",
-  webhookLimiter,
-  express.raw({ type: "application/json" }),
-  SubscriptionController.stripewebhook
-);
+// Note: /subscription/stripewebhook is mounted directly in app.ts
+// BEFORE bodyParser.json() so Stripe signature verification works with raw body
 
 export default subscriptionRoutes;

@@ -34,6 +34,7 @@ export const RefreshTokenService = async (
 
     if (user.tokenVersion !== tokenVersion) {
       res.clearCookie("jrt", { path: "/auth" });
+      res.clearCookie("jrt", { path: "/" });
       throw new AppError("ERR_SESSION_EXPIRED", 401);
     }
 
@@ -43,6 +44,7 @@ export const RefreshTokenService = async (
     return { user, newToken, refreshToken };
   } catch (err) {
     res.clearCookie("jrt", { path: "/auth" });
+    res.clearCookie("jrt", { path: "/" });
     throw new AppError("ERR_SESSION_EXPIRED", 401);
   }
 };

@@ -17,9 +17,25 @@ const ALLOWED_TYPE_ARCH = [
 ];
 
 const BLOCKED_EXTENSIONS = [
-  ".exe", ".bat", ".cmd", ".sh", ".msi", ".com", ".scr",
-  ".pif", ".vbs", ".vbe", ".js", ".wsh", ".wsf", ".ps1",
-  ".dll", ".cpl", ".inf", ".hta", ".reg"
+  ".exe",
+  ".bat",
+  ".cmd",
+  ".sh",
+  ".msi",
+  ".com",
+  ".scr",
+  ".pif",
+  ".vbs",
+  ".vbe",
+  ".js",
+  ".wsh",
+  ".wsf",
+  ".ps1",
+  ".dll",
+  ".cpl",
+  ".inf",
+  ".hta",
+  ".reg"
 ];
 
 export default {
@@ -36,7 +52,10 @@ export default {
       }
 
       // Validate fileId against path traversal
-      if (fileId && (fileId.includes("..") || fileId.includes("/") || fileId.includes("\\"))) {
+      if (
+        fileId &&
+        (fileId.includes("..") || fileId.includes("/") || fileId.includes("\\"))
+      ) {
         return cb(new Error("Invalid file identifier"), "");
       }
 

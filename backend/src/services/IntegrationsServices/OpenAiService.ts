@@ -429,7 +429,6 @@ import {
   getFbConfig
 } from "../FacebookServices/SocialMediaService";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
-import logger from "../../utils/logger";
 import CompaniesSettings from "../../models/CompaniesSettings";
 
 import Invoices from "../../models/Invoices";

@@ -13,10 +13,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const challenge = req.query["hub.challenge"];
 
   if (mode && token) {
-    if (
-      mode === "subscribe" &&
-      token === VERIFY_TOKEN
-    ) {
+    if (mode === "subscribe" && token === VERIFY_TOKEN) {
       return res.status(200).send(String(challenge ?? ""));
     }
   }

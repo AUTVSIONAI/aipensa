@@ -96,6 +96,17 @@ app.use(
 );
 
 app.use(compression());
+
+// Stripe webhook needs raw body for signature verification — mount BEFORE bodyParser.json()
+import { webhookLimiter } from "./middleware/rateLimiter";
+import * as SubscriptionController from "./controllers/SubscriptionController";
+app.post(
+  "/subscription/stripewebhook",
+  webhookLimiter,
+  express.raw({ type: "application/json" }),
+  SubscriptionController.stripewebhook
+);
+
 app.use(bodyParser.json({ limit: "5mb" }));
 app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
 

@@ -399,7 +399,7 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
 
               // Exponential backoff for reconnect
               const currentRetries = whatsapp.retries || 0;
-              const backoffDelay = Math.min(2000 * Math.pow(2, currentRetries), 300000);
+              const backoffDelay = Math.min(2000 * 2 ** currentRetries, 300000);
               await whatsapp.update({ retries: currentRetries + 1 });
 
               if (
@@ -407,8 +407,12 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
                 DisconnectReason.loggedOut
               ) {
                 removeWbot(id, false);
-                wsocket.ev.removeAllListeners();
-                logger.info(`Reconnecting ${name} in ${backoffDelay}ms (retry #${currentRetries + 1})`);
+                wsocket.ev.removeAllListeners("connection.update");
+                logger.info(
+                  `Reconnecting ${name} in ${backoffDelay}ms (retry #${
+                    currentRetries + 1
+                  })`
+                );
                 setTimeout(
                   () => StartWhatsAppSession(whatsapp, whatsapp.companyId),
                   backoffDelay
@@ -425,8 +429,12 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
                   }
                 );
                 removeWbot(id, false);
-                wsocket.ev.removeAllListeners();
-                logger.info(`Reconnecting ${name} after logout in ${backoffDelay}ms (retry #${currentRetries + 1})`);
+                wsocket.ev.removeAllListeners("connection.update");
+                logger.info(
+                  `Reconnecting ${name} after logout in ${backoffDelay}ms (retry #${
+                    currentRetries + 1
+                  })`
+                );
                 setTimeout(
                   () => StartWhatsAppSession(whatsapp, whatsapp.companyId),
                   backoffDelay

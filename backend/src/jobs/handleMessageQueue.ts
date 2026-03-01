@@ -14,7 +14,9 @@ export default {
         wbot === undefined ||
         companyId === undefined
       ) {
-        logger.warn("handleMessageQueue: missing required data (message, wbot, or companyId)");
+        logger.warn(
+          "handleMessageQueue: missing required data (message, wbot, or companyId)"
+        );
       }
 
       const w = getWbot(wbot);

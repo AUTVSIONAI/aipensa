@@ -125,7 +125,9 @@ export const remove = async (
     console.error("Error updating user status on logout:", err);
   }
 
+  // Clear cookie at new path and legacy path for smooth migration
   res.clearCookie("jrt", { path: "/auth" });
+  res.clearCookie("jrt", { path: "/" });
 
   return res.send();
 };
