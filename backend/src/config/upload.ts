@@ -65,7 +65,7 @@ export default {
 
       if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, { recursive: true });
-        fs.chmodSync(folder, 0o755);
+        fs.chmodSync(folder, 0o750);
       }
       return cb(null, folder);
     },
