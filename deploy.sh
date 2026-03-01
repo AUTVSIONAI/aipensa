@@ -12,10 +12,12 @@ echo "--- Iniciando Deploy ZAPCASH ---"
 echo "Backend Domain: $BACKEND_DOMAIN"
 echo "Frontend Domain: $FRONTEND_DOMAIN"
 
-# Substituir domínios no nginx-proxy.conf
+# Gerar nginx configs a partir dos templates
 echo "Configurando Nginx..."
-sed -i "s/api.seudominio.com/$BACKEND_DOMAIN/g" nginx-proxy.conf
-sed -i "s/app.seudominio.com/$FRONTEND_DOMAIN/g" nginx-proxy.conf
+envsubst '${BACKEND_DOMAIN} ${FRONTEND_DOMAIN}' < nginx-proxy.conf.template > nginx-proxy.conf
+if [ -f nginx-proxy-ssl.conf.template ]; then
+  envsubst '${BACKEND_DOMAIN} ${FRONTEND_DOMAIN}' < nginx-proxy-ssl.conf.template > nginx-proxy-ssl.conf
+fi
 
 # Verificar Docker
 if ! command -v docker &> /dev/null
