@@ -83,7 +83,7 @@ const GenerateImageService = async ({
       const filePath = path.join(publicFolder, fileName);
       fs.writeFileSync(filePath, buffer);
 
-      const backendUrl = process.env.BACKEND_URL || "https://api.aipensa.com";
+      const backendUrl = process.env.BACKEND_URL || "";
       const url = `${backendUrl}/public/generated/${fileName}`;
 
       console.log(

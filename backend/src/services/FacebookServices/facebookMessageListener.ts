@@ -506,7 +506,7 @@ const handleOpenAiFacebook = async (
       apiKey: openAiSettings.apiKey,
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
-        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
+        "HTTP-Referer": process.env.FRONTEND_URL || "",
         "X-Title": "AIPENSA.COM"
       }
     });

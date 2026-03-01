@@ -50,16 +50,7 @@ app.set("queues", {
   sendScheduledMessages
 });
 
-const normalizeOrigin = (value?: string) =>
-  value ? value.replace(/\/$/, "") : value;
-const allowedOrigins = [
-  normalizeOrigin(process.env.FRONTEND_URL),
-  normalizeOrigin(process.env.BACKEND_URL),
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "https://aipensa.com",
-  "https://api.aipensa.com"
-].filter(Boolean);
+import { allowedOrigins } from "./config/cors";
 
 // Configuração do BullBoard
 if (

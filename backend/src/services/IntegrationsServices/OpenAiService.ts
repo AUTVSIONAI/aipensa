@@ -330,7 +330,7 @@ const callOpenAiWithDeepSeekFallback = async (
       apiKey,
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
-        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
+        "HTTP-Referer": process.env.FRONTEND_URL || "",
         "X-Title": "AIPENSA.COM"
       }
     });
@@ -1677,10 +1677,11 @@ const handleUpgradeAction = async (response: string) => {
       const json = JSON.parse(match[1]);
       const type = json.type;
 
-      let link = "https://aipensa.com/upgrade";
-      if (type === "posts") link = "https://aipensa.com/checkout/addon-posts";
-      if (type === "voice") link = "https://aipensa.com/checkout/addon-voice";
-      if (type === "agent") link = "https://aipensa.com/checkout/module-agent";
+      const baseUrl = process.env.FRONTEND_URL || "";
+      let link = `${baseUrl}/upgrade`;
+      if (type === "posts") link = `${baseUrl}/checkout/addon-posts`;
+      if (type === "voice") link = `${baseUrl}/checkout/addon-voice`;
+      if (type === "agent") link = `${baseUrl}/checkout/module-agent`;
 
       return (
         response.replace(match[0], "").trim() +
@@ -1933,7 +1934,7 @@ const handleImageGenerationAction = async (
               baseURL: "https://openrouter.ai/api/v1",
               defaultHeaders: {
                 "HTTP-Referer":
-                  process.env.FRONTEND_URL || "https://aipensa.com",
+                  process.env.FRONTEND_URL || "",
                 "X-Title": "AIPENSA.COM"
               }
             });
@@ -2660,7 +2661,7 @@ export const handleOpenAi = async (
       apiKey: effectiveApiKey,
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
-        "HTTP-Referer": process.env.FRONTEND_URL || "https://aipensa.com",
+        "HTTP-Referer": process.env.FRONTEND_URL || "",
         "X-Title": "AIPENSA.COM"
       }
     });

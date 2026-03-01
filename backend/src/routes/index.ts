@@ -201,7 +201,7 @@ routes.get("/", (req, res) =>
     status: "running",
     message: "API Whaticket está funcionando",
     version: "1.0.0",
-    documentation: "https://aipensa.com/docs"
+    documentation: `${process.env.FRONTEND_URL || ""}/docs`
   })
 );
 routes.use(instagramRoutes);
