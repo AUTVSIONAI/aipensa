@@ -54,3 +54,12 @@ export const uploadLimiter = rateLimit({
   legacyHeaders: false,
   ...(store && { store })
 });
+
+export const clinicLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
+  message: { error: "Too many requests. Try again in 1 minute." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  ...(store && { store })
+});
