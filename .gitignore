@@ -1,5 +1,4 @@
 node_modules
-.env
 .DS_Store
 dist
 build
@@ -10,6 +9,13 @@ coverage
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Environment files (secrets) — never commit
+.env
+.env.*
+!.env.exemple
+!.env.example
+!.env.test
 
 backend/public/company*
 backend/public/uploads
