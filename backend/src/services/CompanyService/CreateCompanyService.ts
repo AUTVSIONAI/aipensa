@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import * as Yup from "yup";
 import AppError from "../../errors/AppError";
 import logger from "../../utils/logger";
@@ -98,7 +99,13 @@ const CreateCompanyService = async (
       {
         name: companyUserName || name,
         email: createdCompany.email,
-        password: (password || process.env.DEFAULT_ADMIN_PASSWORD || "ch@ng3m3!").trim(),
+        password: (() => {
+          const pw = password || process.env.DEFAULT_ADMIN_PASSWORD;
+          if (pw) return pw.trim();
+          const generated = crypto.randomBytes(16).toString("hex");
+          logger.warn("[CreateCompanyService] No password provided — generated random password for company '%s'", name);
+          return generated;
+        })(),
         profile: "admin",
         companyId: createdCompany.id,
         super: false,
@@ -179,8 +186,13 @@ const CreateCompanyService = async (
     if (checkUser) {
       logger.info("[CreateCompanyService] User found in DB after commit");
       // Force password re-hash check
-      const valid = await checkUser.checkPassword(password || process.env.DEFAULT_ADMIN_PASSWORD || "ch@ng3m3!");
-      logger.info("[CreateCompanyService] Password check after creation: %s", valid ? "VALID" : "INVALID");
+      const pwToCheck = password || process.env.DEFAULT_ADMIN_PASSWORD;
+      if (!pwToCheck) {
+        logger.info("[CreateCompanyService] Skipping password verification — password was auto-generated");
+      } else {
+        const valid = await checkUser.checkPassword(pwToCheck);
+        logger.info("[CreateCompanyService] Password check after creation: %s", valid ? "VALID" : "INVALID");
+      }
     } else {
       logger.error("[CreateCompanyService] CRITICAL: User NOT found in DB after commit!");
     }
